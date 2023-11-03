@@ -1,0 +1,10 @@
+# node files
+node_modules/
+package-lock.json
+
+# build artifacts
+out/
+
+# vscode files
+.vscode/
+*.code-workspace

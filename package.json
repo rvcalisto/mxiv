@@ -1,0 +1,71 @@
+{
+  "name": "mxiv",
+  "productName": "mxiv",
+  "version": "0.1.0",
+  "description": "Media explorer and interactive viewer",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron-forge start",
+    "package": "electron-forge package",
+    "make": "electron-forge make",
+    "publish": "electron-forge publish",
+    "lint": "echo \"No linting configured\""
+  },
+  "keywords": [],
+  "author": "rvcalisto",
+  "license": "MIT",
+  "config": {
+    "forge": {
+      "packagerConfig": {
+        "icon": "src/icons/mxiv"
+      },
+      "makers": [
+        {
+          "name": "@electron-forge/maker-squirrel",
+          "config": {
+            "name": "mxiv"
+          }
+        },
+        {
+          "name": "@electron-forge/maker-zip",
+          "platforms": [
+            "darwin"
+          ]
+        },
+        {
+          "name": "@electron-forge/maker-deb",
+          "config": {
+            "options": {
+              "productName": "MXIV",
+              "genericName": "Media Explorer & Interactive Viewer",
+              "icon": "src/icons/mxiv.png",
+              "categories": [
+                "AudioVideo",
+                "Audio",
+                "Video",
+                "Graphics"
+              ],
+              "depends" : [
+                "p7zip-full",
+                "imagemagick"
+              ],
+              "mimeType": [
+                "inode/directory"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "electron-squirrel-startup": "^1"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^6",
+    "@electron-forge/maker-deb": "^6",
+    "@electron-forge/maker-squirrel": "^6",
+    "@electron-forge/maker-zip": "^6",
+    "electron": "^26"
+  }
+}

@@ -1,0 +1,184 @@
+@charset "utf-8"; /* prevents badly encoded icons */
+
+:root {
+  --cover-height: 200px;
+  --cl-accent: royalblue;
+  --app-font: system-ui;
+}
+
+@font-face {
+  font-family: "font-awesome";
+  src: url("../fonts/font-awesome-free-6.4.2/fa-solid-900.woff2");
+}
+
+* {
+  padding: 0%;
+  margin: 0%;
+  user-select: none;
+  outline: none;
+  font-family: var(--app-font);
+  font-size: small;
+}
+
+[icon]::before {
+  font-family: "font-awesome";
+  font-size: smaller;
+}
+
+[icon=new]::before {
+  content: "+";
+}
+
+[icon=playing]::before {
+  content: "";
+}
+
+body,
+html {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+body {
+  background: radial-gradient(#1a1a1a, #101010)
+}
+
+#tabs {
+  display: flex;
+}
+
+.tab,
+#newTab {
+  padding: 1px 1em;
+  white-space: nowrap;
+  overflow: hidden;
+  background: inherit;
+  
+  color: gray;
+  transition: .15s;
+  max-width: fit-content;
+  width: 200px;
+  display: flex;
+}
+
+#newTab {
+  min-width: 20px;
+  padding: 1px 0px;
+  display: block;
+  text-align: center;
+}
+
+/* cast shadow over selected tab neighbors */
+.tab.selected + .tab,
+.tab.selected + #newTab {
+  background: linear-gradient(90deg, black, transparent);
+}
+.tab:has(+ .tab.selected) {
+  background: linear-gradient(-90deg, black, transparent);
+}
+
+/* ovewrite background shadow effect on hover for below */
+.tab:hover,
+#newTab:hover {
+  background: #303030 !important;
+}
+
+.tab:active, 
+#newTab:active {
+  background: #414141 !important;
+}
+
+.tab.selected {
+  background: linear-gradient(180deg, var(--cl-accent) 2px, transparent 0px) !important;
+  color: whitesmoke;
+}
+
+/* play state icon */
+.tab button {
+  background: transparent;
+  border: none;
+  color: whitesmoke;
+  font-size: x-small;
+  transform: translateX(-.5em);
+  transition: .2s;
+}
+
+.tab button:hover {
+  color: orange;
+}
+
+/* tab name */
+.tab p {
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+main {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0px;
+  display: flex;
+}
+
+#contents {
+  width: 100%;
+  height: 100%;
+}
+
+app-cli {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+#appNotifier {
+  position: absolute;
+  pointer-events: none;
+  width: 100%;
+  height: 100%;
+  z-index: 3;
+  overflow: hidden;
+}
+
+.notification {
+  margin: .4em auto;
+  padding: .5em 1em; 
+  background: #282828; 
+  color: whitesmoke;
+  border-radius: 1em;
+  width: fit-content;
+  box-shadow: 2px 2px 5px black;
+
+  background: whitesmoke;
+  color: #1b1b1b;
+}
+
+#bar {
+  /* background: linear-gradient(90deg, #1b1b1b, transparent); */
+  background: #1b1b1b;
+  color: silver;
+  
+  display: flex;
+  justify-content: space-between;
+  transition: .1s;
+  padding: 0em .2em;
+  gap: 2em;
+}
+
+#barName, 
+#barInfo {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  width: fit-content;
+  font-size: inherit;
+} 
+
+#barInfo {
+  min-width: fit-content;
+}
