@@ -59,7 +59,7 @@ electron "<path to your extracted mxiv archive>"
 
 ```bash
 # clone repository into a new "mxiv" folder
-git clone "<repoURL>" "mxiv"
+git clone "https://github.com/rvcalisto/mxiv.git" "mxiv"
 
 # fetch and install electron, electron-forge
 cd mxiv; npm install
