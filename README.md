@@ -1,10 +1,8 @@
 <!-- header -->
-<div style="display: flex; gap: 1em; align-items:center;">
-  <img src="./src/icons/mxiv.png" style="height: 5em">
-  <div>
-    <h3 style="line-height: 0"><strong>MXIV</strong></h3>
-    <p>Media Explorer & Interactive Viewer</p>
-  </div>
+<div>
+  <img align="left" src="./src/icons/mxiv.png" style="height: 4em">
+  <h3><strong>MXIV</strong>
+  </h3><p>Media Explorer & Interactive Viewer</p>
 </div>
 
 ![cover]
@@ -74,11 +72,11 @@ npm run make
 ```
 
 <!-- links -->
-[1]: www.electronjs.org
-[2]: www.7-zip.org
-[3]: github.com/p7zip-project/p7zip
-[4]: imagemagick.org
-[5]: fontawesome.com
-[6]: en.wikipedia.org/wiki/PATH_(variable)
+[1]: https://www.electronjs.org
+[2]: https://www.7-zip.org
+[3]: https://github.com/p7zip-project/p7zip
+[4]: https://imagemagick.org
+[5]: https://fontawesome.com
+[6]: https://en.wikipedia.org/wiki/PATH_(variable)
 [icon]: ./src/icons/mxiv.png
 [cover]: ./cover.png
