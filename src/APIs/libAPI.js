@@ -5,7 +5,7 @@ const os = require('os');
 const p = require('path');
 const { randomUUID } = require('crypto');
 const fileAPI = require('./fileAPI')
-const zipAPI = require('./zipAPI');
+const arcAPI = require('./arcAPI');
 const magickAPI = require('./magickAPI');
 const { pathToFileURL } = require('url');
 
@@ -17,7 +17,7 @@ const PLACEHOLDERICON = p.join(__dirname, '../icons/libraryIconPlaceholder.jpg')
 /** localStorage item name for LibraryObject. */
 const libraryStorage = 'libraryPaths'
 
-let canUnzip = undefined
+let canExtract = undefined
 let canMagick = undefined
 
 /**
@@ -76,7 +76,7 @@ async function addToLibrary(folderPath) {
   if ( !await initCoverDir() ) return -1
 
   // set tool availability if unset
-  if (canUnzip === undefined) canUnzip = await zipAPI.hasTool()
+  if (canExtract === undefined) canExtract = await arcAPI.hasTool()
   if (canMagick === undefined) canMagick = await magickAPI.hasTool()
 
   // map folder recursively, filter out already added & invalid keys 
@@ -84,7 +84,7 @@ async function addToLibrary(folderPath) {
   const mappedPaths = await mapFolder(folderPath)
   const pathsToStore = mappedPaths.filter(path => {
     if (libObj[path] != null) return false
-    if (fileAPI.fileType(path) === 'archive' && !canUnzip) return false
+    if (fileAPI.fileType(path) === 'archive' && !canExtract) return false
     return true
   })
 
@@ -121,7 +121,7 @@ async function mapFolder(folderPath) {
     const ls = await fileAPI.lsAsync(path)
   
     // add archives
-    for (const zip of ls.archives) mappedPaths.push(zip.path)
+    for (const archive of ls.archives) mappedPaths.push(archive.path)
   
     // path has viewable files, add absolute path
     if (ls.files.length) mappedPaths.push(ls.target.path)
@@ -152,7 +152,7 @@ async function mapFolder(folderPath) {
 async function storeEntry(path, objRef) {
 
   const cover = fileAPI.fileType(path) === 'archive' ?
-  await coverFromZip(path) : await coverFromDir(path)
+  await coverFromArc(path) : await coverFromDir(path)
 
   objRef[path] = {
     'name' : p.basename(path),
@@ -194,16 +194,16 @@ async function coverFromDir(path) {
  * @param {String} path Folder Path.
  * @returns {Promise<String>} Cover Path.
  */
-async function coverFromZip(path) {
+async function coverFromArc(path) {
 
   // extract first file from archive and get its path
-  const firstFile = (await zipAPI.fileList(path))[0]
+  const firstFile = (await arcAPI.fileList(path))[0]
 
   // firstFile may not be an image! use placeholder
   const isImg = fileAPI.fileType(firstFile) === 'image'
   if (!isImg || !canMagick) return await coverPlaceholder()
 
-  const extractedPath = await zipAPI.extractOnly(firstFile, path, COVERDIR)
+  const extractedPath = await arcAPI.extractOnly(firstFile, path, COVERDIR)
 
   // generate cover path to be used as UUID.extention. Remove extracted source.
   const ext = p.extname(extractedPath)

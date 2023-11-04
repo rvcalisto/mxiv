@@ -3,10 +3,10 @@
 const fs = require('fs');
 const os = require('os');
 const p = require('path');
-const zipAPI = require('./zipAPI')
+const arcAPI = require('./arcAPI')
 const fileAPI = require('./fileAPI')
 
-const TMPDIR = os.tmpdir()  // OS directory where to temporarily unzip archives
+const TMPDIR = os.tmpdir()  // OS directory where to temporarily extract archives
 const TMPPREFIX = 'mxiv-'   // prefix for temporarily extracted archive folders
 
 
@@ -79,13 +79,13 @@ async function open(paths, ownerID = 0) {
       bookObj.files = bookObj.files.concat(lsObj.files)
     }
 
-    // Archive, extract (and prevent extracting directories for ending in '.zip')
-    else if (fileType === 'archive' && !pathStat.isDirectory()) {
+    // Archive, extract (and prevent trying to extract directories with archive extentions)
+    else if ( fileType === 'archive' && !pathStat.isDirectory() ) {
       const tmpDir = await tmpFolders.leaseTmpFolder(path, ownerID)
       if (tmpDir) {
         workingTmpFolders.push(tmpDir) // prevent clearing working tmp folder
   
-        // open folder & append zip path to paths
+        // open folder & append archive filepath to paths
         const lsObj = await fileAPI.lsAsync(tmpDir)
         bookObj.paths.push(fileAPI.fileObj('archive', p.basename(path), path))
         bookObj.files = bookObj.files.concat(lsObj.files)
@@ -124,15 +124,15 @@ const tmpFolders = new class TemporaryFolders {
 
   /**
    * Create a temporary folder for archive if valid. Returns folder path or empty if invalid.
-   * @param {String} archivePath Absolute path to zip file.
+   * @param {String} archivePath Absolute path to archive file.
    * @param {Number} ownerID Owner ID to register folder.
    * @returns {Promise<String>} Path to temporary folder.
    */
   async leaseTmpFolder(archivePath, ownerID = 0) {
 
     // only extract archives that contain a viewable file
-    const zipFiles = await zipAPI.fileList(archivePath)
-    const validFileIdx = zipFiles.findIndex(filePath => {
+    const arcFiles = await arcAPI.fileList(archivePath)
+    const validFileIdx = arcFiles.findIndex(filePath => {
       if ( p.dirname(filePath) !== '.' ) return false
       const fileType = fileAPI.fileType(filePath)
       return fileType === 'image' || fileType === 'video'
@@ -142,7 +142,7 @@ const tmpFolders = new class TemporaryFolders {
 
     // new unique temp folder (ex: /tmp/prefix-dpC7Id)
     const tmpDir = fs.mkdtempSync(p.join(TMPDIR, TMPPREFIX))
-    await zipAPI.extract(archivePath, tmpDir)
+    await arcAPI.extract(archivePath, tmpDir)
     console.log(`Extracted archive to tmp folder ${tmpDir}`)
 
     // add to #leasedFolders

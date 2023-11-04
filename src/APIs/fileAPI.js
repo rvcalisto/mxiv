@@ -44,7 +44,7 @@ function fileType(file) {
     case '.mp4': case '.webm':
     case '.mp3': case '.ogg': // lump together for now
       return 'video';
-    case '.zip':
+    case '.zip': case '.cbz':
       return 'archive'
   }
   return 'other';
@@ -186,10 +186,10 @@ async function lsHint(queryPath) {
     const lsObj = await lsAsync(workingPath)
     
     // concat in order, append separator to directories
-    const dirs = lsObj.directories.map(i => i.name + p.sep)
-    const zips = lsObj.archives.map(i => i.name)
+    const directories = lsObj.directories.map(i => i.name + p.sep)
+    const archives = lsObj.archives.map(i => i.name)
     const files = lsObj.files.map(i => i.name)
-    hints = dirs.concat(zips, files)
+    hints = directories.concat(archives, files)
 
     // store hints in lsCache
     hintCache[workingPath] = hints

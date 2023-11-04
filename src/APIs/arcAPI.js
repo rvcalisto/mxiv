@@ -27,12 +27,12 @@ async function hasTool() {
 
 /**
  * Extract archive into folder.
- * @param {String} zipFile Path to archive to extract files from.
- * @param {String} unzipTo Path to folder to extract files onto.
+ * @param {String} archiveFile Path to archive to extract files from.
+ * @param {String} extractTo Path to folder to extract files onto.
  */
-async function extract(zipFile, unzipTo) {
+async function extract(archiveFile, extractTo) {
   await new Promise((resolve, reject) => {
-    child_process.exec(`${cmd} x "${zipFile}" -o"${unzipTo}"`, () => {
+    child_process.exec(`${cmd} x "${archiveFile}" -o"${extractTo}"`, () => {
       resolve()
     })
   })
@@ -41,12 +41,12 @@ async function extract(zipFile, unzipTo) {
 
 /**
  * List files from archive.
- * @param {String} zipFile Path to archive file.
+ * @param {String} archiveFile Path to archive file.
  * @returns {Promise<String[]>} Archive's basename files.
  */
-async function fileList(zipFile) {
+async function fileList(archiveFile) {
   const rawList = await new Promise((resolve, reject) => {
-    child_process.exec(`${cmd} l -slt -ba "${zipFile}"`, (err, stdout) => {
+    child_process.exec(`${cmd} l -slt -ba "${archiveFile}"`, (err, stdout) => {
       resolve( stdout.toString().split(newlineCode) )
     })
   })
@@ -63,14 +63,14 @@ async function fileList(zipFile) {
 /**
  * Extract a single file from archive.
  * @param {String} file File basename.
- * @param {String} zipFile Target archive to extract from.
- * @param {String} unzipTo Folder path to extrat file onto.
+ * @param {String} archiveFile Target archive to extract from.
+ * @param {String} extractTo Folder path to extrat file onto.
  * @returns {Promise<String>} Path to extracted file.
  */
-async function extractOnly(file, zipFile, unzipTo) {
+async function extractOnly(file, archiveFile, extractTo) {
   return await new Promise((resolve, reject) => {
-    child_process.exec(`${cmd} e -i!"${file}" "${zipFile}" -o"${unzipTo}"`, () => {
-      resolve( join(unzipTo, file) )
+    child_process.exec(`${cmd} e -i!"${file}" "${archiveFile}" -o"${extractTo}"`, () => {
+      resolve( join(extractTo, file) )
     })
   })
 }

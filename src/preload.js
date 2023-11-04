@@ -1,7 +1,7 @@
 const { contextBridge, ipcRenderer } = require("electron")
 const { webFrame } = require("electron/renderer")
 const tagAPI = require("./APIs/tagAPI.js")
-const zipAPI = require('./APIs/zipAPI') // exposed for debugging, remove later
+const arcAPI = require('./APIs/arcAPI') // exposed for debugging, remove later
 const libAPI = require('./APIs/libAPI')
 const fileAPI = require('./APIs/fileAPI')
 const openAPI = require("./APIs/openAPI")
@@ -10,11 +10,11 @@ const openAPI = require("./APIs/openAPI")
 contextBridge.exposeInMainWorld('elecAPI', {
 
   tagAPI:  tagAPI,      // tag, untag, filter files. [book.js] 
-  zipAPI:  zipAPI,      // exposed for debugging, remove later
+  arcAPI:  arcAPI,      // exposed for debugging, remove later
   libAPI:  libAPI,      // library, cover thumbnails [library.js]
   fileAPI: fileAPI,     // everything file related [book.js, fileExplorer.js, statusBar.js]
 
-  // open files/dirs/.zips on book.js [book.js]
+  // open files/dirs/archives on book.js [book.js]
   open: (path, ownerID) => openAPI.open(path, ownerID), // maybe merge with fileAPI
   clearTmp: (ownerID) => openAPI.clearTmp(ownerID),
   clearCache: () => webFrame.clearCache(),
