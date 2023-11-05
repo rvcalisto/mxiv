@@ -61,7 +61,7 @@ export class Library extends HTMLElement {
     let addedPaths = 0
     for (const folder of watchFolders) {
       console.log('sync ' + folder)
-      addedPaths = await elecAPI.libAPI.addToLibrary(folder)
+      addedPaths += await elecAPI.libAPI.addToLibrary(folder)
       this.coverGrid.reloadCovers() // repaint
     }
 
