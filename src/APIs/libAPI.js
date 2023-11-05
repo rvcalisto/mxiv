@@ -11,7 +11,10 @@ const { pathToFileURL } = require('url');
 
 
 /** Local folder for cover thumbnail storage. */
-const COVERDIR = p.join(os.homedir(), '.local', 'share', 'mxiv', 'covers')
+const COVERDIR = process.platform === 'win32' ?
+p.join(process.env.LOCALAPPDATA, 'mxiv', 'covers') :
+p.join(os.homedir(), '.cache', 'mxiv', 'covers')
+
 const PLACEHOLDERICON = p.join(__dirname, '../icons/libraryIconPlaceholder.jpg')
 
 /** localStorage item name for LibraryObject. */

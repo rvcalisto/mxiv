@@ -2,7 +2,11 @@ const os = require('os');
 const path = require('path');
 const { TagDBMS } = require('./tagDB');
 const { mkdir } = require('fs');
-const storageFile = path.join(os.homedir(), '.config', 'mxiv', 'tagDB.json')
+
+
+const storageFile = process.platform === 'win32' ?
+path.join(process.env.LOCALAPPDATA, 'mxiv', 'tagDB.json') :
+path.join(os.homedir(), '.cache', 'mxiv', 'tagDB.json')
 
 /** Tag database manager, singleton. */
 const tagDB = new TagDBMS(storageFile)
