@@ -70,9 +70,10 @@ async function initCoverDir() {
 /**
  * Store archive or folder recursively.
  * @param {String} folderPath Folder/archive path to add.
+ * @param {true} recursively Either to evaluate subfolders recursively.
  * @returns {Promise<Number>} New paths added.
  */
-async function addToLibrary(folderPath) {
+async function addToLibrary(folderPath, recursively = true) {
 
   // make sure that cover folder exists
   console.time(`addToLib ${folderPath}`)
@@ -82,9 +83,9 @@ async function addToLibrary(folderPath) {
   if (canExtract === undefined) canExtract = await arcAPI.hasTool()
   if (canMagick === undefined) canMagick = await magickAPI.hasTool()
 
-  // map folder recursively, filter out already added & invalid keys 
+  // map folder and filter-out ineligible paths 
   const libObj = getLibraryObj()
-  const mappedPaths = await mapFolder(folderPath)
+  const mappedPaths = await mapFolder(folderPath, recursively ? Infinity : 1)
   const pathsToStore = mappedPaths.filter(path => {
     if (libObj[path] != null) return false
     if (fileAPI.fileType(path) === 'archive' && !canExtract) return false
@@ -112,28 +113,26 @@ async function addToLibrary(folderPath) {
 
 
 /**
- * Map archives and folders (recursively) for valid book entries. Returns array.
+ * Recursively map and return media archives and folders.
  * @param {String} folderPath Path to folder to be mapped recursively.
+ * @param {Number} depth How many levels to recurse. Defaults to `Infinity`.
+ * @param {String[]} mappedPaths Used internally on recursive calls.
  * @returns {Promise<String[]>} Mapped paths.
  */
-async function mapFolder(folderPath) {
-  const mappedPaths = []
+async function mapFolder(folderPath, depth = Infinity, mappedPaths = []) {
+  const ls = await fileAPI.lsAsync(folderPath)
 
-  // append valid paths to mappedPaths, recursively
-  async function mapRecursive(path) {
-    const ls = await fileAPI.lsAsync(path)
-  
-    // add archives
-    for (const archive of ls.archives) mappedPaths.push(archive.path)
-  
-    // path has viewable files, add absolute path
-    if (ls.files.length) mappedPaths.push(ls.target.path)
+  // add archives
+  for (const archive of ls.archives) mappedPaths.push(archive.path)
 
-    // process folders recursively
-    for (const dir of ls.directories) await mapRecursive(dir.path)
-  }
+  // path has viewable files, add absolute path
+  if (ls.files.length) mappedPaths.push(ls.target.path)
+
+  // process subfolders recursively
+  if (depth-- > 0)
+    for (const dir of ls.directories) 
+      await mapFolder(dir.path, depth, mappedPaths)
   
-  await mapRecursive(folderPath)
   return mappedPaths
 }
 
