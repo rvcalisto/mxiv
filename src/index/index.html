@@ -865,7 +865,7 @@
 
       .folderItem {
         display: flex;
-        justify-content: space-between;
+        gap: 1em;
         padding: .2em;
         height: fit-content;
         color: silver;
@@ -873,6 +873,17 @@
         align-items: center;
         border-radius: 4px;
         overflow-wrap: anywhere;
+      }
+
+      .folderItem > p:nth-child(2) {
+        display: inherit;
+        gap: .2em;
+        flex-direction: row-reverse;
+        margin-left: auto;
+      }
+
+      .folderItem > button {
+        margin-right: 0px;
       }
 
       /* scroll styling */
@@ -897,14 +908,13 @@
     <div id="wrapper">
       <item-list id="library" tabindex="1"></item-list>
       <div class="menubar">
-        <button id="addBtn" title="(recursively)">add folder</button>
-        <button id="watchBtn" title="open folder list">manage watchlist</button>
-        <button id="syncBtn" title="sync items from folders">sync folders</button>
+        <button id="watchBtn" title="manage watchlist items">watchlist</button>
+        <button id="syncBtn" title="sync library to watchlist items">sync folders</button>
       </div>
       <div class="overlay" style="display: none; opacity: 0;">
         <div id="folderListHeader">
           <p>watchlist</p>
-          <button id="newFolderBtn" title="add">new folder</button>
+          <button id="addToWatch">add to watchlist</button>
         </div>
         <div id="folderList"></div>
       </div>

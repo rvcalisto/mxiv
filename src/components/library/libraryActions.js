@@ -84,7 +84,7 @@ Actions.register('library', {
           Library.watchlistPanel.removePath(path)
           AppNotifier.notify(`removed ${path} from Watchlist`)
         },
-        'options': () => Library.watchlistPanel.getPathArray()
+        'options': () => Object.keys( Library.watchlistPanel.getWatchObject() )
       },
       'sync': {
         'desc': 'synchronize books with Watchlist entries',
