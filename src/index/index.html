@@ -778,10 +778,18 @@
       }
 
       .menubar {
-        background: #111111;
         display: flex;
-        justify-content: space-between;
-        padding: 0px 2px;
+        flex-direction: column;
+        position: absolute;
+        margin: .2em;
+      }
+
+      .menubar > button {
+        font-family: "font-awesome";
+        font-size: large;
+        color: whitesmoke;
+        background: var(--cl-accent);
+        box-shadow: 2px 2px black;
       }
 
       .label {
@@ -908,8 +916,8 @@
     <div id="wrapper">
       <item-list id="library" tabindex="1"></item-list>
       <div class="menubar">
-        <button id="watchBtn" title="manage watchlist items">watchlist</button>
-        <button id="syncBtn" title="sync library to watchlist items">sync folders</button>
+        <button id="watchBtn" title="manage watchlist items"></button>
+        <button id="syncBtn" title="sync library to watchlist items"></button>
       </div>
       <div class="overlay" style="display: none; opacity: 0;">
         <div id="folderListHeader">
