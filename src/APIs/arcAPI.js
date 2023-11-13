@@ -1,7 +1,7 @@
 /* Uses 7z to handle archives. */
 
 const child_process = require("child_process"); // runs 7z
-const { join } = require("path");
+const path = require("path");
 
 const { platform } = require("os"); // for Windows specific constants
 const isWin32 = platform() === 'win32'
@@ -26,13 +26,20 @@ async function hasTool() {
 
 
 /**
- * Extract archive into folder.
+ * Extract archive base files into folder ignoring directory structure 
+ * and overwriting files of same name as extracted.
  * @param {String} archiveFile Path to archive to extract files from.
  * @param {String} extractTo Path to folder to extract files onto.
  */
 async function extract(archiveFile, extractTo) {
+  // extract, preserve directory sctructure
+  // 7z x "<archiveFile>" -o"<extractTo>"
+  
+  // extract only basefiles, force yes for overwrites
+  // 7z e "<archiveFile>" -y -o"<extractTo>"
+
   await new Promise((resolve, reject) => {
-    child_process.exec(`${cmd} x "${archiveFile}" -o"${extractTo}"`, () => {
+    child_process.exec(`${cmd} e -y "${archiveFile}" -o"${extractTo}"`, () => {
       resolve()
     })
   })
@@ -68,9 +75,14 @@ async function fileList(archiveFile) {
  * @returns {Promise<String>} Path to extracted file.
  */
 async function extractOnly(file, archiveFile, extractTo) {
+  const fileIsNested = path.dirname(file) !== '.'
+
   return await new Promise((resolve, reject) => {
     child_process.exec(`${cmd} e -i!"${file}" "${archiveFile}" -o"${extractTo}"`, () => {
-      resolve( join(extractTo, file) )
+      // if archived file is nested (in a subdirectory), 7z "e" option will only
+      // extract the basefile, so return the extracted path accordingly.
+      if (fileIsNested) file = path.basename(file)
+      resolve( path.join(extractTo, file) )
     })
   })
 }

@@ -133,7 +133,6 @@ const tmpFolders = new class TemporaryFolders {
     // only extract archives that contain a viewable file
     const arcFiles = await arcAPI.fileList(archivePath)
     const validFileIdx = arcFiles.findIndex(filePath => {
-      if ( p.dirname(filePath) !== '.' ) return false
       const fileType = fileAPI.fileType(filePath)
       return fileType === 'image' || fileType === 'video'
     })
