@@ -1,68 +1,17 @@
-import { TrackBar } from "./trackBar.js"
-
-/** View methods for video content. */
-export class VideoView {
+/** 
+ * View audio/video track methods (audio/video). 
+ */
+export class ViewMedia {
 
   /** Parent View component.
    * @type {import('./view.js').View} */
   #view
 
   /**
-   * Composed audio/video element class.
    * @param {import('./view.js').View} view View instance.
    */
   constructor(view) {
     this.#view = view
-    this.trackBar = new TrackBar(view)
-  }
-
-  /**
-   * Preload and initialize video element events.
-   * @param {String} filePath File object.
-   * @returns {Promise<Boolean>} Display success.
-   */
-  async display(filePath) {
-
-    // preload content, fail gracefully on error
-    const vid = document.createElement('video')
-    vid.src = filePath
-    vid.id = 'view'
-
-    const success = await new Promise((resolve) => {
-      vid.onerror = () => resolve(false)
-      vid.oncanplay = () => resolve(true)
-    })
-    
-    if (!success) return success
-    
-    // replace previous element with new video
-    this.#view.shadowRoot.getElementById('view').replaceWith(vid)
-
-    // obey autoplay property but toggle on for next videos (for restoring videos as paused)
-    if (this.#view.autoplay) this.playToggle(true)
-    this.#view.autoplay = true
-
-    // attach track monitor and recall runtime state
-    this.trackBar.attach(vid)
-    this.setVolume(this.#view.volume * 100)
-    this.muteToggle(this.#view.mute)
-    this.onEndRepeat(this.#view.onEnd)
-    this.abLoop(null)
-
-    // set methods
-    vid.oncanplay = null // null event as video seek also triggers it
-    vid.onmousemove = () => this.trackBar.peek()
-    vid.oncontextmenu = () => this.playToggle()
-    vid.ontimeupdate = () => this.trackBar.updateTrack() // not 1:1, lazy but ok
-    vid.ondblclick = () => this.#view.signalEvent('view:fullscreen')
-  
-    // enforce AB loop or signal end-of-track behavior
-    vid.onended = () => {
-      if (this.#view.aLoop < Infinity) vid.currentTime = this.#view.aLoop
-      else this.#view.signalEvent(`view:${this.#view.onEnd}`)
-    }
-
-    return success
   }
 
   /**
@@ -86,7 +35,7 @@ export class VideoView {
 
     if (force !== undefined) force ? vid.play() : vid.pause()
     else vid.paused ? vid.play() : vid.pause()
-    this.trackBar.peek()
+    this.#view.trackBar.peek()
 
     // also toggle interval 
     if (this.#view.aLoop != Infinity && this.#view.bLoop != Infinity) {
@@ -108,7 +57,7 @@ export class VideoView {
     else vid.muted = !vid.muted
   
     this.#view.mute = vid.muted
-    this.trackBar.peek()
+    this.#view.trackBar.peek()
   }
   
   /**
@@ -131,7 +80,7 @@ export class VideoView {
   
     vid.volume = newVol
     this.#view.volume = vid.volume
-    this.trackBar.peek()
+    this.#view.trackBar.peek()
   }
   
   /**
@@ -152,7 +101,7 @@ export class VideoView {
 
     vid.loop = behavior === 'loop'
     this.#view.onEnd = behavior
-    this.trackBar.peek()
+    this.#view.trackBar.peek()
   }
   
   /**
@@ -170,8 +119,8 @@ export class VideoView {
     } else {
       vid.currentTime += value
     }
-    this.trackBar.updateTrack()
-    this.trackBar.peek()
+    this.#view.trackBar.updateTrack()
+    this.#view.trackBar.peek()
   }
   
   /**

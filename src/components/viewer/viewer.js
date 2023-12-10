@@ -57,7 +57,7 @@ export class Viewer extends HTMLElement {
     this.fileExplorer = this.shadowRoot.getElementById('fileExplorer')
     this.fileExplorer.viewer = this
 
-    this.#emptyView = this.viewComponent.imgView.img
+    this.#emptyView = this.viewComponent.screen.img
     this.#initEvents()
     console.log('new viewer tab, bookID:', this.fileBook.bookID);
   }
@@ -186,7 +186,7 @@ export class Viewer extends HTMLElement {
   async gotoPage(pageIdx) {
     // show empty view, trigger signal
     if (!this.fileBook.files.length) {
-      const img = this.viewComponent.imgView.img
+      const img = this.viewComponent.screen.img
       img.outerHTML = this.#emptyView.outerHTML
       this.viewComponent.signalEvent('view:loaded')
       return

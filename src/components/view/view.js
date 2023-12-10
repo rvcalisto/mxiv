@@ -1,6 +1,7 @@
 import { ScrollBox } from "./scrollBox.js"
-import { ImageView } from "./imageView.js"
-import { VideoView } from "./videoView.js"
+import { ViewScreen } from "./screen.js"
+import { TrackBar } from "./trackBar.js"
+import { ViewMedia } from "./media.js"
 import { Slideshow } from "./slideshow.js"
 import { AppNotifier } from "../../app/notifier.js"
 
@@ -15,7 +16,7 @@ export class View extends HTMLElement {
   constructor() {
     super()
 
-    /** Currently loaded file type. */
+    /** Currently loaded file type. @type {'image'|'video'} */
     this.fileType = 'image'
 
     // image
@@ -39,15 +40,16 @@ export class View extends HTMLElement {
 
     // instatiate composed parts
     this.scrollBox = new ScrollBox(this)
-    this.imgView = new ImageView(this)
-    this.vidView = new VideoView(this)
+    this.screen = new ViewScreen(this)
+    this.media = new ViewMedia(this)
+    this.trackBar = new TrackBar(this)
     this.slideshow = new Slideshow(this)
   }
 
   // prevent ghost intervals after DOM removal
   disconnectedCallback() {
     this.slideshow.toggle(false, false)
-    this.vidView.abLoop(null)
+    this.media.abLoop(null)
   }
 
   /**
@@ -64,17 +66,17 @@ export class View extends HTMLElement {
 
     // store scroll position, display media by type
     const scroll = this.scrollBox.pos
-    const success = type === 'image' ? await this.imgView.display(filePath) : 
-    await this.vidView.display(filePath)
+    const success = type === 'image' ? await this.screen.displayImage(filePath) : 
+    await this.screen.displayVideo(filePath)
 
     if (success) {
       // preserve scroll pos, view mode & zoom across files, tick slideshow
       this.scrollBox.pos = { x: scroll.x, y: scroll.y, behavior: 'auto' }
-      this.imgView.postPass()
+      this.screen.postPass()
       this.slideshow.tick()
 
       // emit view file state signals
-      const playstate = type === 'image' ? this.slideshow.active : !this.vidView.vid.paused
+      const playstate = type === 'image' ? this.slideshow.active : !this.media.vid.paused
       this.signalEvent('view:playing', playstate)
       this.signalEvent('view:loaded')
     }
@@ -90,18 +92,6 @@ export class View extends HTMLElement {
   osdMsg(msg, typeId) {
     // TODO: transform all call to this into custom events?
     return AppNotifier.notify(msg, typeId)
-  }
-
-  /**
-   * Cycle view mode forward or backwards if false.
-   * @param {true} forward 
-   */
-  cycleMode(forward = true) {
-    this.imgView.cycleViewMode(forward)
-  }
-
-  setViewMode(mode) {
-    this.imgView.setViewMode(mode)
   }
 
   /**
@@ -122,40 +112,6 @@ export class View extends HTMLElement {
   }
 
   /**
-   * Toggles slideshow state or change `delay` if given. 
-   * @param {Number?} delay Optional slide interval.
-   */
-  toggleSlideshow(delay) {
-    if (delay == undefined) this.slideshow.toggle()
-    else this.slideshow.delay = parseFloat(delay)
-  }
-
-  setZoom(value) {
-    if (value === undefined) return this.zoom
-    this.imgView.zoom(value)
-  }
-
-  playToggle(force) {
-    this.fileType == 'image' ? this.slideshow.toggle() : this.vidView.playToggle() 
-  }
-
-  muteToggle(force) {
-    this.vidView.muteToggle(force)
-  }
-
-  setVolume(vol, step) {
-    this.vidView.setVolume(vol, step)
-  }
-
-  abLoop() {
-    this.vidView.abLoop()
-  }
-
-  playbackRate(speed) {
-    this.vidView.playbackRate(speed)
-  }
-
-  /**
    * Navigate view display depending of media and state.
    * First slides scroll bar if any and handle not at border. Next seeks video track. 
    * Last, triggers a `view:next/previous` event. If delta is zero, ends slide interval.
@@ -170,7 +126,7 @@ export class View extends HTMLElement {
       this.scrollBox.slide(axis, 0)
 
       // try to seek if given a number
-      if (deltaSecs !== 0) this.vidView.skipBy(deltaSecs)
+      if (deltaSecs !== 0) this.media.skipBy(deltaSecs)
 
       return
     }
@@ -182,7 +138,7 @@ export class View extends HTMLElement {
 
       if (!cantFurtherX) this.scrollBox.slide('x', deltaPxls)
       else if (this.fileType == 'video') {
-        if (deltaSecs) this.vidView.skipBy(deltaSecs)
+        if (deltaSecs) this.media.skipBy(deltaSecs)
       } else {
         // can't slide and isn't video, skip page
         if (xAdds) this.signalEvent('view:next')
@@ -196,7 +152,7 @@ export class View extends HTMLElement {
       const cantFurtherY = yAdds && scrollPosY == 0 || !yAdds && scrollPosY == 1 || scrollPosY == null
 
       if (!cantFurtherY) this.scrollBox.slide('y', deltaPxls * -1)
-      else if (deltaSecs) this.vidView.skipBy(deltaSecs)
+      else if (deltaSecs) this.media.skipBy(deltaSecs)
     }
   }
 

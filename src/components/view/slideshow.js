@@ -15,7 +15,6 @@ export class Slideshow {
   #delay = 1
 
   /**
-   * Composed slideshow class.
    * @param {import('./view.js').View} view View instance.
    */
   constructor(view) {

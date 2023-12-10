@@ -1,4 +1,6 @@
-/** Track bar methods for Viewer video elements. */
+/** 
+ * Track bar methods for Viewer video elements. 
+ */
 export class TrackBar {
 
   /** How many seconds the track keeps visible after becoming inactive. */
@@ -22,7 +24,6 @@ export class TrackBar {
   #videoElement
 
   /**
-   * Composed audio/video track bar class.
    * @param {import('./view.js').View} view View instance.
    */
   constructor(view) {
@@ -105,8 +106,8 @@ export class TrackBar {
     }
   
     // track label
-    const duration = this.#view.vidView.secToHMS(vidDuration)
-    const time = this.#view.vidView.secToHMS(vid.currentTime)
+    const duration = this.#view.media.secToHMS(vidDuration)
+    const time = this.#view.media.secToHMS(vid.currentTime)
     trackTimeLabel.textContent = `${time} / ${duration}`
   
     // bar progress
@@ -152,16 +153,16 @@ export class TrackBar {
   #initListeners() {
     // mute toggle
     const muteBtn = this.#view.shadowRoot.getElementById('trackMute')
-    muteBtn.parentElement.onclick = () => this.#view.vidView.muteToggle()
+    muteBtn.parentElement.onclick = () => this.#view.media.muteToggle()
 
     // volume wheel
     muteBtn.parentElement.addEventListener('wheel', (e) => {
-      this.#view.vidView.setVolume(e.deltaY > 0 ? '-5' : '+5')
+      this.#view.media.setVolume(e.deltaY > 0 ? '-5' : '+5')
     }, {passive: true})
 
     // ⏸⯈
     const pauseBtn = this.#view.shadowRoot.getElementById('trackPause')
-    pauseBtn.onclick = () => this.#view.vidView.playToggle()
+    pauseBtn.onclick = () => this.#view.media.playToggle()
 
     // ⮞
     const skipRBtn = this.#view.shadowRoot.getElementById('trackSkipR')
@@ -175,7 +176,7 @@ export class TrackBar {
 
     // loop [⟳], skip [🠖], stop [⇥] at the end of vid
     const loopBtn = this.#view.shadowRoot.getElementById('trackLoop')
-    loopBtn.onclick = () => this.#view.vidView.onEndRepeat()
+    loopBtn.onclick = () => this.#view.media.onEndRepeat()
 
     const trackBar = this.#view.shadowRoot.getElementById('vidTrack')
 
@@ -186,7 +187,7 @@ export class TrackBar {
 
       const seekTime = this.#seekTo(e)
       if (e.buttons == 1) vid.currentTime = seekTime
-      if (e.buttons == 2) this.#view.vidView.abLoop() // loop
+      if (e.buttons == 2) this.#view.media.abLoop() // loop
       // vid updates slowly, update bar for visual smoothness
       this.updateTrack()
     }
@@ -201,5 +202,4 @@ export class TrackBar {
       }
     }
   }
-
 }

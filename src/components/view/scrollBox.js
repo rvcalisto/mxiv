@@ -1,4 +1,6 @@
-/** Scrollbar methods for Viewer content container. */
+/** 
+ * Scrollbar methods for Viewer content container. 
+ */
 export class ScrollBox {
 
   /** Parent View component.
@@ -24,7 +26,6 @@ export class ScrollBox {
   #cursorHideTimer
 
   /**
-   * Composed element scroll controller.
    * @param {import('./view.js').View} view View instance.
    */
   constructor(view) {
@@ -167,7 +168,7 @@ export class ScrollBox {
       // zoom in/out when holding shift
       if (e.shiftKey) {
         e.preventDefault()
-        this.#view.imgView.zoom(e.deltaY > 0 ? '-10 ': '+10')
+        this.#view.screen.zoom(e.deltaY > 0 ? '-10 ': '+10')
         return
       }
     
@@ -175,7 +176,7 @@ export class ScrollBox {
       if (this.hasX || this.hasY) return
       // else, seek video or request next image
       if (this.#view.fileType != 'image') {
-        this.#view.vidView.skipBy(`${Math.sign(e.deltaY) * -2}%`) // relative
+        this.#view.media.skipBy(`${Math.sign(e.deltaY) * -2}%`) // relative
       } else {
         if (e.deltaY > 0) this.#view.signalEvent('view:next')
         else this.#view.signalEvent('view:previous')

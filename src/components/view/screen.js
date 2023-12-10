@@ -1,14 +1,13 @@
 /**
- * View methods image related, but not exclusive, content.
+ * View image/video presentation methods.
  */
-export class ImageView {
+export class ViewScreen {
 
   /** Parent View component.
    * @type {import('./view.js').View} */
   #view
 
   /**
-   * Composed image element class.
    * @param {import('./view.js').View} view View instance.
    */
   constructor(view) {
@@ -20,7 +19,7 @@ export class ImageView {
    * @param {String} filePath File object.
    * @returns {Promise<Boolean>} Display success.
    */
-  async display(filePath) {
+  async displayImage(filePath) {
 
     // preload content, fail gracefully on error
     const img = document.createElement('img')
@@ -34,14 +33,64 @@ export class ImageView {
     
     if (!success) return success
     
-    this.#view.vidView.trackBar.detach()
-    this.#view.vidView.abLoop(null)
+    this.#view.trackBar.detach()
+    this.#view.media.abLoop(null)
   
     // replace previous element with new image
     this.#view.shadowRoot.getElementById('view').replaceWith(img)
 
     img.ondblclick = () => this.#view.signalEvent('view:fullscreen')
     
+    return success
+  }
+
+
+  /**
+   * Preload and initialize video element events.
+   * @param {String} filePath File object.
+   * @returns {Promise<Boolean>} Display success.
+   */
+  async displayVideo(filePath) {
+
+    // preload content, fail gracefully on error
+    const vid = document.createElement('video')
+    vid.src = filePath
+    vid.id = 'view'
+
+    const success = await new Promise((resolve) => {
+      vid.onerror = () => resolve(false)
+      vid.oncanplay = () => resolve(true)
+    })
+    
+    if (!success) return success
+    
+    // replace previous element with new video
+    this.#view.shadowRoot.getElementById('view').replaceWith(vid)
+
+    // obey autoplay property but toggle on for next videos (for restoring videos as paused)
+    if (this.#view.autoplay) this.#view.media.playToggle(true)
+    this.#view.autoplay = true
+
+    // attach track monitor and recall runtime state
+    this.#view.trackBar.attach(vid)
+    this.#view.media.setVolume(this.#view.volume * 100)
+    this.#view.media.muteToggle(this.#view.mute)
+    this.#view.media.onEndRepeat(this.#view.onEnd)
+    this.#view.media.abLoop(null)
+
+    // set methods
+    vid.oncanplay = null // null event as video seek also triggers it
+    vid.onmousemove = () => this.#view.trackBar.peek()
+    vid.oncontextmenu = () => this.#view.media.playToggle()
+    vid.ontimeupdate = () => this.#view.trackBar.updateTrack() // not 1:1, lazy but ok
+    vid.ondblclick = () => this.#view.signalEvent('view:fullscreen')
+  
+    // enforce AB loop or signal end-of-track behavior
+    vid.onended = () => {
+      if (this.#view.aLoop < Infinity) vid.currentTime = this.#view.aLoop
+      else this.#view.signalEvent(`view:${this.#view.onEnd}`)
+    }
+
     return success
   }
   

@@ -60,27 +60,27 @@ Actions.register('viewer', {
     'methods': {
       'scale': {
         'desc': 'scale image to fit view',
-        'run': () => FRAME.viewComponent.setViewMode('scale')
+        'run': () => FRAME.viewComponent.screen.setViewMode('scale')
       },
       'width': {
         'desc': 'scale image to fit view width',
-        'run': () => FRAME.viewComponent.setViewMode('width')
+        'run': () => FRAME.viewComponent.screen.setViewMode('width')
       },
       'height': {
         'desc': 'scale image to fit view height',
-        'run': () => FRAME.viewComponent.setViewMode('height')
+        'run': () => FRAME.viewComponent.screen.setViewMode('height')
       },
       'stretch': {
         'desc': 'stretch image to view',
-        'run': () => FRAME.viewComponent.setViewMode('stretch')
+        'run': () => FRAME.viewComponent.screen.setViewMode('stretch')
       },
       'none': {
         'desc': 'show image in its native size',
-        'run': () => FRAME.viewComponent.setViewMode('none')
+        'run': () => FRAME.viewComponent.screen.setViewMode('none')
       },
       'cycle': {
         'desc': 'cycle through factors in any direction',
-        'run': (next = 'next') => FRAME.viewComponent.cycleMode(next === 'next'),
+        'run': (next = 'next') => FRAME.viewComponent.screen.cycleViewMode(next === 'next'),
         'options': (lastArg, allArgs) => allArgs.length < 2 ? ['next', 'back'] : []
       }
     }
@@ -93,12 +93,12 @@ Actions.register('viewer', {
 
   'zoom': {
     'desc' : 'set zoom to value, prepend +/- to increment or decrement',
-    'run'  : (value = '100') => FRAME.viewComponent.setZoom(value)
+    'run'  : (value = '100') => FRAME.viewComponent.screen.zoom(value)
   },
 
   'pause': {
-    'desc' : 'video: toggle pause, img: toggle slideshow',
-    'run'  : () => FRAME.viewComponent.playToggle()
+    'desc' : 'toggle play/pause for audio/video',
+    'run'  : () => FRAME.viewComponent.media.playToggle()
   },
 
   'flipPage': {
@@ -109,28 +109,28 @@ Actions.register('viewer', {
 
   'setVolume': {
     'desc' : 'set new volume, prepend +/- to increment or decrement',
-    'run'  : (volume) => FRAME.viewComponent.setVolume(volume)
+    'run'  : (volume) => FRAME.viewComponent.media.setVolume(volume)
   },
-    
+
   'mute': {
     'desc' : 'toggle mute for audio/video',
-    'run'  : () => FRAME.viewComponent.muteToggle()
+    'run'  : () => FRAME.viewComponent.media.muteToggle()
   },
 
   'reload': {
     'desc' : 'reload directory contents',
     'run'  : () => FRAME.reload()
   },
-    
+
   'loop': {
     'desc' : 'AB loop audio/video',
-    'run'  : () => FRAME.viewComponent.abLoop()
+    'run'  : () => FRAME.viewComponent.media.abLoop()
   },
 
   'endRepeat': {
     'desc': 'set media flow behavior on end of track',
     'run': (option = 'cycle') => {
-      FRAME.viewComponent.vidView.onEndRepeat(option)
+      FRAME.viewComponent.media.onEndRepeat(option)
     },
     'options': (lastArg, allArgs) => allArgs.length < 2 ? [
       cmdLineItem('cycle', 'cycle between modes (default)'),
@@ -144,7 +144,7 @@ Actions.register('viewer', {
     'desc' : 'change video playback rate',
     'run'  : (speed = '1') => {
       speed = parseFloat(speed) || 1
-      FRAME.viewComponent.playbackRate(speed)
+      FRAME.viewComponent.media.playbackRate(speed)
     } 
   },
 
@@ -191,8 +191,8 @@ Actions.register('viewer', {
   'slideshow': {
     'desc' : 'slide through pages on a set delay',
     'run'  : (option = 'toggle', delay = 1) => {
-      if (option === 'delay') FRAME.viewComponent.toggleSlideshow(delay)
-      else FRAME.viewComponent.toggleSlideshow()
+      if (option === 'delay') FRAME.viewComponent.slideshow.delay = parseFloat(delay)
+      else FRAME.viewComponent.slideshow.toggle()
     },
     'options': (lastArg, allArgs) => allArgs.length < 2 ? [
       cmdLineItem('toggle', 'toggle slideshow on or off (default)'),
