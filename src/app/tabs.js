@@ -60,10 +60,13 @@ export class Tab {
     playState.setAttribute('icon', 'playing')
     playState.style.display = 'none'
 
-    // stop frame play state but prevent selection
+    // pause slideshow/media via tab button
     playState.onclick = (e) => {
       e.stopImmediatePropagation()
-      this.frame.viewComponent.playToggle(false)
+      const isImg = this.frame.viewComponent.fileType === 'image'
+
+      if (isImg) this.frame.viewComponent.slideshow.toggle(false, false)
+      else this.frame.viewComponent.media.playToggle(false)
     }
 
     const label = document.createElement('p')
