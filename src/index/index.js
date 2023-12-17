@@ -1,7 +1,7 @@
 import { Tab, FRAME } from "../app/tabs.js"
 import "./keyHandler.js"
 import { loadUserHotkeys } from "../app/userHotkeys.js"
-
+import "./mediaSession.js"
 
 // open paths in current viewer tab on IPC signal
 elecAPI.onOpen(function openInViewer(e, details) {
@@ -21,12 +21,4 @@ onload = function StartApp () {
   loadUserHotkeys()
   Tab.newTab()
   elecAPI.tagAPI.start()
-
-  // custom media controls for current viewer
-  const mediaSession = navigator.mediaSession
-  mediaSession.setActionHandler("nexttrack", () => FRAME.flipPage())
-  mediaSession.setActionHandler("previoustrack", () => FRAME.flipPage(false))
-  mediaSession.setActionHandler("play", () => FRAME.viewComponent.playToggle())
-  mediaSession.setActionHandler("pause", () => FRAME.viewComponent.playToggle())
-  mediaSession.setActionHandler("stop", () => FRAME.viewComponent.playToggle())
 }
