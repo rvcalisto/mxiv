@@ -124,15 +124,23 @@ export class ViewMedia {
   }
   
   /**
-   * Changes video playback speed.
-   * @param {Number} value Playback speed to set.
+   * Set video playback speed or increment/decrement with +/-.
+   * @param {Number|String} value Playback speed to set.
    */
   playbackRate(value) {
     const vid = this.vid
     if (!vid) return
 
-    vid.playbackRate = Math.min(Math.max(value, .07), 16)
-    this.#view.osdMsg(`playback rate set to ${vid.playbackRate}`)
+    let valueNumber = parseFloat(value)
+    if ( isNaN(valueNumber) ) valueNumber = 1
+
+    const signed = String(value)[0] == '+' || String(value)[0] == '-'
+    value = signed ? vid.playbackRate + valueNumber : valueNumber
+
+    vid.playbackRate = Math.min( Math.max(value, .25), 16 )
+
+    const fixedRate = vid.playbackRate.toFixed(2)
+    this.#view.osdMsg(`playback rate set to ${fixedRate}`, 'playbackRate')
   }
   
   /**

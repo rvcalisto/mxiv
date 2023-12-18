@@ -141,9 +141,8 @@ Actions.register('viewer', {
   },
 
   'speed': {
-    'desc' : 'change video playback rate',
+    'desc' : 'change video playback rate, prepend +/- to increment or decrement',
     'run'  : (speed = '1') => {
-      speed = parseFloat(speed) || 1
       FRAME.viewComponent.media.playbackRate(speed)
     } 
   },
