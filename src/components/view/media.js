@@ -142,6 +142,20 @@ export class ViewMedia {
     const fixedRate = vid.playbackRate.toFixed(2)
     this.#view.osdMsg(`playback rate set to ${fixedRate}`, 'playbackRate')
   }
+
+  /**
+   * Set audio pitch-correction behavior at modified playback rates.
+   * @param {Boolean?} preserve Toggle behavior by default.
+   */
+  preservePitch(preserve) {
+    const vid = this.vid
+    if (!vid) return
+
+    if ( preserve == null ) vid.preservesPitch = !vid.preservesPitch
+    else vid.preservesPitch = preserve
+
+    this.#view.osdMsg(`preservePitch: ${vid.preservesPitch}`, 'prePitch')
+  }
   
   /**
    * Get HH:MM:SS string from seconds.

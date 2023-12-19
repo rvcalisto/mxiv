@@ -147,6 +147,19 @@ Actions.register('viewer', {
     } 
   },
 
+  'preservePitch': {
+    'desc': 'preserve pitch when audio/video playback-rate is changed',
+    'run': (option = 'toggle') => {
+      option = option === 'toggle' ? null : option === 'true'
+      FRAME.viewComponent.media.preservePitch(option)
+    },
+    'options': (lastArg, allArgs) => allArgs.length < 2 ? [
+      cmdLineItem('true', 'preserve pitch'),
+      cmdLineItem('false', 'don\'t preserve pitch'),
+      cmdLineItem('toggle', 'alternate option (default)')
+    ] : []
+  },
+
   'openFileDialog': {
     'desc' : 'open folder with dialog window',
     'run'  : async () => {
