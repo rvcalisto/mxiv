@@ -7,11 +7,35 @@ export class ViewScreen {
    * @type {import('./view.js').View} */
   #view
 
+  /** Element displayed on start. @type {HTMLElement} */
+  #emptyView
+
   /**
    * @param {import('./view.js').View} view View instance.
    */
   constructor(view) {
     this.#view = view
+    this.#emptyView = this.img // store default content
+  }
+
+  /**
+   * View image/video element. 
+   * - References gets lost as object is replaced every `display()`. 
+   * This re-captures it every call.
+   * @returns {HTMLImageElement|HTMLMediaElement}
+   */
+  get img() {
+    return this.#view.shadowRoot.getElementById('view');
+  }
+
+  /**
+   * Display default View content.
+   */
+  displayEmpty() {
+    this.#view.trackBar.detach()
+    this.#view.media.abLoop(null)
+
+    this.img.outerHTML = this.#emptyView.outerHTML
   }
 
   /**
@@ -43,7 +67,6 @@ export class ViewScreen {
     
     return success
   }
-
 
   /**
    * Preload and initialize video element events.
@@ -93,18 +116,6 @@ export class ViewScreen {
 
     return success
   }
-  
-
-  /**
-   * View image/video element. 
-   * - References gets lost as object is replaced every `display()`. 
-   * This re-captures it every call.
-   * @returns {HTMLImageElement|HTMLMediaElement}
-   */
-  get img() {
-    return this.#view.shadowRoot.getElementById('view');
-  }
-
 
   /**
    * Apply mode style property values to img element.
@@ -148,7 +159,6 @@ export class ViewScreen {
     }
   }
 
-
   /**
    * Increase, decrease and set zoom.
    * @param {String|Number} value Ex: `+5`, `-2`, `8`.
@@ -165,7 +175,6 @@ export class ViewScreen {
     this.#view.signalEvent('view:zoom')
   }
 
-
   /**
    * Re-evaluates current mode method on img load & zoom, preserves scroll position.
    * Needed to preserve resource dependent properties such as `height: img.nativeHeight` across images.
@@ -180,7 +189,6 @@ export class ViewScreen {
     this.#view.scrollBox.pos = { x: x, y: y, behavior: 'auto' };
   }
 
-
   /**
    * Reset zoom, apply mode and update state. Emits a message on screen. 
    * @param {'none'|'stretch'|'scale'|'width'|'height'} mode View mode.
@@ -194,7 +202,6 @@ export class ViewScreen {
     this.#view.signalEvent('view:mode', mode)
   }
 
-
   /**
    * Cycle between view modes.
    * @param {Boolean} forward Direction.
@@ -207,4 +214,3 @@ export class ViewScreen {
     this.setViewMode(modes[nextIdx])
   }
 }
-

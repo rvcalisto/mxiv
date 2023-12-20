@@ -53,11 +53,20 @@ export class View extends HTMLElement {
   }
 
   /**
-   * Display multimedia file.
+   * Display multimedia file. Show logo if `filePath` is `null`.
    * @param {String} filePath Media resource path.
-   * @param {'image'|'video'} type Media type. 
+   * @param {'image'|'video'} type Media type.
+   * @returns {Promise<Boolean>} Either display content has changed. 
    */
   async display(filePath, type) {
+
+    if (filePath == null) {
+      this.screen.displayEmpty()
+
+      this.signalEvent('view:playing', false)
+      this.signalEvent('view:loaded')
+      return true
+    }
     
     // assign file type, infer if null, fail if unsupported
     if (!type) type = View.inferType(filePath)
@@ -69,15 +78,14 @@ export class View extends HTMLElement {
     const success = type === 'image' ? await this.screen.displayImage(filePath) : 
     await this.screen.displayVideo(filePath)
 
+    // preserve scroll pos & presentation. Emit signals
     if (success) {
-      // preserve scroll pos, view mode & zoom across files, tick slideshow
       this.scrollBox.pos = { x: scroll.x, y: scroll.y, behavior: 'auto' }
-      this.screen.postPass()
+      this.screen.postPass() // re-apply view mode to new content
       this.slideshow.tick()
 
-      // emit view file state signals
-      const playstate = type === 'image' ? this.slideshow.active : !this.media.vid.paused
-      this.signalEvent('view:playing', playstate)
+      const playing = type === 'image' ? this.slideshow.active : !this.media.vid.paused
+      this.signalEvent('view:playing', playing)
       this.signalEvent('view:loaded')
     }
     

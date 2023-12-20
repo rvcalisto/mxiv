@@ -22,8 +22,6 @@ export class Viewer extends HTMLElement {
   #loading = false
   /** Last Page flip direction for auto-scroll. */
   #lastFlipRight = true
-  /** Element displayed on start. @type {HTMLElement} */
-  #emptyView
   
   constructor() {
     super()
@@ -58,7 +56,6 @@ export class Viewer extends HTMLElement {
     this.fileExplorer = this.shadowRoot.getElementById('fileExplorer')
     this.fileExplorer.viewer = this
 
-    this.#emptyView = this.viewComponent.screen.img
     this.#initEvents()
     console.log('new viewer tab, bookID:', this.fileBook.bookID);
   }
@@ -187,9 +184,7 @@ export class Viewer extends HTMLElement {
   async gotoPage(pageIdx) {
     // show empty view, trigger signal
     if (!this.fileBook.files.length) {
-      const img = this.viewComponent.screen.img
-      img.outerHTML = this.#emptyView.outerHTML
-      this.viewComponent.signalEvent('view:loaded')
+      this.viewComponent.display(null)
       return
     }
 
