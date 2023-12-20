@@ -1,8 +1,6 @@
 import { Accelerators } from "../../app/actionTools.js"
-import { FRAME } from "../../app/tabs.js"
 
 
-// '<keyCombo>' : ['<action>', '<arg>']
 Accelerators.register('viewer', {
 	// navigation
 	'w' : ['navigate', 'up'],
@@ -46,6 +44,7 @@ Accelerators.register('viewer', {
   
 })
 
+// to be managed by local controller
 Accelerators.register('fileExplorer', {
   'w' : ['navItems', 'up'],
   'ArrowUp' : ['navItems', 'up'],
@@ -60,35 +59,4 @@ Accelerators.register('fileExplorer', {
   'ArrowRight' : ['select'],
 
   'f' : ['toggleSearch'],
-})
-
-// keyEvents dispatched from fileExplorer
-addEventListener('fileExplorerKeyEvent', function handleFileExplorer(e) {
-  const keyEvent = e.detail
-  const action = Accelerators.byEvent('fileExplorer', keyEvent)
-
-  // no match, bubble up
-  if (!action) return onkeydown(keyEvent)
-
-  keyEvent.preventDefault()
-  const [cmd, ...args] = action
-
-  FRAME.fileExplorer[cmd](...args)
-})
-
-// release slide state for Viewer frames (workaround)
-addEventListener('keyup', function releaseViewSlide(e) {
-  if (!FRAME || FRAME.constructor.name !== 'Viewer') return
-  
-  const action = Accelerators.byEvent('viewer', e)
-  if (!action) return
-
-  // else, run action
-  e.preventDefault()
-  const cmd = action[0]
-  if (cmd !== 'navigate') return
-
-  const axis = action[1]
-  if (['left', 'right'].includes(axis)) FRAME.viewComponent.navigate('x', 0)
-  else if (['up', 'down'].includes(axis)) FRAME.viewComponent.navigate('y', 0)
 })

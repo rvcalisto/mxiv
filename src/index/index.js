@@ -1,7 +1,10 @@
 import { Tab, FRAME } from "../app/tabs.js"
-import "./keyHandler.js"
-import { loadUserHotkeys } from "../app/userHotkeys.js"
 import "./mediaSession.js"
+import "./baseActions.js"
+import "./baseAccelerators.js"
+import "./keyEventController.js"
+import { loadUserHotkeys } from "../app/userHotkeys.js"
+
 
 // open paths in current viewer tab on IPC signal
 elecAPI.onOpen(function openInViewer(e, details) {

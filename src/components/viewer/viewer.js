@@ -8,6 +8,7 @@ import { Tab } from "../../app/tabs.js"
 
 import "./viewerActions.js"
 import "./viewerAccelerators.js"
+import "./keyEventController.js"
 import { AppNotifier } from "../../app/notifier.js"
 
 /**
