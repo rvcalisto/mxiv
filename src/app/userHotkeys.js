@@ -1,10 +1,11 @@
-import { Accelerators } from "./actionTools.js"
+import { AcceleratorDB } from './acceleratorDB.js'
+import { Accelerators } from "./accelerators.js"
 
 const storageEntry = 'userHotkeys'
 
 
 /**
- * @typedef {Object<string, import('./actionTools').AcceleratorSet>} UserHotkeys
+ * @typedef {Object<string, import('./actionDB.js').AcceleratorSet>} UserHotkeys
  */
 
 /**
@@ -66,7 +67,11 @@ export function setUserKeys(newUserKeys, component = 'base', store = true) {
     else userKeys[component][key] = toMask ? [] : actionArr
   }
 
-  Accelerators.register(`${component}-user`, userKeys[component])
+  if (component === 'base')
+    AcceleratorDB.setBaseCustoms(userKeys[component])
+  else
+    AcceleratorDB.setComponentCustoms(component, userKeys[component])
+
   if (store) setStorageObj(userKeys)
   updateCLIaccelCSSvar()
 }
@@ -98,8 +103,9 @@ function updateCLIaccelCSSvar() {
   const action = ['cli', 'show']
   
   // try keycombo for specific action, otherwise any intersection
-  const keycombo = Accelerators.byAction('base-all', action, true)[0] ||
-  Accelerators.byAction('base-all', action)[0] || '???'
+  const baseAccelSet = AcceleratorDB.getAccel('base')
+  const keycombo = baseAccelSet.byAction(action, true)[0] ||
+  baseAccelSet.byAction(action)[0] || '???'
 
   document.documentElement.style.setProperty('--msg-cliAccel', `"${keycombo}"`)
 }

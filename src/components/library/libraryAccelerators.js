@@ -1,7 +1,7 @@
-import { Accelerators } from "../../app/actionTools.js"
+import { AcceleratorDB } from "../../app/acceleratorDB.js"
 
 
-Accelerators.register('library', {
+AcceleratorDB.setComponentDefaults('library', {
   
   'o'   : ['addFolder'],
   'r'   : ['random'],

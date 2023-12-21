@@ -1,4 +1,4 @@
-import { Actions } from "../../app/actionTools.js"
+import { ActionDB } from "../../app/actionDB.js"
 import { CoverGrid } from "./coverGrid.js"
 import { cmdLineItem, standardFilter } from "../../app/appCLI.js"
 import { FRAME as Library }  from "../../app/tabs.js"
@@ -8,7 +8,7 @@ import { AppNotifier } from "../../app/notifier.js"
 /**
  * Commands that can be user invoked by shortcuts on keyHandler or libCLI.
  */
-Actions.register('library', {
+ActionDB.setComponentActions('library', {
 
   'filter' : {
     'desc' : 'filter book by names or tags. Prepend a - to exclude tag',

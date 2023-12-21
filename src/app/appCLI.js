@@ -1,7 +1,8 @@
 import { ItemList } from "./itemList.js";
-import { Tab, FRAME } from "./tabs.js";
-import { Accelerators, Actions } from "./actionTools.js";
+import { ActionDB } from "./actionDB.js";
 import { AppNotifier } from "./notifier.js";
+import { AcceleratorDB } from "./acceleratorDB.js";
+
 
 /** AppCLI action history. */
 const actionHistory = new class {
@@ -68,8 +69,6 @@ class AppCmdLine extends HTMLElement {
 
   static tagName = 'app-cli'
 
-  #commandListCache = {}; #lastActionedFrameType
-
   /** Hint element list. @type {ItemList} */
   #list
   /** Input text element. @type {HTMLInputElement} */
@@ -90,20 +89,6 @@ class AppCmdLine extends HTMLElement {
 
     actionHistory.sync()
     this.#initializeInputs()
-  }
-
-  /**
-   * All actionable actions for current component.
-   * @returns {Object<string, import("./actionTools.js").ActionObject>}
-   */
-  get #commandList() {
-    const frame = FRAME.constructor.name.toLowerCase()
-    if (this.#lastActionedFrameType !== frame) {
-      this.#commandListCache = Actions.byOwner(`${frame}-all`)
-      this.#lastActionedFrameType = frame
-    }
-    
-    return this.#commandListCache
   }
 
   /**
@@ -147,14 +132,12 @@ class AppCmdLine extends HTMLElement {
   #runCmd(inputStr) {
     inputStr = inputStr || this.#input.value
 
-    const frame = FRAME.constructor.name.toLowerCase()
     const action = parseFromCLI(inputStr)
     
-    const success = Actions.run(`${frame}-all`, action)
+    const success = ActionDB.currentFrameActions.run(action)
     if (success) return actionHistory.store(inputStr)
     
-    console.log(`appCLI: "${action[0]}" action doesn't exist for ${frame}`);
-    AppNotifier.notify(`"${action[0]}" is not an action`, 'appCLI')
+    AppNotifier.notify(`"${action[0]}" is not an action in current context`, 'appCLI')
   }
 
   /**
@@ -180,8 +163,9 @@ class AppCmdLine extends HTMLElement {
    * Genereate hint list based on current prompt text.
    */
   async #displayHints() {
+    const currentActions = ActionDB.currentFrameActions.asObject()
     let [cmd, ...args] = parseFromCLI(this.#input.value)
-    let command = this.#commandList[cmd]
+    let command = currentActions[cmd]
 
     // hint action methods / options
     if (command && args.length) {
@@ -208,8 +192,8 @@ class AppCmdLine extends HTMLElement {
     }
 
     // hint history + root actions
-    const cmdList = Object.keys(this.#commandList)
-    .map( cmd => cmdLineItem(cmd, this.#commandList[cmd].desc, 'action', true) )
+    const cmdList = Object.keys(currentActions)
+    .map( cmd => cmdLineItem(cmd, currentActions[cmd].desc, 'action', true) )
 
     const histList = actionHistory.items
     .map( cmd => cmdLineItem(cmd, '', 'history', true) )
@@ -239,8 +223,8 @@ class AppCmdLine extends HTMLElement {
     hint.append(text)
 
     if (item.type === 'action') {
-      const frame = FRAME.constructor.name.toLowerCase()
-      const acceleratedBy = Accelerators.byAction(`${frame}-all`, [item.key])
+      const frameAccelSet = AcceleratorDB.currentFrameAccelerator
+      const acceleratedBy = frameAccelSet.byAction([item.key])
 
       if (acceleratedBy.length) {
         const hotkeyDiv = document.createElement('div')

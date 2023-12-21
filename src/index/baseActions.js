@@ -1,5 +1,5 @@
-import { Actions } from "../app/actionTools.js"
-import { FRAME, Tab } from "../app/tabs.js"
+import { ActionDB } from "../app/actionDB.js"
+import { Tab } from "../app/tabs.js"
 import * as StatusBar from "../app/statusBar.js"
 import * as Profiles from "../app/profiles.js"
 import { AppCLI, cmdLineItem, standardFilter } from "../app/appCLI.js"
@@ -10,7 +10,7 @@ import { AppNotifier } from "../app/notifier.js"
 /**
  * Commands that can be user invoked by shortcuts on keyHandler or AppCLI.
  */
-Actions.register('base', {
+ActionDB.setBaseActions({
 
   'cli': {
     'desc': 'app command line interface methods',

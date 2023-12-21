@@ -1,4 +1,4 @@
-import { Actions } from "../../app/actionTools.js"
+import { ActionDB } from "../../app/actionDB.js"
 import { FRAME } from "../../app/tabs.js"
 import { cmdLineItem, standardFilter } from "../../app/appCLI.js"
 import { AppNotifier } from "../../app/notifier.js"
@@ -7,7 +7,7 @@ import { AppNotifier } from "../../app/notifier.js"
 /**
  * Commands that can be user invoked by shortcuts on keyHandler or IndexCLI.
  */
-Actions.register('viewer', {
+ActionDB.setComponentActions('viewer', {
 
   'open': {
     'desc' : 'open file(s) or folder(s)',

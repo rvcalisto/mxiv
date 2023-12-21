@@ -1,4 +1,4 @@
-import { Accelerators } from "../../app/actionTools.js";
+import { AcceleratorDB } from "../../app/acceleratorDB.js";
 import { FRAME } from "../../app/tabs.js";
 
 
@@ -7,7 +7,9 @@ import { FRAME } from "../../app/tabs.js";
  */
 addEventListener('fileExplorerKeyEvent', function handleFileExplorer(e) {
   const keyEvent = e.detail;
-  const action = Accelerators.byEvent('fileExplorer', keyEvent);
+
+  const fileExpAccel = AcceleratorDB.getAccel('fileExplorer', 'default');
+  const action = fileExpAccel.byEvent(keyEvent);
 
   // no match, bubble up
   if (!action) return onkeydown(keyEvent);
@@ -25,7 +27,8 @@ addEventListener('fileExplorerKeyEvent', function handleFileExplorer(e) {
 addEventListener('keyup', function releaseViewSlide(e) {
   if (!FRAME || FRAME.constructor.name !== 'Viewer') return;
 
-  const action = Accelerators.byEvent('viewer', e);
+  const viewerAccelSet = AcceleratorDB.getAccel('viewer');
+  const action = viewerAccelSet.byEvent(e);
   if (!action) return;
 
   // else, run action

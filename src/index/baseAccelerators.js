@@ -1,7 +1,7 @@
-import { Accelerators } from "../app/actionTools.js";
+import { AcceleratorDB } from "../app/acceleratorDB.js";
 
 
-Accelerators.register('base', {
+AcceleratorDB.setBaseDefaults({
 
   // cmds
   'x': ['cli', 'show'],
