@@ -35,11 +35,8 @@ export class Accelerators {
   static parseKeycombo(key) {
     let treatedKey = key.toLowerCase();
 
-    // translate aliased keys
-    treatedKey = treatedKey.replace('space', ' ');
-
     // set key in predefined order to avoid multiple entries for same combo
-    if (treatedKey.includes('+')) {
+    if ( treatedKey.includes('+') ) {
       const hasShift = treatedKey.includes('shift');
       const hasCtrl = treatedKey.includes('control');
 
@@ -48,6 +45,11 @@ export class Accelerators {
         .replaceAll('+', '').replace('shift', '').replace('control', '');
       if (hasShift) treatedKey += '+shift';
       if (hasCtrl) treatedKey += '+control';
+    }
+
+    // translate aliased keys
+    if ( treatedKey.startsWith('space') ) {
+      treatedKey = treatedKey.replace('space', ' ');
     }
 
     return treatedKey;
