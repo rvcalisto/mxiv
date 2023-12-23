@@ -3,7 +3,7 @@ import { Tab } from "../app/tabs.js"
 import * as StatusBar from "../app/statusBar.js"
 import * as Profiles from "../app/profiles.js"
 import { AppCLI, cmdLineItem, standardFilter } from "../app/appCLI.js"
-import * as Hotkeys from "../app/userHotkeys.js"
+import { UserAccelerators } from "../app/userAccelerators.js"
 import { AppNotifier } from "../app/notifier.js"
 
 
@@ -133,38 +133,43 @@ ActionDB.setBaseActions({
         'desc': 'accelerate action with a hotkey : <component> <key/combo> <action...>',
         'run': (component, keycombo, ...args) => {
           if (!component || !keycombo) return
-          Hotkeys.setUserKeys({ [keycombo]: args }, component)
+          UserAccelerators.set(component, { [keycombo]: args })
           AppNotifier.notify(`user accelerator updated`)
         },
         'options': (lastArg, allArgs) => {
           if (allArgs.length > 3) return []
+          
+          // hint erasure and masking options
           if (allArgs.length > 2) return [
             cmdLineItem('default', 'revert accelerator to default'),
             cmdLineItem('mask', 'neutralize default action')
           ]
+
+          // hint available components
           if (allArgs.length < 2) return [
             cmdLineItem('base', 'on all components, but overruled on concurrency'),
             cmdLineItem('viewer', 'set/overwrite viewer accelerators'),
             cmdLineItem('library', 'set/overwrite library accelerators')
           ]
 
-          const componentKeys = Hotkeys.getUserKeys(allArgs[0])
+          // hint stored user accelerators for component
+          const accelObject = UserAccelerators.getAccelObj(allArgs[0])
           const options = []
 
-          for (const [keycombo, actionArg] of Object.entries(componentKeys) ) {
+          for (const [keycombo, actionArg] of Object.entries(accelObject) ) {
             let actionArgStr = actionArg.length ? '' : 'nothing'
             actionArg.forEach(chunk => actionArgStr += `"${chunk}" `)
             options.push( cmdLineItem(keycombo, actionArgStr) )
           }
           
           const coll = new Intl.Collator()
-          return options.sort((a, b) => coll.compare(a.key, b.key))
+          return options.sort( (a, b) => coll.compare(a.key, b.key) )
         }
       },
       'reload': {
         'desc' : 'reload accelerators',
         'run'  : () => {
-          Hotkeys.loadUserHotkeys()
+          UserAccelerators.reload()
           AppNotifier.notify('reloaded user keys')
         }
       },

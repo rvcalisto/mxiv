@@ -3,7 +3,7 @@ import "./mediaSession.js"
 import "./baseActions.js"
 import "./baseAccelerators.js"
 import "./keyEventController.js"
-import { loadUserHotkeys } from "../app/userHotkeys.js"
+import { UserAccelerators } from "../app/userAccelerators.js"
 
 
 // open paths in current viewer tab on IPC signal
@@ -21,7 +21,7 @@ onbeforeunload = function clearTempFolders () {
 
 // load user key map and create first tab
 onload = function StartApp () {
-  loadUserHotkeys()
+  UserAccelerators.reload()
   Tab.newTab()
   elecAPI.tagAPI.start()
 }

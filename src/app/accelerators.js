@@ -76,7 +76,18 @@ export class Accelerators {
    * @returns {AcceleratorSet}
    */
   asObject() {
-    return this.#byKeycombo;
+    const accelSetClone = {}
+
+    // assign entries to clone while translating-back aliased keys
+    for ( let [key, action] of Object.entries(this.#byKeycombo) ) {
+      if ( key.startsWith(' ') ) {
+        key = key.replace(' ', 'space')
+      }
+      
+      accelSetClone[key] = action
+    }
+
+    return accelSetClone;
   }
 
   /**
