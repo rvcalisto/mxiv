@@ -148,7 +148,7 @@ class AppCmdLine extends HTMLElement {
 
   /**
    * Returns a HTMLElement for this option.
-   * @param {CmdOption|String} item
+   * @param {CmdOption|String} item Option string or object.
    * @returns {HTMLElement}
    */
   #renderElement(item) {
@@ -233,10 +233,10 @@ class AppCmdLine extends HTMLElement {
       if (e.target === overlay) this.toggle(false)
     }
 
-    // creates/updates hintPanel
+    // display hints on value input
     this.#prompt.oninput = () => this.#displayHints()
 
-    // input functions
+    // control inputs
     this.#prompt.onkeydown = (e) => {
 
       // navigate hints
@@ -309,8 +309,8 @@ export function option(name, desc = '', type = 'generic', replace = false) {
 
 /**
  * Returns an ItemList filter function for standart options context.
- * @param {String} query ItemList filter query.
- * @returns {(item)=>{}} Filter function.
+ * @param {String|CmdOption} query ItemList filter query.
+ * @returns {(item:String|CmdOption)=>boolean} Filter function.
  */
 export function standardFilter(query) {
   return (item) => {

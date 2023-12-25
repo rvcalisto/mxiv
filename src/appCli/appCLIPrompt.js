@@ -21,7 +21,7 @@ export const CmdHistory = new class {
    * Sync history with localStorage. Keeps different windows in sync.
    */
   sync() {
-    const lclStr = JSON.parse(localStorage.getItem(this.#historyStorage))
+    const lclStr = JSON.parse( localStorage.getItem(this.#historyStorage) )
     this.#history = lclStr || []
   }
 
@@ -34,7 +34,7 @@ export const CmdHistory = new class {
     if (!cmdStr || cmdStr === 'cli repeatLast') return
 
     // move to top if already in history, else add to top and trim array
-    if (this.#history.includes(cmdStr)) {
+    if ( this.#history.includes(cmdStr) ) {
       const idx = this.#history.indexOf(cmdStr)
       this.#history.splice(idx, 1)
       this.#history.unshift(cmdStr)
@@ -44,7 +44,7 @@ export const CmdHistory = new class {
     }
 
     // write changes to localStorage
-    localStorage.setItem(this.#historyStorage, JSON.stringify(this.#history))
+    localStorage.setItem( this.#historyStorage, JSON.stringify(this.#history) )
   }
 
   /**
@@ -53,7 +53,7 @@ export const CmdHistory = new class {
    */
   remove(specificEntry) {
     this.#history = specificEntry ? this.#history.filter(entry => entry !== specificEntry) : []
-    localStorage.setItem(this.#historyStorage, JSON.stringify(this.#history))
+    localStorage.setItem( this.#historyStorage, JSON.stringify(this.#history) )
   }
 }
 
@@ -101,7 +101,8 @@ export class CmdPrompt {
     let output = [], buffer = '', separateOnSpace = true;
 
     for (let i = 0; i < text.length; i++) {
-      const char = text[i], prevChar = text[i - 1], nextChar = text[i + 1], isLastChar = i + 1 === text.length;
+      const char = text[i], prevChar = text[i - 1], 
+      nextChar = text[i + 1], isLastChar = i + 1 === text.length;
 
       let addToBuffer = true;
 
@@ -177,7 +178,8 @@ export class CmdPrompt {
   }
 
   /**
-   * Returns prompt current text content.
+   * Returns prompt content. Raw string by default. 
+   * @param {false} asUnescapedArray Return unescaped action array if true. 
    * @returns {String|String[]}
    */
   getText(asUnescapedArray = false) {
