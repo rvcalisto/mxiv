@@ -223,7 +223,7 @@ class AppCmdLine extends HTMLElement {
         const element = this.#list.navItems()
         if (element) element.scrollIntoView(false)
 
-        this.clearCmdHistory(selection.hint.key)
+        this.clearCmdHistory(selection.hint.name)
         selection.remove()
       }
 
