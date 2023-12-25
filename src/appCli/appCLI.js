@@ -2,7 +2,14 @@ import { ItemList } from "../app/itemList.js";
 import { ActionDB } from "../actions/actionDB.js";
 import { AppNotifier } from "../app/notifier.js";
 import { CmdPrompt, CmdHistory } from "./appCLIPrompt.js";
-import { AcceleratorDB } from "../actions/acceleratorDB.js";
+import { option, optionElement } from "./option.js";
+export { option };
+
+
+/**
+ * Descriptive option object for display in AppCmdLine.
+ * @typedef {import("./option.js").CmdOption} CmdOption
+ */
 
 
 /**
@@ -154,65 +161,22 @@ class AppCmdLine extends HTMLElement {
   #renderElement(item) {
     if ( typeof(item) !== 'object' ) item = option(item)
 
-    const hint = document.createElement('div');
-    hint.hint = item; // set reference
-    hint.setAttribute('icon', item.type);
+    const optionElm = optionElement(item)
 
-    const text = document.createElement('p');
-    text.className = 'itemText';
-    text.textContent = item.name;
-
-    // description to be applied as atribute for css ::after 
-    if (item.desc) text.setAttribute('desc', item.desc);
-    hint.append(text);
-
-    if (item.type === 'action') {
-      const frameAccelSet = AcceleratorDB.currentFrameAccelerator;
-      const acceleratedBy = frameAccelSet.byAction([item.name]);
-
-      if (acceleratedBy.length) {
-        const hotkeyDiv = document.createElement('div');
-        hotkeyDiv.className = 'accelerators';
-
-        acceleratedBy.forEach(key => {
-          const hotkey = document.createElement('p');
-          hotkey.className = 'itemTag';
-          hotkey.textContent = key;
-          hotkeyDiv.appendChild(hotkey);
-        });
-        hint.append(hotkeyDiv);
-      }
-    }
-
-    if (item.type === 'history') {
-      const delBtn = document.createElement('button');
-      delBtn.className = 'itemTag';
-      delBtn.textContent = 'forget'; // '✖️'
-      hint.appendChild(delBtn);
-
-      delBtn.onclick = (e) => {
-        AppCLI.clearCmdHistory(item.name);
-        hint.remove();
-
-        item.toggle(true);
-        e.stopImmediatePropagation();
-      };
-    }
-
-    hint.onclick = () => {
+    optionElm.onclick = () => {
       this.#prompt.focus()
       const selection = this.#list.pageContainerDiv.getElementsByClassName('selected')[0]
       if (selection) selection.classList.remove('selected')
-      hint.classList.add('selected')
+      optionElm.classList.add('selected')
     };
 
-    hint.ondblclick = () => {
+    optionElm.ondblclick = () => {
       this.#completeSelection()
       this.toggle(false)
       this.#runCmd()
     };
 
-    return hint;
+    return optionElm;
   }
 
   /**
@@ -279,31 +243,6 @@ class AppCmdLine extends HTMLElement {
         this.#runCmd()
       }
     }
-  }
-}
-
-/**
- * @typedef CmdOption
- * @property {String} name Option name.
- * @property {String} desc Option description.
- * @property {'action'|'history'|'generic'|?} type Option type.
- * @property {false} replace Either if to completely replace prompt or complement.
- */
-
-/**
- * Returns rich option object to be displayed by AppCmdLine.
- * @param {String} name Option name.
- * @param {String} desc Option description.
- * @param {'action'|'history'|'generic'|?} type Option type.
- * @param {false} replace Either if to completely replace prompt or complement.
- * @returns {CmdOption} 
- */
-export function option(name, desc = '', type = 'generic', replace = false) {
-  return {
-    name: name,
-    desc: desc,
-    type: type,
-    replace: replace
   }
 }
 
