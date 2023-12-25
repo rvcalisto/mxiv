@@ -1,5 +1,5 @@
 import { Accelerators } from "./accelerators.js"
-import { FRAME } from "./tabs.js"
+import { FRAME } from "../app/tabs.js"
 
 
 /**

@@ -3,7 +3,7 @@ import "./mediaSession.js"
 import "./baseActions.js"
 import "./baseAccelerators.js"
 import "./keyEventController.js"
-import { UserAccelerators } from "../app/userAccelerators.js"
+import { UserAccelerators } from "../actions/userAccelerators.js"
 
 
 // open paths in current viewer tab on IPC signal

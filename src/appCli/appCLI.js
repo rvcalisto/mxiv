@@ -1,8 +1,8 @@
-import { ItemList } from "./itemList.js";
-import { ActionDB } from "./actionDB.js";
-import { AppNotifier } from "./notifier.js";
-import { AcceleratorDB } from "./acceleratorDB.js";
-import { CmdPrompt, CmdHistory } from "./appCLIUtils.js";
+import { ItemList } from "../app/itemList.js";
+import { ActionDB } from "../actions/actionDB.js";
+import { AppNotifier } from "../app/notifier.js";
+import { CmdPrompt, CmdHistory } from "./appCLIPrompt.js";
+import { AcceleratorDB } from "../actions/acceleratorDB.js";
 
 
 /**
@@ -26,7 +26,7 @@ class AppCmdLine extends HTMLElement {
   connectedCallback() {
     const fragment = document.getElementById('appCliTemplate').content
     this.attachShadow({ mode: 'open' })
-    this.shadowRoot.append(fragment.cloneNode(true));
+    this.shadowRoot.append( fragment.cloneNode(true) );
 
     this.#list = this.shadowRoot.getElementById('itemList')
     this.#prompt = new CmdPrompt(this.shadowRoot)
@@ -117,7 +117,7 @@ class AppCmdLine extends HTMLElement {
 
       if (command.methods && args.length === 1) {
         options = Object.keys(command.methods)
-        .map(key => cmdLineItem(key, command.methods[key].desc))
+        .map( key => option(key, command.methods[key].desc) )
       }
 
       else if (command.methods && command.methods[args[0]]) {
@@ -129,7 +129,7 @@ class AppCmdLine extends HTMLElement {
 
       // list options
       // console.time('populate')
-      this.#list.populate(options, (item) => this.#hintElement(item), 
+      this.#list.populate(options, item => this.#renderElement(item), 
       command.customFilter ? command.customFilter(lastArg) : standardFilter(lastArg))
       // console.timeEnd('populate')
       return 
@@ -137,66 +137,66 @@ class AppCmdLine extends HTMLElement {
 
     // hint history + root actions
     const cmdList = Object.keys(currentActions)
-    .map( cmd => cmdLineItem(cmd, currentActions[cmd].desc, 'action', true) )
+    .map( cmd => option(cmd, currentActions[cmd].desc, 'action', true) )
 
     const histList = CmdHistory.items
-    .map( cmd => cmdLineItem(cmd, '', 'history', true) )
+    .map( cmd => option(cmd, '', 'history', true) )
 
     this.#list.populate(histList.concat(cmdList), 
-    (item) => this.#hintElement(item), standardFilter(cmd || ''))
+    (item) => this.#renderElement(item), standardFilter(cmd || ''))
   }
 
   /**
-   * Create and return hint element. Defaults to overwrite.
-   * @param {String|Object} item Item text.
+   * Returns a HTMLElement for this option.
+   * @param {CmdOption|String} item
    * @returns {HTMLElement}
    */
-  #hintElement(item) {
-    if (typeof(item) !== "object") item = cmdLineItem(item)
+  #renderElement(item) {
+    if ( typeof(item) !== 'object' ) item = option(item)
 
-    const hint = document.createElement('div')
-    hint.hint = item // set reference
-    hint.setAttribute('icon', item.type)
+    const hint = document.createElement('div');
+    hint.hint = item; // set reference
+    hint.setAttribute('icon', item.type);
 
-    const text = document.createElement('p')
-    text.className = 'itemText'
-    text.textContent = item.key
+    const text = document.createElement('p');
+    text.className = 'itemText';
+    text.textContent = item.name;
 
     // description to be applied as atribute for css ::after 
-    if (item.desc) text.setAttribute('desc', item.desc)
-    hint.append(text)
+    if (item.desc) text.setAttribute('desc', item.desc);
+    hint.append(text);
 
     if (item.type === 'action') {
-      const frameAccelSet = AcceleratorDB.currentFrameAccelerator
-      const acceleratedBy = frameAccelSet.byAction([item.key])
+      const frameAccelSet = AcceleratorDB.currentFrameAccelerator;
+      const acceleratedBy = frameAccelSet.byAction([item.name]);
 
       if (acceleratedBy.length) {
-        const hotkeyDiv = document.createElement('div')
-        hotkeyDiv.className = 'accelerators'
+        const hotkeyDiv = document.createElement('div');
+        hotkeyDiv.className = 'accelerators';
 
         acceleratedBy.forEach(key => {
-          const hotkey = document.createElement('p')
-          hotkey.className = 'itemTag'
-          hotkey.textContent = key
-          hotkeyDiv.appendChild(hotkey)
-        })
-        hint.append(hotkeyDiv)
+          const hotkey = document.createElement('p');
+          hotkey.className = 'itemTag';
+          hotkey.textContent = key;
+          hotkeyDiv.appendChild(hotkey);
+        });
+        hint.append(hotkeyDiv);
       }
     }
 
     if (item.type === 'history') {
-      const delBtn = document.createElement('button')
-      delBtn.className = 'itemTag'
-      delBtn.textContent = 'forget' // '✖️'
-      hint.appendChild(delBtn)
+      const delBtn = document.createElement('button');
+      delBtn.className = 'itemTag';
+      delBtn.textContent = 'forget'; // '✖️'
+      hint.appendChild(delBtn);
 
       delBtn.onclick = (e) => {
-        AppCLI.clearCmdHistory(item.key)
-        hint.remove()
+        AppCLI.clearCmdHistory(item.name);
+        hint.remove();
 
-        this.toggle(true)
-        e.stopImmediatePropagation()
-      }
+        item.toggle(true);
+        e.stopImmediatePropagation();
+      };
     }
 
     hint.onclick = () => {
@@ -204,15 +204,15 @@ class AppCmdLine extends HTMLElement {
       const selection = this.#list.pageContainerDiv.getElementsByClassName('selected')[0]
       if (selection) selection.classList.remove('selected')
       hint.classList.add('selected')
-    }
+    };
 
     hint.ondblclick = () => {
       this.#completeSelection()
       this.toggle(false)
       this.#runCmd()
-    }
+    };
 
-    return hint
+    return hint;
   }
 
   /**
@@ -222,11 +222,8 @@ class AppCmdLine extends HTMLElement {
     const selection = this.#list.pageContainerDiv.getElementsByClassName('selected')[0]
     if (!selection) return
 
-    if (selection.hint.replace) {
-      this.#prompt.setText(selection.hint.key, true)
-    } else {
-      this.#prompt.setText(selection.hint.key, false)
-    }
+    const replace = selection.hint.replace
+    this.#prompt.setText(selection.hint.name, replace)
   }
 
   #initializeInputs() {
@@ -286,15 +283,24 @@ class AppCmdLine extends HTMLElement {
 }
 
 /**
- * Returns a rich AppCmdLine option item.
- * @param {String} key Entry as its displayed.
- * @param {String} desc Item description.
- * @param {'action'|'history'|'generic'|?} type Item type.
- * @param {false} replace Either to completely replace input field or complete.
+ * @typedef CmdOption
+ * @property {String} name Option name.
+ * @property {String} desc Option description.
+ * @property {'action'|'history'|'generic'|?} type Option type.
+ * @property {false} replace Either if to completely replace prompt or complement.
  */
-export function cmdLineItem(key, desc = '', type = 'generic', replace = false) {
+
+/**
+ * Returns rich option object to be displayed by AppCmdLine.
+ * @param {String} name Option name.
+ * @param {String} desc Option description.
+ * @param {'action'|'history'|'generic'|?} type Option type.
+ * @param {false} replace Either if to completely replace prompt or complement.
+ * @returns {CmdOption} 
+ */
+export function option(name, desc = '', type = 'generic', replace = false) {
   return {
-    key: key,
+    name: name,
     desc: desc,
     type: type,
     replace: replace
@@ -308,14 +314,14 @@ export function cmdLineItem(key, desc = '', type = 'generic', replace = false) {
  */
 export function standardFilter(query) {
   return (item) => {
-    if (typeof(item) === 'object') item = item.key
+    if ( typeof(item) === 'object' ) item = item.name
     const itemIsDot = item[0] === '.', queryIsDot = query[0] === '.'
 
     // empty query, show all non-dot-files
-    if (!query.trim()) return !itemIsDot
+    if ( !query.trim() ) return !itemIsDot
 
     // only show matches if for same item-query category
-    const match = item.toLowerCase().includes(query.toLowerCase())
+    const match = item.toLowerCase().includes( query.toLowerCase() )
     return itemIsDot ? match && queryIsDot : match
   }
 }
@@ -326,6 +332,5 @@ export function standardFilter(query) {
  * @type {AppCmdLine}
  */
 export const AppCLI = document.getElementsByTagName(AppCmdLine.tagName)[0]
-
 
 customElements.define(AppCmdLine.tagName, AppCmdLine)

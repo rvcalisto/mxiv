@@ -1,4 +1,4 @@
-import { AcceleratorDB } from "../../app/acceleratorDB.js";
+import { AcceleratorDB } from "../../actions/acceleratorDB.js";
 import { FRAME } from "../../app/tabs.js";
 
 

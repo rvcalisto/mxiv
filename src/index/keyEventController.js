@@ -1,7 +1,7 @@
 import { FRAME } from "../app/tabs.js"
-import { AppCLI } from "../app/appCLI.js"
-import { ActionDB } from "../app/actionDB.js"
-import { AcceleratorDB } from "../app/acceleratorDB.js"
+import { AppCLI } from "../appCli/appCLI.js"
+import { ActionDB } from "../actions/actionDB.js"
+import { AcceleratorDB } from "../actions/acceleratorDB.js"
 
 
 // catch and treat keydown events for accelerators

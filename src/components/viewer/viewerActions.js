@@ -1,6 +1,6 @@
-import { ActionDB } from "../../app/actionDB.js"
+import { ActionDB } from "../../actions/actionDB.js"
 import { FRAME } from "../../app/tabs.js"
-import { cmdLineItem, standardFilter } from "../../app/appCLI.js"
+import { option, standardFilter } from "../../appCli/appCLI.js"
 import { AppNotifier } from "../../app/notifier.js"
 
 
@@ -19,7 +19,7 @@ ActionDB.setComponentActions('viewer', {
   'scrollTo': {
     'desc' : 'scroll to top or bottom of page',
     'run'  : (arg = 'bottom') => FRAME.viewComponent.scrollToEnd(arg === 'bottom'),
-    'options': () => ['top', cmdLineItem('bottom', 'default')]
+    'options': () => ['top', option('bottom', 'default')]
   },
 
   'navigate': {
@@ -133,10 +133,10 @@ ActionDB.setComponentActions('viewer', {
       FRAME.viewComponent.media.onEndRepeat(option)
     },
     'options': (lastArg, allArgs) => allArgs.length < 2 ? [
-      cmdLineItem('cycle', 'cycle between modes (default)'),
-      cmdLineItem('loop', 'play same track on repeat'),
-      cmdLineItem('next', 'play next track in playlist'),
-      cmdLineItem('random', 'play a random track in playlist')
+      option('cycle', 'cycle between modes (default)'),
+      option('loop', 'play same track on repeat'),
+      option('next', 'play next track in playlist'),
+      option('random', 'play a random track in playlist')
     ] : []
   },
 
@@ -154,9 +154,9 @@ ActionDB.setComponentActions('viewer', {
       FRAME.viewComponent.media.preservePitch(option)
     },
     'options': (lastArg, allArgs) => allArgs.length < 2 ? [
-      cmdLineItem('true', 'preserve pitch'),
-      cmdLineItem('false', 'don\'t preserve pitch'),
-      cmdLineItem('toggle', 'alternate option (default)')
+      option('true', 'preserve pitch'),
+      option('false', 'don\'t preserve pitch'),
+      option('toggle', 'alternate option (default)')
     ] : []
   },
 
@@ -186,7 +186,7 @@ ActionDB.setComponentActions('viewer', {
       opt = opt === 'on' ? true : opt === 'off' ? false : undefined
       FRAME.viewComponent.toggleAutoScrollAnimation(opt)
     },
-    'options': () => [cmdLineItem('toggle', 'default'), 'on', 'off']
+    'options': () => [option('toggle', 'default'), 'on', 'off']
   },
 
   'random': {
@@ -207,8 +207,8 @@ ActionDB.setComponentActions('viewer', {
       else FRAME.viewComponent.slideshow.toggle()
     },
     'options': (lastArg, allArgs) => allArgs.length < 2 ? [
-      cmdLineItem('toggle', 'toggle slideshow on or off (default)'),
-      cmdLineItem('delay', 'set slideshow delay in seconds'),
+      option('toggle', 'toggle slideshow on or off (default)'),
+      option('delay', 'set slideshow delay in seconds'),
     ] : []
   },
 
@@ -224,9 +224,9 @@ ActionDB.setComponentActions('viewer', {
           else FRAME.fileExplorer.toggleMode()
         },
         'options': (lastArg, allArgs) => allArgs.length < 2 ? [
-          cmdLineItem('toggle', 'alternate between modes (default)'), 
-          cmdLineItem('explorer', 'navigate through directories'), 
-          cmdLineItem('playlist', 'list currently loaded files')
+          option('toggle', 'alternate between modes (default)'), 
+          option('explorer', 'navigate through directories'), 
+          option('playlist', 'list currently loaded files')
         ] : []
       },
       'toggleFocus': {
@@ -244,7 +244,7 @@ ActionDB.setComponentActions('viewer', {
     'run'  : (...queries) => FRAME.filter(...queries),
     'options': (query) => {
       if (query.slice(0, 4) == 'tag:') return elecAPI.tagAPI.uniqueTags()
-      else if (query.slice(0, 2) == '--') return [cmdLineItem('--exclusive', 'files must match every tag')]
+      else if (query.slice(0, 2) == '--') return [option('--exclusive', 'files must match every tag')]
       else return FRAME.fileBook.files.map(i => i.name)
     },
     'customFilter': (query) => {

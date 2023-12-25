@@ -1,9 +1,9 @@
-import { ActionDB } from "../app/actionDB.js"
+import { ActionDB } from "../actions/actionDB.js"
 import { Tab } from "../app/tabs.js"
 import * as StatusBar from "../app/statusBar.js"
 import * as Profiles from "../app/profiles.js"
-import { AppCLI, cmdLineItem, standardFilter } from "../app/appCLI.js"
-import { UserAccelerators } from "../app/userAccelerators.js"
+import { AppCLI, option, standardFilter } from "../appCli/appCLI.js"
+import { UserAccelerators } from "../actions/userAccelerators.js"
 import { AppNotifier } from "../app/notifier.js"
 
 
@@ -41,19 +41,19 @@ ActionDB.setBaseActions({
         'desc' : 'create new tab',
         'run'  : (type = 'viewer') => Tab.newTab(type),
         'options': (lastArg, allArgs) => allArgs.length < 2 ? [
-            cmdLineItem('viewer', 'file navigator and general viewer (default)'), 
-            cmdLineItem('library', 'collection of media directories and archives')
+            option('viewer', 'file navigator and general viewer (default)'), 
+            option('library', 'collection of media directories and archives')
           ] : []
       },
       'move': {
         'desc' : 'move current tab to the right or left',
         'run'  : (right = 'right') => Tab.moveTab(right === 'right'),
-        'options': () => [cmdLineItem('right', 'default'), 'left']
+        'options': () => [option('right', 'default'), 'left']
       },
       'cycle': {
         'desc' : 'cycle through tabs',
         'run'  : (next = 'next') => Tab.cycleTabs(next === 'next'),
-        'options': () => [cmdLineItem('next', 'default'), 'back']
+        'options': () => [option('next', 'default'), 'back']
       },
       'close': {
         'desc' : 'close current tab',
@@ -76,7 +76,7 @@ ActionDB.setBaseActions({
           show = show === 'on' ? true : show === 'off' ? false : undefined
           Tab.toggleTabBar(show)
         },
-        'options': () => [cmdLineItem('toggle', 'default'), 'on', 'off']
+        'options': () => [option('toggle', 'default'), 'on', 'off']
       }
     }
   },
@@ -92,8 +92,8 @@ ActionDB.setBaseActions({
         'options': (query, args) => {
           if (args.length === 1) return Profiles.listProfiles()
           if (args.length === 2) return [
-            cmdLineItem('default', 'close current tabs on profile load'),
-            cmdLineItem('keepSession', 'keep current tabs on profile load')
+            option('default', 'close current tabs on profile load'),
+            option('keepSession', 'keep current tabs on profile load')
           ]
           return []
         }
@@ -141,15 +141,15 @@ ActionDB.setBaseActions({
           
           // hint erasure and masking options
           if (allArgs.length > 2) return [
-            cmdLineItem('default', 'revert accelerator to default'),
-            cmdLineItem('mask', 'neutralize default action')
+            option('default', 'revert accelerator to default'),
+            option('mask', 'neutralize default action')
           ]
 
           // hint available components
           if (allArgs.length < 2) return [
-            cmdLineItem('base', 'on all components, but overruled on concurrency'),
-            cmdLineItem('viewer', 'set/overwrite viewer accelerators'),
-            cmdLineItem('library', 'set/overwrite library accelerators')
+            option('base', 'on all components, but overruled on concurrency'),
+            option('viewer', 'set/overwrite viewer accelerators'),
+            option('library', 'set/overwrite library accelerators')
           ]
 
           // hint stored user accelerators for component
@@ -159,7 +159,7 @@ ActionDB.setBaseActions({
           for (const [keycombo, actionArg] of Object.entries(accelObject) ) {
             let actionArgStr = actionArg.length ? '' : 'nothing'
             actionArg.forEach(chunk => actionArgStr += `"${chunk}" `)
-            options.push( cmdLineItem(keycombo, actionArgStr) )
+            options.push( option(keycombo, actionArgStr) )
           }
           
           const coll = new Intl.Collator()
@@ -187,7 +187,7 @@ ActionDB.setBaseActions({
         'run': (...args) => console.log('all args received:', ...args),
         'options': (lastArg, allArgs) => {
           console.log('options receive\nlastArg:', lastArg,'\nallArgs:', allArgs)
-          return ['apple', 'banana', cmdLineItem('coconut', 'has water inside')]
+          return ['apple', 'banana', option('coconut', 'has water inside')]
         }
       },
       'secondMethod': {

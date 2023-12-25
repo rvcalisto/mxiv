@@ -1,6 +1,6 @@
-import { ActionDB } from "../../app/actionDB.js"
+import { ActionDB } from "../../actions/actionDB.js"
 import { CoverGrid } from "./coverGrid.js"
-import { cmdLineItem, standardFilter } from "../../app/appCLI.js"
+import { option, standardFilter } from "../../appCli/appCLI.js"
 import { FRAME as Library }  from "../../app/tabs.js"
 import { AppNotifier } from "../../app/notifier.js"
 
@@ -110,8 +110,8 @@ ActionDB.setComponentActions('library', {
           Library.coverGrid.openCoverBook(true, whichTab === 'newTab')
         },
         'options': (query, allArgs) => allArgs.length < 2 ? [
-          cmdLineItem('newTab', 'open book in a new tab'),
-          cmdLineItem('inPlace', 'open book on current tab (default)'),
+          option('newTab', 'open book in a new tab'),
+          option('inPlace', 'open book on current tab (default)'),
         ] : []
       },
       'delist': {
@@ -133,12 +133,12 @@ ActionDB.setComponentActions('library', {
     },
     'options': (lastArg, allArgs) => {
       if (allArgs.length === 1) return [
-        cmdLineItem('horizontally', 'select neighbor in the horizontal'),
-        cmdLineItem('vertically', 'select neighbor in the vertical')
+        option('horizontally', 'select neighbor in the horizontal'),
+        option('vertically', 'select neighbor in the vertical')
       ]
       if (allArgs.length === 2) return [
-        cmdLineItem('next', 'horizontal: right, vertical: down (default)'),
-        cmdLineItem('back', 'horizontal: left, vertical: up')
+        option('next', 'horizontal: right, vertical: down (default)'),
+        option('back', 'horizontal: left, vertical: up')
       ]
       return []
     }
