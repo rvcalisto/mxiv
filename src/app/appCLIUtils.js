@@ -156,7 +156,7 @@ export class CmdPrompt {
   /**
    * Set prompt text. Either replace whole string or only last argument.
    * @param {String} text Content to insert.
-   * @param {false} replaceWhole Either to replace whole string or only last argument.
+   * @param {true} replaceWhole Either to replace whole string or only last argument.
    */
   setText(text, replaceWhole = true) {
     let newText = text;
