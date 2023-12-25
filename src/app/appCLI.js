@@ -2,64 +2,7 @@ import { ItemList } from "./itemList.js";
 import { ActionDB } from "./actionDB.js";
 import { AppNotifier } from "./notifier.js";
 import { AcceleratorDB } from "./acceleratorDB.js";
-
-
-/** AppCLI action history. */
-const actionHistory = new class {
-
-  /** @type {String[]} */
-  #history = []
-  #historySize = 10
-  #historyStorage = 'cmdHist'
-
-  constructor() {
-    this.sync()
-  }
-
-  /** In order of last stored. Read-only. */
-  get items() {
-    return this.#history
-  }
-
-  /**
-   * Sync history with localStorage. Keeps different windows in sync.
-   */
-  sync() {
-    const lclStr = JSON.parse(localStorage.getItem(this.#historyStorage))
-    this.#history = lclStr || []
-  }
-
-  /**
-   * Store action & args string item.
-   * @param {String} cmdStr Command string to store.
-   */
-  store(cmdStr) {
-    cmdStr = cmdStr.trim()
-    if (!cmdStr || cmdStr === 'cli repeatLast') return
-
-    // move to top if already in history, else add to top and trim array
-    if (this.#history.includes(cmdStr)) {
-      const idx = this.#history.indexOf(cmdStr)
-      this.#history.splice(idx, 1)
-      this.#history.unshift(cmdStr)
-    } else {
-      const newLength = this.#history.unshift(cmdStr)
-      if (newLength > this.#historySize) this.#history.length = this.#historySize
-    }
-
-    // write changes to localStorage
-    localStorage.setItem(this.#historyStorage, JSON.stringify(this.#history))
-  }
-
-  /**
-   * Erase exact item from history. Erase all items if undefined.
-   * @param {String?} specificEntry If given, remove only this string from history.
-   */
-  remove(specificEntry) {
-    this.#history = specificEntry ? this.#history.filter(entry => entry !== specificEntry) : []
-    localStorage.setItem(this.#historyStorage, JSON.stringify(this.#history))
-  }
-}
+import { CmdPrompt, CmdHistory } from "./appCLIUtils.js";
 
 
 /**
@@ -71,8 +14,9 @@ class AppCmdLine extends HTMLElement {
 
   /** Hint element list. @type {ItemList} */
   #list
-  /** Input text element. @type {HTMLInputElement} */
-  #input
+
+  /** Prompt element. @type {CmdPrompt} */
+  #prompt
 
   constructor() {
     super()
@@ -81,13 +25,13 @@ class AppCmdLine extends HTMLElement {
 
   connectedCallback() {
     const fragment = document.getElementById('appCliTemplate').content
-    this.attachShadow({mode: 'open'})
+    this.attachShadow({ mode: 'open' })
     this.shadowRoot.append(fragment.cloneNode(true));
 
-    this.#input = this.shadowRoot.getElementById('cmdInput')
     this.#list = this.shadowRoot.getElementById('itemList')
+    this.#prompt = new CmdPrompt(this.shadowRoot)
 
-    actionHistory.sync()
+    CmdHistory.sync()
     this.#initializeInputs()
   }
 
@@ -103,11 +47,11 @@ class AppCmdLine extends HTMLElement {
 
     // focus input, set optionalStr & list hints. Exit after focus if already open
     if (open) {
-      this.#input.focus()
+      this.#prompt.focus()
       if (this.active) return
 
-      this.#input.value = optionalStr
-      actionHistory.sync()
+      this.#prompt.setText(optionalStr)
+      CmdHistory.sync()
       this.#displayHints()
     } 
 
@@ -130,12 +74,12 @@ class AppCmdLine extends HTMLElement {
    * @param {String?} inputStr Custom CLI command.
    */
   #runCmd(inputStr) {
-    inputStr = inputStr || this.#input.value
+    inputStr = inputStr || this.#prompt.getText()
 
-    const action = parseFromCLI(inputStr)
+    const action = CmdPrompt.unescapeIntoArray(inputStr)
     
     const success = ActionDB.currentFrameActions.run(action)
-    if (success) return actionHistory.store(inputStr)
+    if (success) return CmdHistory.store(inputStr)
     
     AppNotifier.notify(`"${action[0]}" is not an action in current context`, 'appCLI')
   }
@@ -145,7 +89,7 @@ class AppCmdLine extends HTMLElement {
    * @param {String?} specificEntry If given, remove only this string from history.
    */
   clearCmdHistory(specificEntry) {
-    actionHistory.remove(specificEntry)
+    CmdHistory.remove(specificEntry)
     
     const msg = specificEntry ? 'history item removed' : 'history cleared'
     AppNotifier.notify(msg, specificEntry ? 'appCLI:forget' : 'appCLI:clear')
@@ -155,16 +99,16 @@ class AppCmdLine extends HTMLElement {
    * Repeat last command.
    */
   redoCmd() {
-    const historyArray = actionHistory.items
+    const historyArray = CmdHistory.items
     if (historyArray.length) this.#runCmd(historyArray[0])
   }
 
   /**
-   * Genereate hint list based on current prompt text.
+   * Genereate hint list based on current this.#prompt text.
    */
   async #displayHints() {
     const currentActions = ActionDB.currentFrameActions.asObject()
-    let [cmd, ...args] = parseFromCLI(this.#input.value)
+    let [cmd, ...args] = this.#prompt.getText(true)
     let command = currentActions[cmd]
 
     // hint action methods / options
@@ -195,7 +139,7 @@ class AppCmdLine extends HTMLElement {
     const cmdList = Object.keys(currentActions)
     .map( cmd => cmdLineItem(cmd, currentActions[cmd].desc, 'action', true) )
 
-    const histList = actionHistory.items
+    const histList = CmdHistory.items
     .map( cmd => cmdLineItem(cmd, '', 'history', true) )
 
     this.#list.populate(histList.concat(cmdList), 
@@ -256,7 +200,7 @@ class AppCmdLine extends HTMLElement {
     }
 
     hint.onclick = () => {
-      this.#input.focus()
+      this.#prompt.focus()
       const selection = this.#list.pageContainerDiv.getElementsByClassName('selected')[0]
       if (selection) selection.classList.remove('selected')
       hint.classList.add('selected')
@@ -278,22 +222,11 @@ class AppCmdLine extends HTMLElement {
     const selection = this.#list.pageContainerDiv.getElementsByClassName('selected')[0]
     if (!selection) return
 
-    const [cmd, ...args] = parseFromCLI(this.#input.value)
-    let newLine = ''
-
     if (selection.hint.replace) {
-      newLine = selection.hint.key
+      this.#prompt.setText(selection.hint.key, true)
     } else {
-      // remove last argument that were going to handle
-      args.pop()
-
-      let lastArgs = `${cmd}`
-      for (const arg of args) lastArgs += ` ${parseToCLI(arg)}`
-      newLine = `${lastArgs} ${parseToCLI(selection.hint.key)}`
+      this.#prompt.setText(selection.hint.key, false)
     }
-
-    this.#input.value = newLine
-    this.#input.scrollLeft = 9999 // scroll to end of text (hopefully)
   }
 
   #initializeInputs() {
@@ -304,10 +237,10 @@ class AppCmdLine extends HTMLElement {
     }
 
     // creates/updates hintPanel
-    this.#input.oninput = () => this.#displayHints()
+    this.#prompt.oninput = () => this.#displayHints()
 
     // input functions
-    this.#input.onkeydown = (e) => {
+    this.#prompt.onkeydown = (e) => {
 
       // navigate hints
       if (e.key === 'Tab' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
@@ -318,7 +251,7 @@ class AppCmdLine extends HTMLElement {
       }
 
       // close when cmd is fully erased
-      if (e.key === 'Backspace' && !this.#input.value.length) this.toggle(false)
+      if (e.key === 'Backspace' && !this.#prompt.getText().length) this.toggle(false)
 
       // delete history type hint
       if (e.key === 'Delete') {
@@ -387,71 +320,6 @@ export function standardFilter(query) {
   }
 }
 
-/**
- * Parse escaped double quotes into a command and arguments array.
- * - Ex: `runScript "notify-send \"see you\""` => `['runScript','notify-send','see you']`
- * @param {String} text 
- * @returns {String[]}
- */
-function parseFromCLI(text) {
-  let output = [], buffer = '', separateOnSpace = true
-  
-  for (let i = 0; i < text.length; i++) {
-    const char = text[i], prevChar = text[i-1], 
-    nextChar = text[i+1], isLastChar = i +1 === text.length
-
-    let addToBuffer = true
-    
-    // handle unescaped quotes
-    if (char === `"` && prevChar !== `\\`) {
-      addToBuffer = false
-      separateOnSpace = !separateOnSpace
-    }
-    
-    // handle escaped quotes
-    if (char === `\\` && nextChar === `"`) {
-      addToBuffer = false
-    }
-    
-    // ignore separators
-    if (char === ` ` && separateOnSpace) {
-      addToBuffer = false
-    }
-    
-    // normal char, add
-    if (addToBuffer) {
-      buffer += char
-    }
-
-    // push buffer on separator or end of line
-    if ( (char === ` ` && separateOnSpace) || isLastChar) {
-      if (buffer.length) {
-        output.push(buffer)
-        buffer = ''
-      }
-    }
-
-    // append empty string if signaling new arg
-    if (isLastChar) {
-      const endInSeparator = char === ` ` && separateOnSpace
-      const endOnOpenQuote = char === `"` && prevChar === ` ` && !separateOnSpace
-      if (endInSeparator || endOnOpenQuote) output.push('')
-    }
-  }
-  
-  // console.log(output)
-  return output
-}
-
-/**
- * Parse strings with whitespaces as quoted arguments. Escape inner quotes if any.
- * @param {String} text 
- * @returns {String}
- */
-function parseToCLI(text) {
-  const whiteSpaces = text.split(' ').length > 1
-  return whiteSpaces ? `"${text.replaceAll(`"`, `\\"`)}"` : text
-}
 
 /**
  * Command line interface for application instance.
