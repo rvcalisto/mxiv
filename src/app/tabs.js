@@ -10,8 +10,7 @@ export var FRAME
 
 
 /**
- * Creates tab and Viewer in the DOM when instanced.
- * Use static methods for standard procedures such as creating new tab, duplication, etc.
+ * Tab instace and manager via static methods.
  */
 export class Tab {
 
@@ -25,68 +24,72 @@ export class Tab {
   }
 
   /**
-   * Creates a new viewer Instance.
-   * @param {'viewer'|'library'} type Tab frame type.
-   * @param {(instance:(Viewer|Library))} func Callback, Viewer passed as first argument.
+   * Creates a new tab Instance.
+   * @param {'viewer'|'library'} type Frame type.
+   * @param {(instance:(Viewer|Library))} func Callback, frame passed as first argument.
    * @param {String} name Tab name.
    */
   constructor(type = 'viewer', func = null, name = 'tab') {
     this.name = 'unnamed'
     this.nameCount = 1
-    this.btn = null
 
-    /** @type {Viewer|Library} */
-    this.frame = null
+    this.btn = this.#createTabBtn()
+    this.renameTab(name)
 
-    this.#create(type, func, name)
+    this.frame = this.#createTabFrame(type)
+    if (func) func(this.frame)
+    this.select()
   }
 
   /** 
-   * Create and append tab and frame component elements to DOM. 
+   * Append current tab HTMLButtonElement to DOM.
+   * @returns {HTMLButtonElement}
    */
-  #create(type, func, name) {
-    // set frame reference to this tab instance, hide host element
-    this.frame = document.createElement(`${type}-component`)
-    this.frame.tab = this
-    this.frame.style.display = 'none'
-    
+  #createTabBtn() {
     const tabBtn = document.createElement('div')
-    this.btn = tabBtn
     tabBtn.className = 'tab'
     tabBtn.classObj = this // allows class reference by element order on Tab.allTabs
     
     const playState = document.createElement('button')
-    this.btn.playState = playState
+    tabBtn.playState = playState
     playState.setAttribute('icon', 'playing')
     playState.style.display = 'none'
 
-    // pause slideshow/media via tab button
+    // pause media via tab button
     playState.onclick = (e) => {
       e.stopImmediatePropagation()
-      const isImg = this.frame.viewComponent.fileType === 'image'
-
-      if (isImg) this.frame.viewComponent.slideshow.toggle(false, false)
-      else this.frame.viewComponent.media.playToggle(false)
+      if (this.frame.mediaPlayToggle)
+        this.frame.mediaPlayToggle(false)
     }
 
     const label = document.createElement('p')
-    this.btn.label = label
-    this.renameTab(name)
+    tabBtn.label = label
   
     // compose & append tabBtn, frame to document
     tabBtn.append(playState, label)
     if (Tab.selectedTab) Tab.selectedTab.btn.after(tabBtn)
     else document.getElementById('newTab').before(tabBtn)
-    document.getElementById('contents').appendChild(this.frame)
 
     // set tab events
     tabBtn.onclick = () => this.select()
     tabBtn.oncontextmenu = () => this.close()
     Tab.#setDrag(tabBtn)
 
-    if (func) func(this.frame)
+    return tabBtn
+  }
 
-    this.select()
+  /** 
+   * Append tab frame component to DOM.
+   * @returns {Viewer|Library}
+   */
+  #createTabFrame(type) {
+    const tabFrame = document.createElement(`${type}-component`)
+    tabFrame.tab = this // set reference to self in frame 
+    tabFrame.style.display = 'none' // starts hidden
+
+    document.getElementById('contents').appendChild(tabFrame)
+
+    return tabFrame
   }
 
   /**
@@ -128,7 +131,7 @@ export class Tab {
    * Rename tab. Add suffix on name repetion. 
    * @param {String} newName 
    */
-  renameTab(newName = String()) {
+  renameTab(newName) {
     if (newName === this.name) return
     
     let nameIdx = 1, usedSuffixes = []
@@ -136,7 +139,7 @@ export class Tab {
       if (tab.name === newName) usedSuffixes.push(tab.nameCount);
     }
 
-    usedSuffixes.sort((a, b) => a - b)
+    usedSuffixes.sort( (a, b) => a - b )
     for (const idx of usedSuffixes) {
       if (idx === nameIdx) nameIdx++
       else break
@@ -210,23 +213,19 @@ export class Tab {
 
   /**
    * Create default new tab.
-   * viewer: start with fileExplorer open
-   * library: only one instance, focus if else
+   * - `viewer`: Start with FileExplorer open.
+   * - `library`: Enforce single instance, focus tab.
    * @param {'viewer'|'library'} type
    */
   static newTab(type = 'viewer') {
     if (type === 'library') {
-      for (const tab of this.allTabs) {
-        if ( !(tab.frame instanceof Library) ) continue
-        tab.select()
-        return 
-      }
+      const library = this.allTabs.find(tab => tab.frame instanceof Library)
+      if (library) return library.select()
     }
 
-    const tab = new Tab(type)
-    if (type === 'viewer') {
-      tab.frame.fileExplorer.togglePanel()
-    }
+    new Tab(type, frame => {
+      if (type === 'viewer') frame.fileExplorer.togglePanel()
+    })
   }
 
   /**

@@ -66,7 +66,7 @@ export class Viewer extends HTMLElement {
   }
 
   /**
-   * Allow duplication and preserve state. 
+   * Tab method, allow duplication and preserve state. 
    * @param {Viewer} newInstance 
    */
   async duplicate(newInstance) {
@@ -74,7 +74,7 @@ export class Viewer extends HTMLElement {
   }
 
   /**
-   * Store state persistence object.
+   * Tab method, store state persistence object.
    */
   storeState() {
     return {
@@ -94,7 +94,7 @@ export class Viewer extends HTMLElement {
   }
 
   /**
-   * Restore state.
+   * Tab method, restore state.
    * @param {} stateObj State object.
    */
   async restoreState(stateObj) {
@@ -361,7 +361,7 @@ export class Viewer extends HTMLElement {
   }
 
   /**
-   * Status bar object implementation.
+   * Tab method, returns status bar object.
    */
   barStatus() {
     const currentFile = this.fileBook.currentFile
@@ -398,6 +398,17 @@ export class Viewer extends HTMLElement {
    */
   updateBar() {
     if (Tab.selectedTab.frame === this) StatusBar.updateStatus()
+  }
+
+  /**
+   * Tab method, toggles Viewer play state.
+   * @param {Boolean?} forceState Force play with `true` or pause with `false`.
+   */
+  mediaPlayToggle(forceState) {
+    const isImg = this.viewComponent.fileType === 'image'
+
+    if (isImg) this.viewComponent.slideshow.toggle(forceState, false)
+    else this.viewComponent.media.playToggle(forceState)
   }
 }
 
