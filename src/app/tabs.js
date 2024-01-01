@@ -1,6 +1,8 @@
+import { TabHeader } from "./tabHeader.js"
 import { Viewer } from "../components/viewer/viewer.js"
 import { Library } from "../components/library/library.js"
 import * as StatusBar from "../app/statusBar.js"
+
 
 /** 
  * Returns reference to currently active frame component.
@@ -17,12 +19,6 @@ export class Tab {
   /** @type {Tab} */
   static selectedTab
 
-  static #DRAG = {
-    'origin' : null,
-    'originOnLeft' : false, // use after() or before()
-    'destination' : null,
-  }
-
   /**
    * Creates a new tab Instance.
    * @param {'viewer'|'library'} type Frame type.
@@ -30,52 +26,11 @@ export class Tab {
    * @param {String} name Tab name.
    */
   constructor(type = 'viewer', func = null, name = 'tab') {
-    this.name = 'unnamed'
-    this.nameCount = 1
-
-    this.btn = this.#createTabBtn()
-    this.renameTab(name)
+    this.header = new TabHeader(this, name)
 
     this.frame = this.#createTabFrame(type)
     if (func) func(this.frame)
     this.select()
-  }
-
-  /** 
-   * Append current tab HTMLButtonElement to DOM.
-   * @returns {HTMLButtonElement}
-   */
-  #createTabBtn() {
-    const tabBtn = document.createElement('div')
-    tabBtn.className = 'tab'
-    tabBtn.classObj = this // allows class reference by element order on Tab.allTabs
-    
-    const playState = document.createElement('button')
-    tabBtn.playState = playState
-    playState.setAttribute('icon', 'playing')
-    playState.style.display = 'none'
-
-    // pause media via tab button
-    playState.onclick = (e) => {
-      e.stopImmediatePropagation()
-      if (this.frame.mediaPlayToggle)
-        this.frame.mediaPlayToggle(false)
-    }
-
-    const label = document.createElement('p')
-    tabBtn.label = label
-  
-    // compose & append tabBtn, frame to document
-    tabBtn.append(playState, label)
-    if (Tab.selectedTab) Tab.selectedTab.btn.after(tabBtn)
-    else document.getElementById('newTab').before(tabBtn)
-
-    // set tab events
-    tabBtn.onclick = () => this.select()
-    tabBtn.oncontextmenu = () => this.close()
-    Tab.#setDrag(tabBtn)
-
-    return tabBtn
   }
 
   /** 
@@ -93,32 +48,31 @@ export class Tab {
   }
 
   /**
-   * Close tab and select next in order. Close window if last.
+   * Closes tab. Quit window if last remaining instance.
+   * - If currently selected, pass selection to the left or right instance.
    */
   close() {
-    // get next valid neighbor tab
-    let next = this.btn.previousElementSibling
-    next = next && next.className.includes('tab') ? next : this.btn.nextElementSibling
+    const allTabs = Tab.allTabs
+    const thisIdx = allTabs.findIndex(tab => tab === this)
+    const next = allTabs[thisIdx -1] || allTabs[thisIdx +1]
 
     this.frame.remove()
-    this.btn.remove()
+    this.header.remove()
 
-    // close window if last, otherwise pass focus if currently selected
     if (!Tab.allTabs.length) window.close()
-    else if (Tab.selectedTab === this) next.classObj.select()
+    else if (Tab.selectedTab === this) next.select()
   }
 
   /**
-   * Select tab, update `FRAME` and signals event.
+   * Present and update tab references as selected.
    */
   select() {
-    // hide all frame instances but this one
-    for (const tab of Tab.allTabs) tab.frame.style.display = 'none'
-    this.frame.style.display = '' // making this the only visible tab count as focus
+    // hide all frame instances but this one (which count as focus)
+    Tab.allTabs.forEach(tab => tab.frame.style.display = 'none')
+    this.frame.style.display = ''
 
-    const tabSelected = document.getElementsByClassName('selected')[0]
-    if (tabSelected) tabSelected.classList.remove('selected')
-    this.btn.classList.add('selected')
+    if (Tab.selectedTab) Tab.selectedTab.header.select(false)
+    this.header.select()
 
     Tab.selectedTab = this
     FRAME = this.frame
@@ -128,28 +82,19 @@ export class Tab {
   }
 
   /**
-   * Rename tab. Add suffix on name repetion. 
+   * Tab header name.
+   * @returns {String}
+   */
+  get name() {
+    return this.header.name
+  }
+
+  /**
+   * Rename tab header.
    * @param {String} newName 
    */
   renameTab(newName) {
-    if (newName === this.name) return
-    
-    let nameIdx = 1, usedSuffixes = []
-    for (const tab of Tab.allTabs) {
-      if (tab.name === newName) usedSuffixes.push(tab.nameCount);
-    }
-
-    usedSuffixes.sort( (a, b) => a - b )
-    for (const idx of usedSuffixes) {
-      if (idx === nameIdx) nameIdx++
-      else break
-    }
-    
-    this.name = newName
-    this.nameCount = nameIdx
-    
-    const textFormat = `${newName} ${nameIdx > 1 ? nameIdx : ''}`
-    this.btn.label.textContent = this.btn.title = textFormat
+    this.header.rename(newName)
   }
 
   /** 
@@ -157,39 +102,7 @@ export class Tab {
    * @param {Boolean} isPlaying 
    */
   set playing(isPlaying) {
-    this.btn.playState.style.display = isPlaying ? '' : 'none'
-  }
-
-  /** 
-   * Setup mouse drag events for tab button element.
-   * @param {HTMLElement} btn Button element to set events.
-   */
-  static #setDrag(btn) {
-    const DRAG = this.#DRAG
-    // drag: set tab origin
-    btn.onmousedown = (e) => {
-      if (e.button === 0) DRAG.origin = btn
-    }
-    // drag: draw border relative to origin
-    btn.onmouseenter = (e) => {
-      if (!DRAG.origin || DRAG.origin === btn || !e.buttons) return
-      // identify origin position to destination
-      const tabBtns = [...document.getElementsByClassName('tab')]
-      const originIdx = tabBtns.indexOf(DRAG.origin)
-      const targetIdx = tabBtns.indexOf(btn)
-
-      DRAG.originOnLeft = originIdx < targetIdx
-      btn.style.borderLeft = DRAG.originOnLeft ? '' : 'solid'
-      btn.style.borderRight = DRAG.originOnLeft ? 'solid' : ''
-    }
-    // drag: clear borders on element exit 
-    btn.onmouseleave = () => btn.style.borderLeft = btn.style.borderRight = ''
-    // drag: change order
-    btn.onmouseup = (e) => {
-      if (!DRAG.origin || e.button !== 0 || DRAG.origin === btn) return
-      DRAG.originOnLeft ? btn.after(DRAG.origin) : btn.before(DRAG.origin)
-      btn.style.borderLeft = btn.style.borderRight = ''
-    }
+    this.header.setPlayingIcon(isPlaying)
   }
   
   /**
@@ -245,7 +158,7 @@ export class Tab {
     }, orgTab.name)
 
     // move duplicate behind currentTab
-    orgTab.btn.after(newTab.btn)
+    orgTab.header.after(newTab.header)
   }
 
   /**
@@ -253,28 +166,24 @@ export class Tab {
    * @param {Boolean} forward 
    */
   static cycleTabs(forward = true) {
-    const selected = Tab.selectedTab.btn
-    let next = forward ? selected.nextElementSibling : 
-    selected.previousElementSibling
-  
-    if (!next || !next.classList.contains('tab')) {
-      const tabs = document.getElementsByClassName('tab')
-      next = tabs[forward ? 0 : tabs.length - 1]
-    }
-  
-    next.click()
+    const selected = Tab.selectedTab
+
+    const allTabs = Tab.allTabs
+    const thisIdx = allTabs.findIndex(tab => tab === selected)
+
+    let nextIdx = forward ? (thisIdx +1) : (thisIdx -1)
+    if (nextIdx < 0) nextIdx = allTabs.length -1 // wrap around negatives
+
+    const nextTab = allTabs[nextIdx % allTabs.length]
+    nextTab.select()
   }
 
   /**
-   * Move tab element order.
+   * Move selected tab header order.
    * @param {Boolean} right 
    */
   static moveTab(right = true) {
-    const selected = Tab.selectedTab.btn
-    let next = right ? selected.nextElementSibling : selected.previousElementSibling
-    
-    if (!next || !next.classList.contains('tab')) return
-    right ? selected.before(next) : next.before(selected)
+    Tab.selectedTab.header.move(right)
   }
 
   /**
@@ -282,8 +191,8 @@ export class Tab {
    * @returns {Tab[]}
    */
   static get allTabs() {
-    const tabs = document.getElementsByClassName('tab')
-    return [...tabs].map(element => element.classObj)
+    const tabs = TabHeader.allHeaders
+    return tabs.map(header => header.tabInstance)
   }
 
   /**
@@ -291,11 +200,11 @@ export class Tab {
    * @param {Boolean} keepWindowOpen Either to keep the window open after closing all tabs.
    */
   static closeAll(keepWindowOpen = false) {
-
     for (const tab of Tab.allTabs) {
       tab.frame.remove()
-      tab.btn.remove()
+      tab.header.remove()
     }
+    
     // update Tab class properties 
     Tab.selectedTab = null
     FRAME = null
