@@ -1,7 +1,7 @@
 import { TabHeader } from "./tabHeader.js"
 import { Viewer } from "../components/viewer/viewer.js"
 import { Library } from "../components/library/library.js"
-import * as StatusBar from "../app/statusBar.js"
+import * as StatusBar from "./statusBar.js"
 
 
 /** 

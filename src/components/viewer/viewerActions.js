@@ -1,5 +1,5 @@
 import { ActionDB } from "../../actions/actionDB.js"
-import { FRAME } from "../../app/tabs.js"
+import { FRAME } from "../../tabs/tab.js"
 import { option, standardFilter } from "../../appCli/appCLI.js"
 import { AppNotifier } from "../../app/notifier.js"
 

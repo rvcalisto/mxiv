@@ -1,5 +1,5 @@
-import { AppNotifier } from "./notifier.js"
-import { FRAME, Tab } from "./tabs.js"
+import { AppNotifier } from "../app/notifier.js"
+import { FRAME, Tab } from "./tab.js"
 
 const storageEntry = 'profiles'
 

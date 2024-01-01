@@ -1,4 +1,4 @@
-import { FRAME } from "../app/tabs.js"
+import { FRAME } from "../tabs/tab.js"
 
 
 /**

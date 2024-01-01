@@ -1,5 +1,5 @@
 import { AcceleratorDB } from "../../actions/acceleratorDB.js";
-import { FRAME } from "../../app/tabs.js";
+import { FRAME } from "../../tabs/tab.js";
 
 
 /**

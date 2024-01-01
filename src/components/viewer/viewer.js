@@ -3,8 +3,8 @@ import { FileExplorer } from "./fileExplorer.js"
 import { View } from "../view/view.js"
 
 // for visibily toggle static methods
-import * as StatusBar from "../../app/statusBar.js"
-import { Tab } from "../../app/tabs.js"
+import * as StatusBar from "../../tabs/statusBar.js"
+import { Tab } from "../../tabs/tab.js"
 
 import "./viewerActions.js"
 import "./viewerAccelerators.js"

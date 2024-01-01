@@ -1,5 +1,5 @@
 /** Display frame info on status bar and update window title */
-import { Tab } from "./tabs.js"
+import { Tab } from "./tab.js"
 
 const barElement = document.getElementById('bar')
 const nameElement = document.getElementById('barName')

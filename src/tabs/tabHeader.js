@@ -1,6 +1,9 @@
-import { Tab } from "./tabs.js"
+import { Tab } from "./tab.js"
 
 
+/**
+ * Tab HTML header element.
+ */
 export class TabHeader {
 
   static #DRAG = {

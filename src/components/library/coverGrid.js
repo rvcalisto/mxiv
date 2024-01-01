@@ -1,6 +1,6 @@
 import { ItemList } from "../../app/itemList.js"
-import { Tab, FRAME } from "../../app/tabs.js";
-import * as StatusBar from "../../app/statusBar.js"
+import { Tab, FRAME } from "../../tabs/tab.js";
+import * as StatusBar from "../../tabs/statusBar.js"
 
 
 /**

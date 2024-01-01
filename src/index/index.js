@@ -1,4 +1,4 @@
-import { Tab, FRAME } from "../app/tabs.js"
+import { Tab, FRAME } from "../tabs/tab.js"
 import "./mediaSession.js"
 import "./baseActions.js"
 import "./baseAccelerators.js"
