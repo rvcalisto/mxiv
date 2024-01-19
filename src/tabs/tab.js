@@ -1,12 +1,15 @@
 import { TabHeader } from "./tabHeader.js"
-import { Viewer } from "../components/viewer/viewer.js"
-import { Library } from "../components/library/library.js"
 import * as StatusBar from "./statusBar.js"
+import { GenericFrame } from "./genericFrame.js"
+
+// concrete frames
+import "../components/viewer/viewer.js"
+import "../components/library/library.js"
 
 
 /** 
  * Returns reference to currently active frame component.
- * @type {Viewer|Library}
+ * @type {GenericFrame}
  */
 export var FRAME 
 
@@ -22,26 +25,41 @@ export class Tab {
   /**
    * Creates a new tab Instance.
    * @param {'viewer'|'library'} type Frame type.
-   * @param {(instance:(Viewer|Library))} func Callback, frame passed as first argument.
+   * @param {(instance:(GenericFrame))} func Callback, frame passed as first argument.
    * @param {String} name Tab name.
    */
   constructor(type = 'viewer', func = null, name = 'tab') {
     this.header = new TabHeader(this, name)
-
     this.frame = this.#createTabFrame(type)
+
     if (func) func(this.frame)
     this.select()
   }
 
   /** 
    * Append tab frame component to DOM.
-   * @returns {Viewer|Library}
+   * @returns {GenericFrame}
    */
   #createTabFrame(type) {
     const tabFrame = document.createElement(`${type}-component`)
-    tabFrame.tab = this // set reference to self in frame 
+    tabFrame.setAttribute('frametitle', this.header.name)
     tabFrame.style.display = 'none' // starts hidden
 
+    // observe changes in key attributes
+    const observer = new MutationObserver(mutations => {
+      for (const mutation of mutations) {
+        const attribute = mutation.attributeName
+
+        if (attribute === 'frametitle')
+          this.header.rename( this.frame.getAttribute('frametitle') )
+        if (attribute === 'playing')
+          this.header.setPlayingIcon( this.frame.getAttribute('playing') === 'true' )
+        if (attribute === 'updatestatus' && FRAME === this.frame)
+          StatusBar.updateStatus( this.frame.status() )
+      }
+    })
+
+    observer.observe(tabFrame, { attributes: true })
     document.getElementById('contents').appendChild(tabFrame)
 
     return tabFrame
@@ -78,15 +96,7 @@ export class Tab {
     FRAME = this.frame
     this.frame.focus()
 
-    StatusBar.updateStatus()
-  }
-
-  /**
-   * Tab header name.
-   * @returns {String}
-   */
-  get name() {
-    return this.header.name
+    StatusBar.updateStatus( this.frame.status() )
   }
 
   /**
@@ -94,15 +104,7 @@ export class Tab {
    * @param {String} newName 
    */
   renameTab(newName) {
-    this.header.rename(newName)
-  }
-
-  /** 
-   * Set tab play state and play button visibility.
-   * @param {Boolean} isPlaying 
-   */
-  set playing(isPlaying) {
-    this.header.setPlayingIcon(isPlaying)
+    this.frame.renameTab(newName)
   }
   
   /**
@@ -128,12 +130,14 @@ export class Tab {
    * Create default new tab.
    * - `viewer`: Start with FileExplorer open.
    * - `library`: Enforce single instance, focus tab.
-   * @param {'viewer'|'library'} type
+   * @param {String} type
    */
   static newTab(type = 'viewer') {
-    if (type === 'library') {
-      const library = this.allTabs.find(tab => tab.frame instanceof Library)
-      if (library) return library.select()
+    const frameClass = GenericFrame.getClass(type)
+    
+    if (!frameClass.allowDuplicate) {
+      const instance = this.allTabs.find(tab => tab.frame instanceof frameClass)
+      if (instance) return instance.select()
     }
 
     new Tab(type, frame => {
@@ -145,20 +149,23 @@ export class Tab {
    * Duplicate tab and state.
    */
   static duplicateTab() {
-    const orgTab = Tab.selectedTab, orgFrame = orgTab.frame
-    const frameType = orgFrame.constructor.name.toLowerCase()
+    const tab = Tab.selectedTab
+    const type = tab.frame.type
 
-    if (!orgFrame.duplicate) {
-      console.log(`${frameType} has no 'duplicate' method.`);
+    const frameClass = GenericFrame.getClass(type)
+    const frameState = frameClass.allowDuplicate ? tab.frame.getState() : null
+
+    if (!frameState) {
+      console.log(`${type}: duplicate disallowed or stateless.`);
       return
     }
     
-    const newTab = new Tab(frameType, async (frame) => {
-      orgFrame.duplicate(frame)
-    }, orgTab.name)
+    const newTab = new Tab(type, async (frame) => {
+      frame.restoreState(frameState)
+    }, tab.name)
 
     // move duplicate behind currentTab
-    orgTab.header.after(newTab.header)
+    tab.header.after(newTab.header)
   }
 
   /**
@@ -218,3 +225,11 @@ export class Tab {
 document.getElementById('newTab').onclick = function newTabListener() {
   Tab.newTab()
 }
+
+
+// toggle tab bar visibility on fullscreen
+let oldTabBarVisibility = Tab.tabBarIsVisible
+elecAPI.onFullscreen( function onFullscreenChange(e, isFullscreen) {
+  if (isFullscreen) oldTabBarVisibility = Tab.tabBarIsVisible
+  Tab.toggleTabBar(isFullscreen ? false : oldTabBarVisibility)
+})

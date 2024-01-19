@@ -61,6 +61,7 @@ function ipcHandlers() {
     const win = BrowserWindow.getFocusedWindow()
     const newState = !win.fullScreen
     win.setFullScreen(newState)
+    win.send('window:onFullscreen', newState)
     return newState
   })
 }

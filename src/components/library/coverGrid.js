@@ -1,6 +1,6 @@
 import { ItemList } from "../../app/itemList.js"
 import { Tab, FRAME } from "../../tabs/tab.js";
-import * as StatusBar from "../../tabs/statusBar.js"
+import { Library } from "./library.js";
 
 
 /**
@@ -23,9 +23,15 @@ export class CoverGrid {
 
   /** @type {ItemList} */
   #list
+
+  #library
   
+  /**
+   * @param {Library} library Host component.
+   */
   constructor(library) {
     this.#list = library.shadowRoot.getElementById('library')
+    this.#library = library
     Cover.coverGrid = this
   }
 
@@ -86,7 +92,7 @@ export class CoverGrid {
       if (lastSelected) this.selectCover(lastSelected)
     }
 
-    StatusBar.updateStatus()
+    this.#library.refreshStatus()
   }
 
   /**
@@ -104,14 +110,44 @@ export class CoverGrid {
     this.drawCovers()
   }
 
-  selectCover(cover) {
-    this.#list.selectIntoFocus(cover)
-    CoverGrid.selection = cover
+  /**
+   * Select cover into focus and remember selection. 
+   * @param {Cover} cover 
+   */
+  selectCover(cover, keepOpen = false) {
+    if (CoverGrid.selection !== cover ) {
+      this.#list.selectIntoFocus(cover)
+      CoverGrid.selection = cover
+      return
+    }
+
+    const libraryTab = Tab.selectedTab
+    if (!keepOpen) libraryTab.close()
+    
+    new Tab('viewer', (v) => v.open(cover.bookPath) )
   }
 
-  openCoverBook(newTab = false, keepOpen = false) {
+  /**
+   * Delist cover and remove it from library.
+   * @param {Cover} cover 
+   */
+  removeCover(cover) {
+    elecAPI.libAPI.removeFromLibrary(cover.bookPath)
+
+    if (CoverGrid.selection === cover) this.nextCoverHorizontal()
+    cover.remove()
+
+    CoverGrid.dirtyCache = true
+    this.#library.refreshStatus()
+  }
+
+  /**
+   * Open book in Viewer tab.
+   * @param {false} keepOpen Either to keep Library open.
+   */
+  openCoverBook(keepOpen = false) {
     const selectedBook = CoverGrid.selection
-    if (selectedBook) selectedBook.select(newTab, keepOpen)
+    if (selectedBook) this.selectCover(selectedBook, keepOpen)
   }
 
   nextCoverHorizontal(right = true) {
@@ -143,6 +179,9 @@ export class CoverGrid {
 }
 
 
+/**
+ * Library cover object.
+ */
 class Cover extends HTMLElement {
 
   static tagName = 'cover-element'
@@ -170,12 +209,12 @@ class Cover extends HTMLElement {
     delBtn.title = 'delist book'
     delBtn.onclick = (e) => {
       e.stopImmediatePropagation()
-      this.removeBook()
+      Cover.coverGrid.removeCover(this)
     }
     
     this.style.backgroundImage = `url(${this.coverURL})`
-    this.onclick = () => this.select(true)
-    this.onauxclick = () => this.select(true, true)
+    this.onclick = () => Cover.coverGrid.selectCover(this)
+    this.onauxclick = () => Cover.coverGrid.selectCover(this, true)
 
     this.append(title, delBtn)
   }
@@ -197,36 +236,6 @@ class Cover extends HTMLElement {
     cover.coverURL = coverURL
 
     return cover
-  }
-
-  /**
-   * Focus cover if unselected, opens if already selected.
-   * @param {Boolean} newTab Either to open bookPath in a new tab.
-   * @param {Boolean} keepOpen Either to close library window after open.
-   */
-  select(newTab = false, keepOpen = false) {
-    if (!this.classList.contains('selected')) {
-      return Cover.coverGrid.selectCover(this)
-    }
-
-    const libraryTab = Tab.selectedTab
-    if (!keepOpen) libraryTab.close()
-    
-    if (newTab) new Tab('viewer', (v) => v.open(this.bookPath))
-    else FRAME.open(this.bookPath)
-  }
-  
-  /**
-   * Delist cover and remove entry from library.
-   */
-  removeBook() {
-    elecAPI.libAPI.removeFromLibrary(this.bookPath)
-
-    if (CoverGrid.selection === this) Cover.coverGrid.nextCoverHorizontal()
-    this.remove()
-
-    CoverGrid.dirtyCache = true
-    StatusBar.updateStatus()
   }
 }
 

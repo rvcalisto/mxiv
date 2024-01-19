@@ -1,3 +1,4 @@
+import { GenericFrame } from "../../tabs/genericFrame.js"
 import { CoverGrid } from "./coverGrid.js"
 import "./libraryActions.js"
 import "./libraryAccelerators.js"
@@ -6,9 +7,10 @@ import { AppNotifier } from "../../app/notifier.js"
 /**
  * Composed book and archive library.
  */
-export class Library extends HTMLElement {
+export class Library extends GenericFrame {
 
   static tagName = 'library-component'
+  static allowDuplicate = false
 
   constructor() {
     super()
@@ -29,15 +31,12 @@ export class Library extends HTMLElement {
     this.syncProgessNotifier = new ProgressNotifier(this)
     this.coverGrid = new CoverGrid(this)
 
-    this.tab.renameTab('Library')
+    this.renameTab('Library')
     this.#initEvents()
   }
 
-  /** Allow component to be stored and restored. */
-  storeState() {}
-
   /*** Status bar object implementation. */
-  barStatus() {
+  status() {
     return {
       title: 'Library',
       infoLeft: 'Library',

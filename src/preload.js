@@ -27,5 +27,6 @@ contextBridge.exposeInMainWorld('elecAPI', {
 
   // app window
   newWindow: () => ipcRenderer.invoke('window:new'), // new window instance [commands.js]
-  toggleFullscreen: () => ipcRenderer.invoke('window:fullscreen') // [viewer.js, commands.js]
+  toggleFullscreen: () => ipcRenderer.invoke('window:fullscreen'), // [viewer.js, commands.js]
+  onFullscreen: (isFullscreen) => ipcRenderer.on('window:onFullscreen', isFullscreen),
 })

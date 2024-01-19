@@ -152,7 +152,6 @@ export const ActionDB = new class _ActionDB {
    * @returns {Actions} 
    */
   get currentFrameActions() {
-    const currentComponent = FRAME.constructor.name.toLowerCase()
-    return this.#collection[`${currentComponent}-all`]
+    return this.#collection[`${FRAME.type}-all`]
   }
 }

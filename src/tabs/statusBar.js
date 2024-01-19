@@ -1,14 +1,20 @@
-/** Display frame info on status bar and update window title */
-import { Tab } from "./tab.js"
+// Display frame status and update window title.
 
-const barElement = document.getElementById('bar')
-const nameElement = document.getElementById('barName')
-const infoElement = document.getElementById('barInfo')
+/**
+ * Application name.
+ */
 const titleSuffix = 'MXIV'
 
-/** Either status bar is visible.
- * @type {Boolean} */
+/** 
+ * Either status bar is visible.
+ * @type {Boolean} 
+ */
 export let visibility = true
+
+/**
+ * Old visibility value before fullscreen.
+ */
+let oldVisibility = visibility
 
 
 /**
@@ -18,28 +24,40 @@ export let visibility = true
 export function toggle(force) {
   if (force === undefined) force = !visibility
   visibility = force
+
+  const barElement = document.getElementById('bar')
   barElement.style.fontSize = force ? '' : '0px' // smooth animation
 }
 
+/**
+ * @typedef StatusObjectType
+ * @property {String} title Title to display on application window.
+ * @property {String} infoLeft Information to display on the left.
+ * @property {String} infoRight Information to display on the right.
+ * @property {()=>} infoLeftFunc Function to run on right-click on the left.
+ */
 
 /**
  * Force update status info with current tab data.
+ * @param {StatusObjectType} statusObject 
  */
-export function updateStatus() {
-  const frameImplementsStatus = Tab.selectedTab.frame.barStatus
+export function updateStatus(statusObject) {
+  const { title, infoLeft, infoRight, infoLeftFunc } = statusObject
 
-  // implemented object, otherwise generic information
-  let frameStatusObj = frameImplementsStatus ? Tab.selectedTab.frame.barStatus() : {
-    title : Tab.selectedTab.frame.constructor.name,
-    infoLeft : Tab.selectedTab.frame.constructor.name,
-    infoRight : '',
-    infoLeftFunc : null
-  }
-
-  const { title, infoLeft, infoRight, infoLeftFunc } = frameStatusObj
   document.title = title ? `${title} — ${titleSuffix}` : titleSuffix
+
+  const nameElement = document.getElementById('barName')
   nameElement.title = infoLeft
   nameElement.textContent = infoLeft
+
+  const infoElement = document.getElementById('barInfo')
   infoElement.textContent = infoRight
   nameElement.oncontextmenu = infoLeftFunc
 }
+
+
+// toggle visibility on fullscreen
+elecAPI.onFullscreen( function onFullscreenChange(e, isFullscreen) {
+  if (isFullscreen) oldVisibility = visibility
+  toggle(isFullscreen ? false : oldVisibility)
+})

@@ -1,20 +1,18 @@
+import { GenericFrame } from "../../tabs/genericFrame.js"
 import { FileBook } from "./fileBook.js"
 import { FileExplorer } from "./fileExplorer.js"
 import { View } from "../view/view.js"
-
-// for visibily toggle static methods
-import * as StatusBar from "../../tabs/statusBar.js"
-import { Tab } from "../../tabs/tab.js"
 
 import "./viewerActions.js"
 import "./viewerAccelerators.js"
 import "./keyEventController.js"
 import { AppNotifier } from "../../app/notifier.js"
 
+
 /**
  * Composed File Explorer & Media Viewer component.
  */
-export class Viewer extends HTMLElement {
+export class Viewer extends GenericFrame {
 
   static tagName = 'viewer-component'
 
@@ -37,9 +35,6 @@ export class Viewer extends HTMLElement {
 
     /** @type {FileExplorer} */
     this.fileExplorer
-    
-    /** @type {Tab} Tab instance reference set by Tab before connectedCallback() */
-    this.tab
   }
 
 
@@ -65,20 +60,10 @@ export class Viewer extends HTMLElement {
     this.fileBook.closeBook()
   }
 
-  /**
-   * Tab method, allow duplication and preserve state. 
-   * @param {Viewer} newInstance 
-   */
-  async duplicate(newInstance) {
-    newInstance.restoreState( this.storeState() )
-  }
-
-  /**
-   * Tab method, store state persistence object.
-   */
-  storeState() {
+  /** @override */
+  getState() {
     return {
-      tabName: this.tab.name,
+      tabName: this.tabName,
 
       paths: this.openArgs,
 
@@ -93,14 +78,11 @@ export class Viewer extends HTMLElement {
     }
   }
 
-  /**
-   * Tab method, restore state.
-   * @param {} stateObj State object.
-   */
+  /** @override */
   async restoreState(stateObj) {
     // open path on file
     if (stateObj.paths.length) await this.open(...stateObj.paths)
-    if (stateObj.tabName) this.tab.renameTab(stateObj.tabName)
+    if (stateObj.tabName) this.renameTab(stateObj.tabName)
     
     // load media state
     this.viewComponent.state(stateObj.mediaState)
@@ -133,7 +115,7 @@ export class Viewer extends HTMLElement {
 
     // name tab path basenames, sorted for order-redundancy
     const basedirs = this.fileBook.paths.map(dir => dir.name)
-    this.tab.renameTab( String(basedirs) )
+    this.renameTab( String(basedirs) )
 
     this.gotoPage(startIdx)
     this.fileExplorer.reload()
@@ -163,7 +145,7 @@ export class Viewer extends HTMLElement {
     // new filter exclude currentFile, get new one
     if (this.fileBook.getIdxOf(currentFilePath) === -1) this.flipPage()
     // update status bar and reload fileExplorer
-    this.updateBar()
+    this.refreshStatus()
     this.fileExplorer.reload()
     AppNotifier.notify(fileCount > 0 ? `${fileCount} files matched` : 'clear filter')
   }
@@ -236,14 +218,14 @@ export class Viewer extends HTMLElement {
 
     const previousFilters = this.fileBook.filterQuery
     const paths = this.fileBook.paths.map(dir => dir.path)
-    const tabName = this.tab.name
+    const tabName = this.tabName
 
     // re-open current paths, starting by current-file
     AppNotifier.notify('reloading files...', 'fileReload')
     await this.open(currentFile.path, ...paths)
 
     // restore tab name and re-apply filter
-    this.tab.renameTab(tabName)
+    this.renameTab(tabName)
     if (previousFilters.length) this.filter(...previousFilters)
     AppNotifier.notify('files reloaded', 'fileReload')
   }
@@ -283,27 +265,18 @@ export class Viewer extends HTMLElement {
   }
 
   /**
-   * Toggle fullscreen using electron instead of requestFullscreen to avoid
-   * ESC reverting fullscreen and to take in accound every component that
-   * should still be handled separately (Tab bar. StatusBar, fileExplorer).
-   * Kinda messy, but works as intended.
+   * Toggle fullscreen and hide/show FileExplorer accordingly.
    */
   async toggleFullscreen() {
+    // using electron to keep components other than the target visible. 
     const isFullscreen = await elecAPI.toggleFullscreen()
     
-    // store previous state when going fullscreen
-    if (isFullscreen) this.wasVisibleBeforeFullscreen = {
-      statusBar: StatusBar.visibility,
-      tabBar: Tab.tabBarIsVisible,
-      fileExplorer: !this.fileExplorer.isHidden
+    if (isFullscreen) {
+      this.openFileExplorerBeforeFS = !this.fileExplorer.isHidden
+      await this.fileExplorer.togglePanel(false)
+      this.fileExplorer.blur()
     }
-    
-    // for previously visible components, toggle visibility accordingly
-    const { statusBar, tabBar, fileExplorer } = this.wasVisibleBeforeFullscreen
-    
-    if (statusBar) StatusBar.toggle(!isFullscreen)
-    if (tabBar) Tab.toggleTabBar(!isFullscreen)
-    if (fileExplorer) {
+    else if (this.openFileExplorerBeforeFS) {
       await this.fileExplorer.togglePanel(!isFullscreen)
       this.fileExplorer.blur()
     }
@@ -341,17 +314,16 @@ export class Viewer extends HTMLElement {
     })
 
     // view events
-    this.addEventListener('view:playing', (e) => this.tab.playing = e.detail)
+    this.addEventListener('view:playing', (e) => this.setFrameIsPlaying(e.detail))
     this.addEventListener('view:next', () => this.flipPage())
     this.addEventListener('view:random', () => this.gotoRandom())
     this.addEventListener('view:previous', () => this.flipPage(false))
-    this.addEventListener('view:mode', () => this.updateBar())
-    this.addEventListener('view:zoom', () => this.updateBar())
+    this.addEventListener('view:mode', () => this.refreshStatus())
+    this.addEventListener('view:zoom', () => this.refreshStatus())
     this.addEventListener('view:fullscreen', () => this.toggleFullscreen())
     this.addEventListener('view:loaded', () => {
-      // update title, status bar
-      // auto-scroll to start/end of page based on direction, sync playlist selection
-      this.updateBar()
+      // refresh status, auto-scroll to start/end of page based on direction
+      this.refreshStatus()
       this.viewComponent.scrollToEnd(!this.#lastFlipRight)
 
       // sync selection to viewer if in playlist modde
@@ -360,10 +332,8 @@ export class Viewer extends HTMLElement {
     })
   }
 
-  /**
-   * Tab method, returns status bar object.
-   */
-  barStatus() {
+  /** @override */
+  status() {
     const currentFile = this.fileBook.currentFile
     const pageIdx = this.fileBook.page, pageCount = this.fileBook.files.length
     const filters = this.fileBook.filterQuery
@@ -393,17 +363,7 @@ export class Viewer extends HTMLElement {
     return barObj
   }
 
-  /**
-   * Update status bar with new contextual info when selected.
-   */
-  updateBar() {
-    if (Tab.selectedTab.frame === this) StatusBar.updateStatus()
-  }
-
-  /**
-   * Tab method, toggles Viewer play state.
-   * @param {Boolean?} forceState Force play with `true` or pause with `false`.
-   */
+  /** @override */
   mediaPlayToggle(forceState) {
     const isImg = this.viewComponent.fileType === 'image'
 

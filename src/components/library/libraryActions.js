@@ -107,7 +107,7 @@ ActionDB.setComponentActions('library', {
       'open': {
         'desc': 'open currently selected book in-place or on a new tab',
         'run': (whichTab = 'inPlace') => {
-          Library.coverGrid.openCoverBook(true, whichTab === 'newTab')
+          Library.coverGrid.openCoverBook(whichTab === 'newTab')
         },
         'options': (query, allArgs) => allArgs.length < 2 ? [
           option('newTab', 'open book in a new tab'),

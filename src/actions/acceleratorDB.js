@@ -120,7 +120,6 @@ export const AcceleratorDB = new class _AcceleratorDB {
    * @returns {Accelerators}
    */
   get currentFrameAccelerator() {
-    const currentComponent = FRAME.constructor.name.toLowerCase()
-    return this.#acceleratorSets[`${currentComponent}-all`]
+    return this.#acceleratorSets[`${FRAME.type}-all`]
   }
 }

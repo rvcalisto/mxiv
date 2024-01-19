@@ -1,5 +1,6 @@
 import { AppNotifier } from "../app/notifier.js"
-import { FRAME, Tab } from "./tab.js"
+import { GenericFrame } from "./genericFrame.js"
+import { Tab } from "./tab.js"
 
 const storageEntry = 'profiles'
 
@@ -34,13 +35,17 @@ export function storeProfile(name) {
     tabs: []
   }
 
-  // for tab in order, store type & state if method exists
+  // store type and state per tab, in order, if allowed and implemented
   for (const tab of Tab.allTabs) {
-    if (!tab.frame.storeState) continue
+    const type = tab.frame.type
+    const allowProfiling = GenericFrame.getClass(type).allowProfiling
+    
+    const state = allowProfiling ? tab.frame.getState() : null
+    if (!state) continue
 
     newProfile.tabs.push({
-      type: tab.frame.constructor.name.toLowerCase(),
-      state: tab.frame.storeState()
+      type: type,
+      state: state
     })
   }
 
@@ -74,7 +79,7 @@ export function loadProfile(name, clearSession = true) {
     const { type, state } = tabStateObj
 
     new Tab(type, async (frame) => {
-      if (frame.restoreState) frame.restoreState(state)
+      frame.restoreState(state)
     })
   }
 }
