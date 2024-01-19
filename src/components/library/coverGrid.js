@@ -1,5 +1,5 @@
 import { ItemList } from "../../app/itemList.js"
-import { Tab, FRAME } from "../../tabs/tab.js";
+import { Tab } from "../../tabs/tab.js";
 import { Library } from "./library.js";
 
 
@@ -16,7 +16,7 @@ export class CoverGrid {
   /** @type {String[]} */
   static #sortedLibraryKeys = []
 
-  static dirtyCache = true
+  static #dirtyCache = true
 
   /** @type {Cover?} */
   static selection = null
@@ -24,7 +24,7 @@ export class CoverGrid {
   /** @type {ItemList} */
   #list
 
-  #library
+  #library; #collator
   
   /**
    * @param {Library} library Host component.
@@ -32,23 +32,20 @@ export class CoverGrid {
   constructor(library) {
     this.#list = library.shadowRoot.getElementById('library')
     this.#library = library
-    Cover.coverGrid = this
+    this.#collator = new Intl.Collator('en', { numeric: true })
   }
 
   /**
    * Read and store library items and order in cache.
    */
-  buildCache() {
+  #buildCache() {
     const localEntry = localStorage.getItem(CoverGrid.#libraryStorage)
     CoverGrid.#libraryCache = localEntry ? JSON.parse(localEntry) : {}
   
-    // console.time('sort library')
     CoverGrid.#sortedLibraryKeys = Object.keys(CoverGrid.#libraryCache)
-    const coll = new Intl.Collator('en', {numeric: true})
-    CoverGrid.#sortedLibraryKeys.sort((pathA, pathB) => coll.compare(pathA, pathB)) 
-    // console.timeEnd('sort library')
+    CoverGrid.#sortedLibraryKeys.sort( (pathA, pathB) => this.#collator.compare(pathA, pathB) ) 
   
-    CoverGrid.dirtyCache = false
+    CoverGrid.#dirtyCache = false
     console.log('Library cache (re)built.');
   }
 
@@ -57,7 +54,7 @@ export class CoverGrid {
    * @param {String[]?} queries Filter covers.
    */
   drawCovers(queries) {
-    if (CoverGrid.dirtyCache) this.buildCache()
+    if (CoverGrid.#dirtyCache) this.#buildCache()
 
     // all queries must match either path or a tag. Exclusive.
     const filterFunc = !queries ? undefined : (key) => {
@@ -82,7 +79,13 @@ export class CoverGrid {
     // console.time('populate library')
     this.#list.populate(CoverGrid.#sortedLibraryKeys, (key) => {
       const { name, path, coverPath, coverURL } = CoverGrid.#libraryCache[key]
-      return Cover.from(name, path, coverPath, coverURL)
+      const cover = Cover.from(name, path, coverPath, coverURL)
+      
+      cover.onclick = () => this.selectCover(cover)
+      cover.onauxclick = () => this.selectCover(cover, true)
+      cover.onClickRemove = () => this.removeCover(cover)
+
+      return cover
     }, filterFunc)
     // console.timeEnd('populate library')
 
@@ -106,13 +109,14 @@ export class CoverGrid {
    * Force build cache and draw covers.
    */
   reloadCovers() {
-    CoverGrid.dirtyCache = true
+    CoverGrid.#dirtyCache = true
     this.drawCovers()
   }
 
   /**
    * Select cover into focus and remember selection. 
-   * @param {Cover} cover 
+   * @param {Cover} cover
+   * @param {false} keepOpen Keep Library open after openning book.
    */
   selectCover(cover, keepOpen = false) {
     if (CoverGrid.selection !== cover ) {
@@ -121,9 +125,7 @@ export class CoverGrid {
       return
     }
 
-    const libraryTab = Tab.selectedTab
-    if (!keepOpen) libraryTab.close()
-    
+    if (!keepOpen) Tab.selectedTab.close()
     new Tab('viewer', (v) => v.open(cover.bookPath) )
   }
 
@@ -137,7 +139,7 @@ export class CoverGrid {
     if (CoverGrid.selection === cover) this.nextCoverHorizontal()
     cover.remove()
 
-    CoverGrid.dirtyCache = true
+    CoverGrid.#dirtyCache = true
     this.#library.refreshStatus()
   }
 
@@ -186,15 +188,19 @@ class Cover extends HTMLElement {
 
   static tagName = 'cover-element'
 
-  /** @type {CoverGrid} */
-  static coverGrid
-
   constructor() {
     super()
+
     this.bookName = ''
     this.bookPath = ''
     this.coverPath = ''
     this.coverURL = ''
+
+    /**
+     * Set behavior on 'remove' button click.
+     * @type {Function?}
+     */
+    this.onClickRemove
   }
 
   connectedCallback() {
@@ -202,21 +208,20 @@ class Cover extends HTMLElement {
     title.className = 'coverTitle'
     title.textContent = this.bookName
 
-    const delBtn = document.createElement('button')
-    delBtn.className = 'coverRemoveButton'
-    delBtn.setAttribute('icon', 'close')
-    delBtn.tabIndex = -1
-    delBtn.title = 'delist book'
-    delBtn.onclick = (e) => {
+    const removeBtn = document.createElement('button')
+    removeBtn.className = 'coverRemoveButton'
+    removeBtn.setAttribute('icon', 'close')
+    removeBtn.title = 'delist book'
+    removeBtn.tabIndex = -1
+
+    this.style.backgroundImage = `url(${this.coverURL})`
+    
+    removeBtn.onclick = (e) => {
       e.stopImmediatePropagation()
-      Cover.coverGrid.removeCover(this)
+      if (this.onClickRemove) this.onClickRemove()
     }
     
-    this.style.backgroundImage = `url(${this.coverURL})`
-    this.onclick = () => Cover.coverGrid.selectCover(this)
-    this.onauxclick = () => Cover.coverGrid.selectCover(this, true)
-
-    this.append(title, delBtn)
+    this.append(title, removeBtn)
   }
 
   /**

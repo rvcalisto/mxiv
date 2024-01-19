@@ -4,6 +4,7 @@ import "./libraryActions.js"
 import "./libraryAccelerators.js"
 import { AppNotifier } from "../../app/notifier.js"
 
+
 /**
  * Composed book and archive library.
  */
@@ -15,27 +16,25 @@ export class Library extends GenericFrame {
   constructor() {
     super()
 
-    // components
+    this.syncProgressNotifier
     this.watchlistPanel
-    this.syncProgessNotifier
     this.coverGrid
   }
 
   connectedCallback() {
-    const template = document.getElementById('libraryTemplate')
-    const fragment = template.content
+    const fragment = document.getElementById('libraryTemplate').content
     this.attachShadow({ mode: 'open' })
     this.shadowRoot.append( fragment.cloneNode(true) )
 
+    this.syncProgressNotifier = new ProgressNotifier(this)
     this.watchlistPanel = new WatchlistPanel(this)
-    this.syncProgessNotifier = new ProgressNotifier(this)
     this.coverGrid = new CoverGrid(this)
 
     this.renameTab('Library')
     this.#initEvents()
   }
 
-  /*** Status bar object implementation. */
+  /** @override */
   status() {
     return {
       title: 'Library',
@@ -54,7 +53,7 @@ export class Library extends GenericFrame {
     
     // prevent closing window while async population happens
     window.onbeforeunload = () => false
-    this.syncProgessNotifier.toggleVisibility()
+    this.syncProgressNotifier.toggleVisibility()
 
     // use keys for now as no recursive check is in place
     let addedPaths = 0
@@ -64,12 +63,11 @@ export class Library extends GenericFrame {
       this.coverGrid.reloadCovers() // repaint
     }
 
+    // hide ProgressNotifier allow to close window again
     AppNotifier.notify(`${addedPaths} new book(s) added`, 'syncToWatchlist')
-    this.syncProgessNotifier.toggleVisibility(false)
-    // allow to close window again
+    this.syncProgressNotifier.toggleVisibility(false)
     window.onbeforeunload = null
   }
-
 
   /**
    * add files to library without adding to watchlist.
@@ -95,14 +93,7 @@ export class Library extends GenericFrame {
     this.coverGrid.reloadCovers() // repaint
   }
 
-
   #initEvents() {
-
-    this.onresize = () => {
-      const selectedBook = CoverGrid.selection
-      if (selectedBook) selectedBook.scrollIntoView({ block:"nearest" })
-    }
-
     // open folder management
     const manageWatchlistBtn = this.shadowRoot.getElementById('watchBtn')
     manageWatchlistBtn.onclick = () => this.watchlistPanel.toggleVisibility()
@@ -112,10 +103,9 @@ export class Library extends GenericFrame {
     syncBtn.onclick = () => this.syncToWatchlist()
     
     // populate coverGrid and setup button events 
-    // (+timeout hack so focus doesn't get skipped as tab frame style.display: none -> '')
-    setTimeout(() => this.coverGrid.reloadCovers(), 0);
+    // [Workaround] Wait 0 so cover.focus() isn't ignored as frame becomes visible
+    setTimeout( () => this.coverGrid.reloadCovers(), 0 );
   }
-
 }
 
 
@@ -298,14 +288,9 @@ class WatchlistPanel {
  */
 class ProgressNotifier {
 
-  #overlay; #label; #defaultMsg; #bar; #componentRoot
+  #label; #bar; #overlay; #componentRoot; #defaultMsg = 'Loading'
 
   constructor(library) {
-    this.#overlay
-    this.#label
-    this.#bar
-    this.#defaultMsg = 'Loading'
-
     this.#componentRoot = library.shadowRoot
     this.#createElements()
   }
@@ -372,6 +357,6 @@ addEventListener('bookAdded', function onNewBook(ev) {
   const libraryComponent = document.getElementsByTagName(Library.tagName)[0]
   
   const { current, total, newPath } = ev.detail
-  libraryComponent.syncProgessNotifier.updateLabel(newPath)
-  libraryComponent.syncProgessNotifier.updateBar(current, total)
+  libraryComponent.syncProgressNotifier.updateLabel(newPath)
+  libraryComponent.syncProgressNotifier.updateBar(current, total)
 })
