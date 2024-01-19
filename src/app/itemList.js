@@ -167,7 +167,11 @@ export class ItemList extends HTMLElement {
     let count = 0
     for (const pageKey in this.#virtualPages) {
       const pageData = this.#virtualPages[pageKey]
-      count += pageData.items.length
+      if (pageData.unrendered) count += pageData.items.length
+      else {
+        const element = this.pageContainerDiv.querySelector(`[page='${pageKey}']`)
+        if (element) count += element.childElementCount // in case nodes were removed
+      }
     }
 
     return count
