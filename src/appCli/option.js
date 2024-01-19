@@ -93,7 +93,7 @@ function forgetFromHistory(hostOption) {
   element.textContent = 'forget'; // '✖️'
 
   element.onclick = (e) => {
-    AppCLI.clearCmdHistory(hostOption.name);
+    AppCLI.clearCmdHistory(hostOption.hint.name);
     hostOption.remove();
     
     AppCLI.toggle(true);
