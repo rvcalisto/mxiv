@@ -117,9 +117,9 @@ ActionDB.setComponentActions('library', {
       'delist': {
         'desc': 'delist currently selected book from library',
         'run': () => {
-          const hasSelection = CoverGrid.selection != null
-          if (hasSelection) CoverGrid.selection.removeBook()
-          AppNotifier.notify(hasSelection ? 'book delisted' : 'no book selected ', 'bookDelist')
+          const cover = CoverGrid.selection
+          if (cover) Library.coverGrid.removeCover(cover)
+          AppNotifier.notify(cover ? 'book delisted' : 'no book selected ', 'bookDelist')
         }
       }
     }
