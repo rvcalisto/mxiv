@@ -129,7 +129,6 @@ export class Tab {
   /**
    * Create default new tab.
    * - `viewer`: Start with FileExplorer open.
-   * - `library`: Enforce single instance, focus tab.
    * @param {String} type
    */
   static newTab(type = 'viewer') {

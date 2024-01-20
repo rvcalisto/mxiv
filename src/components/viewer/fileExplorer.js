@@ -18,12 +18,16 @@ export class FileExplorer extends HTMLElement {
   /** Item search input. @type {HTMLInputElement} */
   #search
 
+  #collator
+
   constructor() {
     super()
 
     /** Set upstream.
      * @type {import('./viewer.js').Viewer} */
     this.viewer
+
+    this.#collator = new Intl.Collator('en', { numeric: true })
 
     this.currentDir = '~/'
     this.upperDir = ''
@@ -35,10 +39,9 @@ export class FileExplorer extends HTMLElement {
   // called when tag appears in the DOM
   connectedCallback() {
     // attatch shadow root, append template
-    this.attachShadow({mode: 'open'})
-    const template = document.getElementById('fileExplorerTemplate')
-    const fragment = template.content
-    this.shadowRoot.append(fragment.cloneNode(true));
+    this.attachShadow({ mode: 'open' })
+    const fragment = document.getElementById('fileExplorerTemplate').content
+    this.shadowRoot.append( fragment.cloneNode(true) );
 
     // get properties
     this.#wrapper = this.shadowRoot.getElementById('wrapper')
@@ -119,13 +122,12 @@ export class FileExplorer extends HTMLElement {
 
     // update header elements
     this.#updateHeader('explorer', ls.upperDir.name, ls.target.name,
-    path, () => this.backOneFolder())
+    path, () => this.backOneFolder() )
   
     // sort first
-    const coll = new Intl.Collator('en', {numeric: true})
     for (const key of ['directories', 'archives', 'files']) {
-      ls[key].sort((fileA, fileB) =>
-        coll.compare(fileA.path, fileB.path)
+      ls[key].sort( (fileA, fileB) =>
+        this.#collator.compare(fileA.path, fileB.path)
       )
     }
 
@@ -149,8 +151,8 @@ export class FileExplorer extends HTMLElement {
   listFiles() {
     // update header elements
     const pathFileObjs = this.viewer.fileBook.paths
-    this.#updateHeader('playlist', 'playlist', pathFileObjs.map((i) => i.name),
-    pathFileObjs.map((i) => i.path), () => {})
+    this.#updateHeader('playlist', 'playlist', pathFileObjs.map(i => i.name),
+    pathFileObjs.map(i => i.path), () => {})
 
     // set mode, files and cache
     this.mode = 'playlist'
@@ -188,7 +190,7 @@ export class FileExplorer extends HTMLElement {
   /** Navigate list item selection. */
   navItems(down = 'down') {
     const element = this.#list.navItems(down === 'down')
-    if (element) element.scrollIntoView({block:"center"})
+    if (element) element.scrollIntoView({ block:"center" })
   }
 
   /** Invoke click() method for currently selected list item. */
@@ -210,7 +212,7 @@ export class FileExplorer extends HTMLElement {
   async reload() {
     // avoid unecessary reload for not initiated FileExplorer
     const pageContainer = this.#list.pageContainerDiv
-    if (this.isHidden && !pageContainer.childElementCount) return
+    if (!this.isVisible && !pageContainer.childElementCount) return
 
     // reverse search #itemTable and discover selection path
     const selection = pageContainer.getElementsByClassName('selected')[0]
@@ -246,9 +248,9 @@ export class FileExplorer extends HTMLElement {
     this.#list.populate(workingArr, (item) => this.#fileItem(item),
     (file) => {
       const fileIsDot = file.name[0] === '.', queryIsDot = query[0] === '.'
-      if (!query.trim()) return !fileIsDot
+      if ( !query.trim() ) return !fileIsDot
 
-      const match = file.name.toLowerCase().includes(query.toLowerCase())
+      const match = file.name.toLowerCase().includes( query.toLowerCase() )
       return fileIsDot ? match && queryIsDot : match
     })
   
@@ -282,15 +284,15 @@ export class FileExplorer extends HTMLElement {
       const searchFocus = this.shadowRoot.activeElement === this.#search
       if (searchFocus) return
 
-      const keyEvent = new CustomEvent('fileExplorerKeyEvent', {detail : e})
+      const keyEvent = new CustomEvent('fileExplorerKeyEvent', { detail : e })
       dispatchEvent(keyEvent)
     }
 
   }
 
-  /** Either host element is hidden (`display: none`). */
-  get isHidden() {
-    return this.style.display === 'none'
+  /** Either FileExplorer panel is visible.*/
+  get isVisible() {
+    return this.style.display === ''
   }
 
   /**
@@ -306,29 +308,28 @@ export class FileExplorer extends HTMLElement {
     { filter: 'blur(0px)' }], { duration: 150 })
 
     newMode === 'playlist' ? this.listFiles() : await this.listDirectory(this.currentDir)
-    if (this.isHidden) this.togglePanel(true)
+    if (!this.isVisible) this.togglePanel(true)
   }
 
   /**
-   * Expand/collapses panel.
+   * Expand/collapses panel. Toggle by default.
    * @param {Boolean?} show Set visibility state instead of toggle.
    * @param {Number} duration Hide/show animation duration (ms).
    * @returns {Promise<true>} Promise that resolves at animation completion.
    */
-  async togglePanel(show = this.isHidden, duration = 150) {
-    // if going to show a unpopulated panel, populate (first presentation)
-    const populated = this.mode === 'playlist' ? this.#playlistCache.length : this.#explorerCache.length
-    if (show && !populated) {
-      this.mode === 'playlist' ? this.listFiles() : await this.listDirectory(this.currentDir)
-      this.syncSelection()
-    }
+  async togglePanel(show = !this.isVisible, duration = 150) {
+    if (show === this.isVisible) return true // skip animation
 
-    // always sync selection for playlist
-    if (this.mode === 'playlist') this.syncSelection()
-    
-    // resolve on enf of animation 
-    return new Promise((resolve, reject) => {
+    // populate list on first presentation if not already
+    const isPlaylist = this.mode === 'playlist'
+    const populated = isPlaylist ? this.#playlistCache.length : this.#explorerCache.length
+    if (show && !populated) isPlaylist ? this.listFiles() : await this.listDirectory(this.currentDir)
+
+    // resolve on end of animation or instantly if state hasn't changed
+    return new Promise( (resolve, reject) => {
       this.style.display = ''
+      if ( show && (isPlaylist || !populated) ) this.syncSelection()
+
       this.animate([
         { width: '0px', minWidth: show ? '0px' : '' },
         { width: '0px', minWidth: show ? '' : '0px' }
@@ -336,7 +337,7 @@ export class FileExplorer extends HTMLElement {
         duration: duration
       }).onfinish = () => {
         this.style.display = show ? '' : 'none'
-        this.isHidden ? this.blur() : this.focus()
+        show ? this.focus() : this.blur()
         resolve(true)
       }
     })

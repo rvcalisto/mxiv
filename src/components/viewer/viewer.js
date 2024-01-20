@@ -73,7 +73,7 @@ export class Viewer extends GenericFrame {
       fileExplorer: {
         dir: this.fileExplorer.currentDir,
         mode: this.fileExplorer.mode,
-        show: !this.fileExplorer.isHidden
+        show: this.fileExplorer.isVisible
       },
     }
   }
@@ -272,11 +272,10 @@ export class Viewer extends GenericFrame {
     const isFullscreen = await elecAPI.toggleFullscreen()
     
     if (isFullscreen) {
-      this.openFileExplorerBeforeFS = !this.fileExplorer.isHidden
+      this.fileExplorerWasOpen = this.fileExplorer.isVisible
       await this.fileExplorer.togglePanel(false)
-      this.fileExplorer.blur()
     }
-    else if (this.openFileExplorerBeforeFS) {
+    else if (this.fileExplorerWasOpen) {
       await this.fileExplorer.togglePanel(!isFullscreen)
       this.fileExplorer.blur()
     }
@@ -328,7 +327,7 @@ export class Viewer extends GenericFrame {
 
       // sync selection to viewer if in playlist modde
       const fileExplorer = this.fileExplorer
-      if (!fileExplorer.isHidden && fileExplorer.mode === 'playlist') fileExplorer.syncSelection()
+      if (fileExplorer.isVisible && fileExplorer.mode === 'playlist') fileExplorer.syncSelection()
     })
   }
 
