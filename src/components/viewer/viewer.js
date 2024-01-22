@@ -18,13 +18,14 @@ export class Viewer extends GenericFrame {
 
   /** Display flow state, prevents unloaded page flips. */
   #loading = false
+  
   /** Last Page flip direction for auto-scroll. */
   #lastFlipRight = true
   
   constructor() {
     super()
 
-    /** @type {String[]} Currently loaded paths for state replication */
+    /** Currently loaded paths for state replication. @type {String[]} */
     this.openArgs = []
     
     /** @type {FileBook} */
@@ -52,7 +53,6 @@ export class Viewer extends GenericFrame {
     this.fileExplorer.viewer = this
 
     this.#initEvents()
-    console.log('new viewer tab, bookID:', this.fileBook.bookID);
   }
 
   // triggered on DOM disconect (tab closed and on quit)
@@ -123,7 +123,7 @@ export class Viewer extends GenericFrame {
 
   /**
    * Find and present file with matching filepath substrings. 
-   * @param {...String} queries File name or substring to find.
+   * @param {String[]} queries File name or substring to find.
    */
   find(...queries) {
     const idx = this.fileBook.getIdxOf(...queries)
@@ -133,21 +133,21 @@ export class Viewer extends GenericFrame {
 
   /**
    * Filter files by partial words and tags.
-   * @param  {...String} queries Tags and substrings to filter for.
+   * @param  {String[]} queries Tags and substrings to filter for.
    */
   filter(...queries) {
     const currentFilePath = this.fileBook.currentFile.path
-    const fileCount = this.fileBook.filter(...queries)
 
-    // if nothing changed, exit
-    if (fileCount === 0) return AppNotifier.notify('no matches')
+    const matches = this.fileBook.filter(...queries)
+    if (matches === 0) return AppNotifier.notify('no matches')
 
-    // new filter exclude currentFile, get new one
-    if (this.fileBook.getIdxOf(currentFilePath) === -1) this.flipPage()
+    // new filter exclude currentFile, refresh
+    if (this.fileBook.getIdxOf(currentFilePath) < 0) this.gotoPage(this.fileBook.page)
+
     // update status bar and reload fileExplorer
     this.refreshStatus()
     this.fileExplorer.reload()
-    AppNotifier.notify(fileCount > 0 ? `${fileCount} files matched` : 'clear filter')
+    AppNotifier.notify(matches > 0 ? `${matches} files matched` : 'clear filter')
   }
 
   /**
@@ -164,7 +164,6 @@ export class Viewer extends GenericFrame {
    * @param {Number} pageIdx
    */
   async gotoPage(pageIdx) {
-    // show empty view, trigger signal
     if (!this.fileBook.files.length) {
       this.viewComponent.display(null)
       return
