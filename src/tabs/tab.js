@@ -227,8 +227,8 @@ document.getElementById('newTab').onclick = function newTabListener() {
 
 
 // toggle tab bar visibility on fullscreen
-let oldTabBarVisibility = Tab.headerBarVisible
+let headerBarWasVisible = Tab.headerBarVisible
 elecAPI.onFullscreen( function onFullscreenChange(e, isFullscreen) {
-  if (isFullscreen) oldTabBarVisibility = Tab.headerBarVisible
-  Tab.toggleHeaderBar(isFullscreen ? false : oldTabBarVisibility)
+  if (isFullscreen) headerBarWasVisible = Tab.headerBarVisible
+  Tab.toggleHeaderBar(isFullscreen ? false : headerBarWasVisible)
 })
