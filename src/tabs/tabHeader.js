@@ -177,4 +177,28 @@ export class TabHeader {
     const elements = document.getElementsByClassName('tab')
     return [...elements].map(element => element.classObj)
   }
+
+  /**
+   * Get Header Bar visibility.
+   */
+  static get headerBarVisible() {
+    return document.getElementById('tabs').style.display === ''
+  }
+  
+  /**
+   * Toggle Header Bar visibility.
+   * @param {Boolean?} show Either to force visibility on or off.
+   */
+  static toggleHeaderBar(show) {
+    if (show == null) show = !this.headerBarVisible
+    document.getElementById('tabs').style.display = show ? '' : 'none'
+  }
 }
+
+
+// toggle tab bar visibility on fullscreen
+let headerBarWasVisible = TabHeader.headerBarVisible
+elecAPI.onFullscreen( function onFullscreenChange(e, isFullscreen) {
+  if (isFullscreen) headerBarWasVisible = TabHeader.headerBarVisible
+  TabHeader.toggleHeaderBar(isFullscreen ? false : headerBarWasVisible)
+})

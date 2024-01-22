@@ -140,7 +140,7 @@ export class Tab {
   }
 
   /**
-   * Create default new tab.
+   * Create new tab of given type.
    * - `viewer`: Start with FileExplorer open.
    * @param {String} type
    */
@@ -200,22 +200,11 @@ export class Tab {
   }
 
   /**
-   * Get tab Header Bar visibility.
-   */
-  static get headerBarVisible() {
-    const tabsBar = document.getElementById('tabs')
-    return tabsBar.style.display == ''
-  }
-  
-  /**
    * Toggle tab Header Bar visibility.
    * @param {Boolean?} show Either to force visibility on or off.
    */
   static toggleHeaderBar(show) {
-    const tabsBar = document.getElementById('tabs')
-    
-    if (show === undefined) show = tabsBar.style.display == 'none'
-    tabsBar.style.display = show ? '' : 'none'
+    TabHeader.toggleHeaderBar(show)
   }
 }
 
@@ -224,11 +213,3 @@ export class Tab {
 document.getElementById('newTab').onclick = function newTabListener() {
   Tab.newTab()
 }
-
-
-// toggle tab bar visibility on fullscreen
-let headerBarWasVisible = Tab.headerBarVisible
-elecAPI.onFullscreen( function onFullscreenChange(e, isFullscreen) {
-  if (isFullscreen) headerBarWasVisible = Tab.headerBarVisible
-  Tab.toggleHeaderBar(isFullscreen ? false : headerBarWasVisible)
-})
