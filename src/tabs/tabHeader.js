@@ -58,6 +58,7 @@ export class TabHeader {
 
     // set tab events
     tabBtn.onclick = () => this.tabInstance.select()
+    tabBtn.onauxclick = () => this.tabInstance.duplicate()
     tabBtn.oncontextmenu = () => this.tabInstance.close()
     TabHeader.#setDrag(tabBtn)
 
