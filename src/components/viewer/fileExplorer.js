@@ -9,34 +9,59 @@ export class FileExplorer extends HTMLElement {
 
   static tagName = 'file-explorer'
   
-  #playlistCache = []; #explorerCache = [] // cache for search
+  /**
+   * Last populated object list cache.
+   * @type {import("../../APIs/fileAPI.js").FileObject[]}
+   */
+  #explorerCache = []
 
-  /** Enclosing element. @type {HTMLElement} */
-  #wrapper
-  /** File item list. @type {ItemList} */
+  /**
+   * Prevent empty list if first presentation is in playlist mode.
+   */
+  #playlistSynced = false
+
+  /**
+   * File item list.
+   * @type {ItemList}
+   */
   #list
-  /** Item search input. @type {HTMLInputElement} */
+
+  /**
+   * File search prompt.
+   * @type {HTMLInputElement}
+   */
   #search
 
-  #collator
+  /**
+   * Parent diretory path for Explorer mode.
+   * @type {String}
+   */
+  #upperDir = ''
+
+  #collator = new Intl.Collator('en', { numeric: true })
 
   constructor() {
     super()
 
-    /** Set upstream.
-     * @type {import('./viewer.js').Viewer} */
+    /** 
+     * FileBook host, set upstream.
+     * @type {import('./viewer.js').Viewer}
+     */
     this.viewer
 
-    this.#collator = new Intl.Collator('en', { numeric: true })
+    /**
+     * Presentation mode.
+     * @type {'explorer'|'playlist'}
+     */
+    this.mode = 'explorer'
 
+    /**
+     * Current directory path for Explorer mode.
+     * @type {String}
+     */
     this.currentDir = '~/'
-    this.upperDir = ''
-
-    /** @type {'explorer'|'playlist'} */
-    this.mode = 'explorer' // listing loaded files? else explorer mode
   }
 
-  // called when tag appears in the DOM
   connectedCallback() {
     // attatch shadow root, append template
     this.attachShadow({ mode: 'open' })
@@ -44,10 +69,7 @@ export class FileExplorer extends HTMLElement {
     this.shadowRoot.append( fragment.cloneNode(true) );
 
     // get properties
-    this.#wrapper = this.shadowRoot.getElementById('wrapper')
     this.#search = this.shadowRoot.getElementById('search')
-
-    /** @type {ItemList} */
     this.#list = this.shadowRoot.getElementById('itemList')
 
     // init input listeners and hide element
@@ -62,24 +84,21 @@ export class FileExplorer extends HTMLElement {
    */
   #fileItem(file) {
     const item = document.createElement('p')
-    item.textContent = file.name
-    item.className = 'itemFont item'
     item.setAttribute('icon', file.category)
+    item.className = 'itemFont item'
+    item.textContent = file.name
     item.filePath = file.path // to preserve selection on reload()
 
     item.onclick = () => {
       this.#list.selectIntoFocus(item)
 
-      // change directory and return
-      if (file.category === 'folder') {
-        this.listDirectory(file.path)
-        return
+      // list directory or open media
+      if (file.category === 'folder') this.listDirectory(file.path)
+      else {
+        this.dispatchEvent( new CustomEvent('fileExplorer:open', {
+          composed: true, detail: file.path 
+        }))
       }
-  
-      // signal filepath in custom event
-      const event = new CustomEvent('fileExplorer:open', 
-      { composed: true, detail: file.path  })
-      this.dispatchEvent(event)
     }
 
     return item
@@ -91,7 +110,7 @@ export class FileExplorer extends HTMLElement {
    * @param {String} secondaryLabel De-empasized label.
    * @param {String} primaryLabel Emphasized label.
    * @param {String} title Text on mouse hover.
-   * @param {()=>{}} clickFunc On click function.
+   * @param {Function?} clickFunc On click function.
    */
   #updateHeader(icon, secondaryLabel, primaryLabel, title, clickFunc) {
     const parentLabel = this.shadowRoot.getElementById('parDir')
@@ -101,132 +120,130 @@ export class FileExplorer extends HTMLElement {
     currentLabel.textContent = primaryLabel
 
     const header = this.shadowRoot.getElementById('dirBar')
-    header.title = title
-    header.onclick = clickFunc
     header.setAttribute('icon', icon)
+    header.onclick = clickFunc
+    header.title = title
   }
 
-  /** List files in given path in explorer mode. */
+  /** 
+   * List files in given path in explorer mode.
+   */
   async listDirectory(path) {
-    const ls = await elecAPI.fileAPI.lsAsync(path)
-    const lsLength = ls.directories.length + ls.archives.length + ls.files.length
-
-    if (!lsLength) {
-      AppNotifier.notify(`${ls.target.name}: no supported files to list`, 'listDirectory')
+    /** @type {import("../../APIs/fileAPI.js").LSObject} */
+    const lsObj = await elecAPI.fileAPI.lsAsync(path)
+    const count = lsObj.directories.length + lsObj.archives.length + lsObj.files.length
+    if (count < 1) {
+      AppNotifier.notify(`${lsObj.target.name}: no supported files to list`, 'listDirectory')
       return
     }
 
-    // else, list directory files
-    this.currentDir = ls.target.path
-    this.upperDir = ls.upperDir.path
+    this.currentDir = lsObj.target.path
+    this.#upperDir = lsObj.upperDir.path
 
     // update header elements
-    this.#updateHeader('explorer', ls.upperDir.name, ls.target.name,
-    path, () => this.backOneFolder() )
+    this.#updateHeader('explorer', lsObj.upperDir.name, 
+      lsObj.target.name, path, () => this.backOneFolder() )
   
-    // sort first
+    // sort values
     for (const key of ['directories', 'archives', 'files']) {
-      ls[key].sort( (fileA, fileB) =>
+      lsObj[key].sort( (fileA, fileB) =>
         this.#collator.compare(fileA.path, fileB.path)
       )
     }
 
-    // set mode, files and cache
+    // order files (directories, archives & files), cache and populate list
     this.mode = 'explorer'
-    const files = ls.directories.concat(ls.archives, ls.files)
-    this.#explorerCache = files
-    
-    // populate in order (directories, archives & files)
-    this.#list.populate(files, (item) => this.#fileItem(item),
-    (file) => file.name[0] !== '.')
+    this.#explorerCache = lsObj.directories.concat(lsObj.archives, lsObj.files)
+    this.#list.populate(this.#explorerCache, 
+      item => this.#fileItem(item), file => file.name[0] !== '.')
 
-    // focus first item [can not be listed (dot files)]
-    this.#list.navItems()
-
-    // clear search
+    // clear search, focus first item
     this.toggleSearch(false)
+    this.#list.navItems()
   }
 
-  /** List files from FileBook in playlist mode. */
+  /**
+   * List files from FileBook in playlist mode.
+   */
   listFiles() {
     // update header elements
-    const pathFileObjs = this.viewer.fileBook.paths
-    this.#updateHeader('playlist', 'playlist', pathFileObjs.map(i => i.name),
-    pathFileObjs.map(i => i.path), () => {})
+    const pathFiles = this.viewer.fileBook.paths
+    this.#updateHeader('playlist', 'playlist', 
+      pathFiles.map(i => i.name), pathFiles.map(i => i.path), null)
 
-    // set mode, files and cache
+    // draw playlist
     this.mode = 'playlist'
-    const files = this.viewer.fileBook.files
-    this.#playlistCache = files
-    
-    // draw playlist, items will be tracked internally
-    this.#list.populate(files, (item) => this.#fileItem(item),
-    (file) => file.name[0] !== '.')
+    this.#playlistSynced = true
+    this.#list.populate(this.viewer.fileBook.files, 
+      item => this.#fileItem(item), file => file.name[0] !== '.')
 
     // try selecting current file, else focus first item
     if ( !this.syncSelection() ) this.#list.navItems()
-  
-    // clear search
     this.toggleSearch(false)
   }
 
   /**
-   * Sync item list selection with current fileBook file.
+   * Sync selection with fileBook current page file.
    * @param {String} filePath Custom filepath to select instead.
    * @returns {Boolean} Success.
    */
   syncSelection(filePath) {
     const currentFile = this.viewer.fileBook.currentFile
-    // prefer given filePath, else use currentFile's. Use empty if undefined.
-    filePath = filePath ? filePath : currentFile ? currentFile.path : ''
+    filePath = filePath || currentFile?.path || ''
+    
     const item = this.#list.findItemElement(item => filePath === item.path)
-
     if (!item) return false
-    // else
+  
     this.#list.selectIntoFocus(item)
     return true
   }
 
-  /** Navigate list item selection. */
+  /**
+   * Navigate list item selection.
+   */
   navItems(down = 'down') {
     const element = this.#list.navItems(down === 'down')
     if (element) element.scrollIntoView({ block:"center" })
   }
 
-  /** Invoke click() method for currently selected list item. */
+  /**
+   * View selected media file or open selected folder.
+   */
   select() {
     const selected = this.#list.pageContainerDiv.getElementsByClassName('selected')[0]
     if (selected) selected.click()
   }
   
-  /** Goes to parent folder. Ignore if in playlist mode. */
+  /**
+   * Goes to parent folder when in Explorer mode.
+   */
   async backOneFolder() {
     if (this.mode === 'playlist') return
 
     const previousDir = this.currentDir
-    await this.listDirectory(this.upperDir)
+    await this.listDirectory(this.#upperDir)
     this.syncSelection(previousDir)
   }
 
-  /** Re-run mode procedure while keeping state. */
+  /**
+   * Reload file listings while keeping selection.
+   */
   async reload() {
-    // avoid unecessary reload for not initiated FileExplorer
+    // avoid unecessary reload for uninitialized FileExplorer
     const pageContainer = this.#list.pageContainerDiv
     if (!this.isVisible && !pageContainer.childElementCount) return
 
-    // reverse search #itemTable and discover selection path
-    const selection = pageContainer.getElementsByClassName('selected')[0]
-    const syncTo = selection ? selection.filePath : undefined
+    const path = pageContainer.getElementsByClassName('selected')[0]?.filePath
     
-    // rebuild #list
     if (this.mode === 'playlist') this.listFiles()
     else await this.listDirectory(this.currentDir)
 
-    // restore selection if any
-    if (syncTo) this.syncSelection(syncTo)
+    if (path) this.syncSelection(path)
   }
 
-  /** Toggle search visibility. */
+  /**
+   * Toggle search prompt on/off.
+   */
   toggleSearch(show = true) {
     if (show) {
       this.#search.style.display = ''
@@ -234,18 +251,19 @@ export class FileExplorer extends HTMLElement {
     } else {
       this.#search.value = ''
       this.#search.style.display = 'none'
-
       if (this.mode === 'playlist') this.syncSelection()
     }
   }
 
-  /** Filter list items based on search query. */
+  /**
+   * Filter list items based on search query.
+   */
   #searchQuery() {
-    const workingArr = this.mode === 'playlist' ? this.#playlistCache : this.#explorerCache
+    const workList = this.mode === 'playlist' ? this.viewer.fileBook.files : this.#explorerCache
     const query = this.#search.value
     
     // filter files
-    this.#list.populate(workingArr, (item) => this.#fileItem(item),
+    this.#list.populate(workList, (item) => this.#fileItem(item),
     (file) => {
       const fileIsDot = file.name[0] === '.', queryIsDot = query[0] === '.'
       if ( !query.trim() ) return !fileIsDot
@@ -259,18 +277,16 @@ export class FileExplorer extends HTMLElement {
   }
 
   #initEvents() {
-    // focus visual queue
+    // opacity on focus visual queue, search on input
     this.onblur = () => this.style.opacity = .6
     this.onfocus = () => this.style.opacity = 1
-
-    // search items
     this.#search.oninput = () => this.#searchQuery()
     
-    // remove focus / clear search
+    // remove focus from, close search prompt
     this.#search.onkeydown = (e) => {
       if (e.key === 'Enter' || e.key === 'Escape' || e.key === 'Tab') {
         e.preventDefault()
-        !this.#search.value ? this.toggleSearch(false) : this.#search.focus()
+        if (!this.#search.value) this.toggleSearch(false)
         this.focus()
       }
 
@@ -278,19 +294,17 @@ export class FileExplorer extends HTMLElement {
       if (e.key === 'Backspace' && !this.#search.value.length) this.toggleSearch(false)
     }
     
-    // capture unhandled keys on search focus, bubble otherwise
+    // bubble events as long as search prompt isn't focused
     this.onkeydown = (e) => {
       e.stopImmediatePropagation()
-      const searchFocus = this.shadowRoot.activeElement === this.#search
-      if (searchFocus) return
-
-      const keyEvent = new CustomEvent('fileExplorerKeyEvent', { detail : e })
-      dispatchEvent(keyEvent)
+      if (this.shadowRoot.activeElement !== this.#search)
+        dispatchEvent( new CustomEvent('fileExplorerKeyEvent', { detail : e }) )
     }
-
   }
 
-  /** Either FileExplorer panel is visible.*/
+  /**
+   * Either FileExplorer panel is visible.
+   */
   get isVisible() {
     return this.style.display === ''
   }
@@ -304,8 +318,7 @@ export class FileExplorer extends HTMLElement {
     if (newMode === this.mode) return this.togglePanel()
     if (!newMode) newMode = this.mode === 'explorer' ? 'playlist' : 'explorer'
 
-    this.#wrapper.animate([{ filter: 'blur(10px)' }, 
-    { filter: 'blur(0px)' }], { duration: 150 })
+    this.animate([{ filter: 'blur(10px)' }, { filter: 'blur(0px)' }], { duration: 150 })
 
     newMode === 'playlist' ? this.listFiles() : await this.listDirectory(this.currentDir)
     if (!this.isVisible) this.togglePanel(true)
@@ -322,7 +335,7 @@ export class FileExplorer extends HTMLElement {
 
     // populate list on first presentation if not already
     const isPlaylist = this.mode === 'playlist'
-    const populated = isPlaylist ? this.#playlistCache.length : this.#explorerCache.length
+    const populated = isPlaylist ? this.#playlistSynced : this.#explorerCache.length
     if (show && !populated) isPlaylist ? this.listFiles() : await this.listDirectory(this.currentDir)
 
     // resolve on end of animation or instantly if state hasn't changed
