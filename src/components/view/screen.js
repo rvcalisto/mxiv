@@ -3,11 +3,15 @@
  */
 export class ViewScreen {
 
-  /** Parent View component.
-   * @type {import('./view.js').View} */
+  /**
+   * Host View component.
+   * @type {import('./view.js').View}
+   */
   #view
 
-  /** Element displayed on start. @type {HTMLElement} */
+  /**
+   * Element displayed on start. @type {HTMLElement}
+   */
   #emptyView
 
   /**
@@ -44,7 +48,6 @@ export class ViewScreen {
    * @returns {Promise<Boolean>} Display success.
    */
   async displayImage(filePath) {
-
     // preload content, fail gracefully on error
     const img = document.createElement('img')
     img.src = filePath
@@ -74,7 +77,6 @@ export class ViewScreen {
    * @returns {Promise<Boolean>} Display success.
    */
   async displayVideo(filePath) {
-
     // preload content, fail gracefully on error
     const vid = document.createElement('video')
     vid.src = filePath

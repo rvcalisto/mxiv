@@ -3,25 +3,33 @@
  */
 export class Slideshow {
 
-  /** Parent View component.
-   * @type {import('./view.js').View} */
+  /**
+   * Host View component.
+   * @type {import('./view.js').View}
+   */
   #view
 
-  /** File skip timeout.
-   * @type {Number?} */
+  /**
+   * File skip timeout.
+   * @type {Number?}
+   */
   #timer = null
 
-  /** Seconds to wait between slides. */
+  /**
+   * Seconds to wait between slides.
+   */
   #delay = 1
 
   /**
    * @param {import('./view.js').View} view View instance.
    */
   constructor(view) {
-    this.#view = view
-
-    /** Slideshow state. Read only */
+    /**
+     * Slideshow state. Read only.
+     */
     this.active = false
+
+    this.#view = view
   }
 
   /**

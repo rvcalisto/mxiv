@@ -16,7 +16,10 @@ export class View extends HTMLElement {
   constructor() {
     super()
 
-    /** Currently loaded file type. @type {'image'|'video'} */
+    /**
+     * Currently loaded file type.
+     * @type {'image'|'video'}
+     */
     this.fileType = 'image'
 
     // image
@@ -59,7 +62,6 @@ export class View extends HTMLElement {
    * @returns {Promise<Boolean>} Either display content has changed. 
    */
   async display(filePath, type) {
-
     if (filePath == null) {
       this.screen.displayEmpty()
 
@@ -115,7 +117,7 @@ export class View extends HTMLElement {
    * @param {Boolean} value 
    */
   toggleAutoScrollAnimation(value) {
-    if (value === undefined) value = !this.scrollBox.smooth
+    if (value == null) value = !this.scrollBox.smooth
     this.scrollBox.setAutoScrollAnimation(value)
   }
 
@@ -167,13 +169,12 @@ export class View extends HTMLElement {
 
   /**
    * Returns state object. Loads state object if given as parameter.
-   * @param {StateObject<{}>} stateObject Component properties object.
-   * @returns {StateObject<{}>|void}
+   * @param {*?} stateObject Component properties object.
+   * @returns {*}
    */
   state(stateObject) {
 
-    // return current state properties
-    if (stateObject === undefined) return {
+    if (stateObject == null) return {
       // image
       zoom: this.zoom,
       mode: this.mode,
@@ -186,8 +187,6 @@ export class View extends HTMLElement {
       aLoop: this.aLoop,
       bLoop: this.bLoop,
     }
-
-    // else, load given state
 
     // image
     this.zoom = stateObject.zoom
@@ -231,8 +230,9 @@ export class View extends HTMLElement {
    * @param {*?} detailValue
    */
   signalEvent(event, detailValue) {
-    const signal = new CustomEvent(event,  {composed: true, bubbles: true, detail: detailValue})
-    this.dispatchEvent(signal)
+    this.dispatchEvent( new CustomEvent(event, {
+      composed: true, bubbles: true, detail: detailValue
+    }) )
   }
 }
 

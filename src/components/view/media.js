@@ -3,8 +3,10 @@
  */
 export class ViewMedia {
 
-  /** Parent View component.
-   * @type {import('./view.js').View} */
+  /**
+   * Host View component.
+   * @type {import('./view.js').View}
+   */
   #view
 
   /**
@@ -237,5 +239,4 @@ export class ViewMedia {
       }
     }, 10);
   }
-
 }

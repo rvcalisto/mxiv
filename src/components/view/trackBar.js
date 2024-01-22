@@ -3,24 +3,33 @@
  */
 export class TrackBar {
 
-  /** How many seconds the track keeps visible after becoming inactive. */
+  /**
+   * How many seconds the track keeps visible after becoming inactive.
+   */
   static peekDuration = 1.5
 
-  /** Track peek timeout timer.
-   * @type {Number?} */
+  /**
+   * Track peek timeout timer.
+   * @type {Number?}
+   */
   #peekTimer = null
 
-  /** Parent View component.
-   * @type {import('./view.js').View} */
+  /**
+   * Host View component.
+   * @type {import('./view.js').View}
+   */
   #view
 
-  /** Track root HTML element contained in View.
+  /**
+   * Track root HTML element contained in View.
    * @type {HTMLDivElement}
    */
   #panelElement
  
-  /** HTML Video element to represent.
-   * @type {HTMLVideoElement?} */
+  /**
+   * HTML Video element to represent.
+   * @type {HTMLVideoElement?}
+   */
   #videoElement
 
   /**
@@ -30,7 +39,7 @@ export class TrackBar {
     this.#view = view
     this.#panelElement = this.#view.shadowRoot.getElementById('trackPanel')
 
-    this.#initListeners()
+    this.#initEvents()
     this.hide()
   }
 
@@ -149,8 +158,7 @@ export class TrackBar {
     return vidPosition
   }
 
-
-  #initListeners() {
+  #initEvents() {
     // mute toggle
     const muteBtn = this.#view.shadowRoot.getElementById('trackMute')
     muteBtn.parentElement.onclick = () => this.#view.media.muteToggle()
@@ -158,7 +166,7 @@ export class TrackBar {
     // volume wheel
     muteBtn.parentElement.addEventListener('wheel', (e) => {
       this.#view.media.setVolume(e.deltaY > 0 ? '-5' : '+5')
-    }, {passive: true})
+    }, { passive: true })
 
     // ⏸⯈
     const pauseBtn = this.#view.shadowRoot.getElementById('trackPause')

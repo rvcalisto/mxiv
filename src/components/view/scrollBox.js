@@ -3,26 +3,38 @@
  */
 export class ScrollBox {
 
-  /** Parent View component.
-   * @type {import('./view.js').View} */
+  /**
+   * Host View component.
+   * @type {import('./view.js').View}
+   */
   #view
 
-  /** ScrollBox root HTML Div element contained in View.
-   * @type {HTMLDivElement} */
+  /**
+   * ScrollBox root HTML Div element contained in View.
+   * @type {HTMLDivElement}
+   */
   #box
 
-  /** Instant smooth scroll interval loop.
-   * @type {Number?} */
+  /** 
+   * Instant smooth scroll interval loop.
+   * @type {Number?}
+   */
   #slideInterval = null
 
-  /** Horizontal delta to be applied each slide loop tick */
+  /**
+   * Horizontal delta to be applied each slide loop tick.
+   */
   #deltaX = 0
 
-  /** Vertical delta to be applied each slide loop tick */
+  /**
+   * Vertical delta to be applied each slide loop tick.
+   */
   #deltaY = 0
 
-  /** Timeout, hides mouse cursor after inactive for a set amount.
-   * @type {Number?} */
+  /**
+   * Timeout, hides mouse cursor after inactive for a set amount.
+   * @type {Number?}
+   */
   #cursorHideTimer
 
   /**
@@ -41,12 +53,16 @@ export class ScrollBox {
     this.#view.osdMsg(`auto-scroll animation ${this.smooth ? 'on' : 'off'}`);
   }
 
-  /** Either view has horizontal scrollbar */
+  /**
+   * Either view has horizontal scrollbar.
+   */
   get hasX() {
     return this.#box.scrollWidth > this.#box.clientWidth;
   }
 
-  /** Either view has vertical scrollbar */
+  /**
+   * Either view has vertical scrollbar.
+   */
   get hasY() {
     return this.#box.scrollHeight > this.#box.clientHeight;
   }
@@ -181,6 +197,6 @@ export class ScrollBox {
         if (e.deltaY > 0) this.#view.signalEvent('view:next')
         else this.#view.signalEvent('view:previous')
       }
-    }, {passive: false})
+    }, { passive: false })
   }
 };
