@@ -146,7 +146,7 @@ ActionDB.setComponentActions('library', {
 
   'random': {
     'desc': 'select random book',
-    'run': () => Library.coverGrid.random()
+    'run': () => Library.coverGrid.randomCover()
   },
   
   'fullscreen': {

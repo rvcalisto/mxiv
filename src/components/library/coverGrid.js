@@ -10,18 +10,33 @@ export class CoverGrid {
 
   static #libraryStorage = 'libraryPaths'
 
-  /** @type {import('../../APIs/libAPI.js'.LibraryObject)} */
+  /**
+   * Cached library entry collection.
+   * @type {import('../../APIs/libAPI.js'.LibraryObject)}
+   */
   static #libraryCache = {}
 
-  /** @type {String[]} */
+  /**
+   * Library entry keys sorted by path.
+   * @type {String[]}
+   */
   static #sortedLibraryKeys = []
 
+  /**
+   * Either library entry cache needs to be rebuilt on next draw.
+   */
   static #dirtyCache = true
 
-  /** @type {Cover?} */
+  /**
+   * Last known cover selection.
+   * @type {Cover?}
+   */
   static selection = null
 
-  /** @type {ItemList} */
+  /**
+   * List as cover grid.
+   * @type {ItemList}
+   */
   #list
 
   #library; #collator
@@ -36,7 +51,7 @@ export class CoverGrid {
   }
 
   /**
-   * Read and store library items and order in cache.
+   * Read and store library entry collection and order in cache.
    */
   #buildCache() {
     const localEntry = localStorage.getItem(CoverGrid.#libraryStorage)
@@ -172,7 +187,7 @@ export class CoverGrid {
     this.selectCover(element)
   }
 
-  random() {
+  randomCover() {
     const rndIdx = Math.floor( Math.random() * this.#list.itemCount )
     const cover = this.#list.findItemElement( (item, idx) => idx === rndIdx )
 

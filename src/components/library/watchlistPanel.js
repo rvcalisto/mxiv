@@ -8,10 +8,16 @@ export class WatchlistPanel {
 
   #watchlistStorage = 'libraryWatch';
 
-  /** @type {HTMLElement} */
+  /**
+   * Background overlay element.
+   * @type {HTMLElement}
+   */
   #overlay;
 
-  /** @type {ShadowRoot} */
+  /**
+   * Library shadowRoot reference.
+   * @type {ShadowRoot}
+   */
   #componentRoot;
 
   /**
@@ -98,9 +104,8 @@ export class WatchlistPanel {
    * Draw list of folders to add to library on sync.
    */
   #drawList() {
-    // clean list
     const folderList = this.#componentRoot.getElementById('folderList');
-    folderList.textContent = '';
+    folderList.textContent = ''; // clean list
 
     // populate list
     for (const item of Object.values(this.getWatchObject())) {
