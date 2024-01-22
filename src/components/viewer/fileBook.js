@@ -102,7 +102,7 @@ export class FileBook {
 
   /**
    * Get FileObject from current page index.
-   * @returns {import("../../APIs/fileAPI").FileObject}
+   * @returns {import("../../APIs/fileAPI").FileObject?}
    */
   get currentFile() {
     return this.files[this.page]

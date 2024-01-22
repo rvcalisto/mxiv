@@ -136,7 +136,7 @@ export class Viewer extends GenericFrame {
    * @param  {String[]} queries Tags and substrings to filter for.
    */
   filter(...queries) {
-    const currentFilePath = this.fileBook.currentFile.path
+    const currentFilePath = this.fileBook.currentFile?.path
 
     const matches = this.fileBook.filter(...queries)
     if (matches === 0) return AppNotifier.notify('no matches')
@@ -332,33 +332,29 @@ export class Viewer extends GenericFrame {
 
   /** @override */
   status() {
-    const currentFile = this.fileBook.currentFile
-    const pageIdx = this.fileBook.page, pageCount = this.fileBook.files.length
-    const filters = this.fileBook.filterQuery
-    const barObj = {
+    const status = {
       title: '',
       infoLeft: 'None',
       infoRight: '[0/0]',
       infoLeftFunc: null
     }
+    
+    const { files, page, currentFile, filterQuery } = this.fileBook
+    if (files.length) {
+      const filterInfo = filterQuery.length ? `filter:${filterQuery}` : ''
+      const pager = `[${page + 1}/${files.length}]`
+      const { mode, zoom } = this.viewComponent
 
-    if (pageCount) {
-      const filterStr = filters.length ? `filter:${String(filters)}` : ''
-      const imgMode = `fit-${this.viewComponent.mode}`
-      const zoom = `${this.viewComponent.zoom.toFixed(0)}%`
-      const pager = `[${pageIdx + 1}/${pageCount}]`
-
-      barObj.infoLeft = currentFile.name
-      barObj.infoRight = `${filterStr} ${imgMode}:${zoom} ${pager}`
-      barObj.title = `${currentFile.name}`
-      // copy filepath to clipboard
-      barObj.infoLeftFunc = () => {
+      status.title = currentFile.name
+      status.infoLeft = currentFile.name
+      status.infoRight = `${filterInfo} fit-${mode}:${zoom.toFixed(0)}% ${pager}`
+      status.infoLeftFunc = () => {
         navigator.clipboard.writeText(currentFile.path)
         AppNotifier.notify('filepath copied to clipboard')
       }
     }
 
-    return barObj
+    return status
   }
 
   /** @override */
