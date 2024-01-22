@@ -47,7 +47,7 @@ ActionDB.setBaseActions({
       },
       'move': {
         'desc' : 'move current tab to the right or left',
-        'run'  : (right = 'right') => Tab.moveTab(right === 'right'),
+        'run'  : (right = 'right') => Tab.selected.move(right === 'right'),
         'options': () => [option('right', 'default'), 'left']
       },
       'cycle': {
@@ -57,24 +57,24 @@ ActionDB.setBaseActions({
       },
       'close': {
         'desc' : 'close current tab',
-        'run'  : () => Tab.selectedTab.close()
+        'run'  : () => Tab.selected.close()
       },
       'duplicate': {
         'desc' : 'duplicate current tab',
-        'run'  : () => Tab.duplicateTab()
+        'run'  : () => Tab.selected.duplicate()
       },
       'rename': {
         'desc' : 'rename current tab',
         'run'  : (newName) => {
           newName = newName.trim()
-          if (newName) Tab.selectedTab.renameTab(newName)
+          if (newName) Tab.selected.rename(newName)
         }
       },
       'visibility': {
-        'desc' : 'toggle or set tab bar visibility',
+        'desc' : 'toggle or set tab header bar visibility',
         'run'  : (show) => {
           show = show === 'on' ? true : show === 'off' ? false : undefined
-          Tab.toggleTabBar(show)
+          Tab.toggleHeaderBar(show)
         },
         'options': () => [option('toggle', 'default'), 'on', 'off']
       }

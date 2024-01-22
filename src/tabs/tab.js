@@ -19,8 +19,11 @@ export var FRAME
  */
 export class Tab {
 
-  /** @type {Tab} */
-  static selectedTab
+  /**
+   * Currently selected tab reference.
+   * @type {Tab}
+   */
+  static selected
 
   /**
    * Creates a new tab Instance.
@@ -66,6 +69,61 @@ export class Tab {
   }
 
   /**
+   * Present and update tab references as selected.
+   */
+  select() {
+    // hide all frame instances but this one (which count as focus)
+    Tab.allTabs.forEach(tab => tab.frame.style.display = 'none')
+    this.frame.style.display = ''
+
+    if (Tab.selected) Tab.selected.header.select(false)
+    this.header.select()
+
+    Tab.selected = this
+    FRAME = this.frame
+    this.frame.focus()
+
+    StatusBar.updateStatus( this.frame.status() )
+  }
+
+  /**
+   * Move tab header to the right or to the left.
+   * @param {Boolean} right 
+   */
+  move(right = true) {
+    this.header.move(right)
+  }
+
+  /**
+   * Rename tab header.
+   * @param {String} newName 
+   */
+  rename(newName) {
+    this.frame.renameTab(newName)
+  }
+
+  /**
+   * Duplicate tab and state.
+   */
+  duplicate() {
+    const type = this.frame.type
+    const frameClass = GenericFrame.getClass(type)
+    const frameState = frameClass.allowDuplicate ? this.frame.getState() : null
+
+    if (!frameState) {
+      console.log(`${type}: duplicate disallowed or stateless.`);
+      return
+    }
+    
+    const newTab = new Tab(type, async (frame) => {
+      frame.restoreState(frameState)
+    }, this.frame.tabName)
+
+    // move duplicate behind currentTab
+    this.header.after(newTab.header)
+  }
+
+  /**
    * Closes tab. Quit window if last remaining instance.
    * - If currently selected, pass selection to the left or right instance.
    */
@@ -78,52 +136,7 @@ export class Tab {
     this.header.remove()
 
     if (!Tab.allTabs.length) window.close()
-    else if (Tab.selectedTab === this) next.select()
-  }
-
-  /**
-   * Present and update tab references as selected.
-   */
-  select() {
-    // hide all frame instances but this one (which count as focus)
-    Tab.allTabs.forEach(tab => tab.frame.style.display = 'none')
-    this.frame.style.display = ''
-
-    if (Tab.selectedTab) Tab.selectedTab.header.select(false)
-    this.header.select()
-
-    Tab.selectedTab = this
-    FRAME = this.frame
-    this.frame.focus()
-
-    StatusBar.updateStatus( this.frame.status() )
-  }
-
-  /**
-   * Rename tab header.
-   * @param {String} newName 
-   */
-  renameTab(newName) {
-    this.frame.renameTab(newName)
-  }
-  
-  /**
-   * Toggle tab bar visibility.
-   * @param {Boolean?} show Either to force visibility on or off.
-   */
-  static toggleTabBar(show) {
-    const tabsBar = document.getElementById('tabs')
-    
-    if (show === undefined) show = tabsBar.style.display == 'none'
-    tabsBar.style.display = show ? '' : 'none'
-  }
-
-  /**
-   * Get tab bar visibility.
-   */
-  static get tabBarIsVisible() {
-    const tabsBar = document.getElementById('tabs')
-    return tabsBar.style.display == ''
+    else if (Tab.selected === this) next.select()
   }
 
   /**
@@ -145,34 +158,11 @@ export class Tab {
   }
 
   /**
-   * Duplicate tab and state.
-   */
-  static duplicateTab() {
-    const tab = Tab.selectedTab
-    const type = tab.frame.type
-
-    const frameClass = GenericFrame.getClass(type)
-    const frameState = frameClass.allowDuplicate ? tab.frame.getState() : null
-
-    if (!frameState) {
-      console.log(`${type}: duplicate disallowed or stateless.`);
-      return
-    }
-    
-    const newTab = new Tab(type, async (frame) => {
-      frame.restoreState(frameState)
-    }, tab.name)
-
-    // move duplicate behind currentTab
-    tab.header.after(newTab.header)
-  }
-
-  /**
    * Cycle currently selected tab.
    * @param {Boolean} forward 
    */
   static cycleTabs(forward = true) {
-    const selected = Tab.selectedTab
+    const selected = Tab.selected
 
     const allTabs = Tab.allTabs
     const thisIdx = allTabs.findIndex(tab => tab === selected)
@@ -182,14 +172,6 @@ export class Tab {
 
     const nextTab = allTabs[nextIdx % allTabs.length]
     nextTab.select()
-  }
-
-  /**
-   * Move selected tab header order.
-   * @param {Boolean} right 
-   */
-  static moveTab(right = true) {
-    Tab.selectedTab.header.move(right)
   }
 
   /**
@@ -212,10 +194,28 @@ export class Tab {
     }
     
     // update Tab class properties 
-    Tab.selectedTab = null
-    FRAME = null
+    Tab.selected = FRAME = null
 
     if (!keepWindowOpen) window.close()
+  }
+
+  /**
+   * Get tab Header Bar visibility.
+   */
+  static get headerBarVisible() {
+    const tabsBar = document.getElementById('tabs')
+    return tabsBar.style.display == ''
+  }
+  
+  /**
+   * Toggle tab Header Bar visibility.
+   * @param {Boolean?} show Either to force visibility on or off.
+   */
+  static toggleHeaderBar(show) {
+    const tabsBar = document.getElementById('tabs')
+    
+    if (show === undefined) show = tabsBar.style.display == 'none'
+    tabsBar.style.display = show ? '' : 'none'
   }
 }
 
@@ -227,8 +227,8 @@ document.getElementById('newTab').onclick = function newTabListener() {
 
 
 // toggle tab bar visibility on fullscreen
-let oldTabBarVisibility = Tab.tabBarIsVisible
+let oldTabBarVisibility = Tab.headerBarVisible
 elecAPI.onFullscreen( function onFullscreenChange(e, isFullscreen) {
-  if (isFullscreen) oldTabBarVisibility = Tab.tabBarIsVisible
-  Tab.toggleTabBar(isFullscreen ? false : oldTabBarVisibility)
+  if (isFullscreen) oldTabBarVisibility = Tab.headerBarVisible
+  Tab.toggleHeaderBar(isFullscreen ? false : oldTabBarVisibility)
 })

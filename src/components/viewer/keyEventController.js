@@ -25,13 +25,12 @@ addEventListener('fileExplorerKeyEvent', function handleFileExplorer(e) {
  * [Workaround] Release slide interval for Viewer's View component.
  */
 addEventListener('keyup', function releaseViewSlide(e) {
-  if (!FRAME || FRAME.constructor.name !== 'Viewer') return;
+  if (!FRAME || FRAME.type !== 'viewer') return;
 
   const viewerAccelSet = AcceleratorDB.getAccel('viewer');
   const action = viewerAccelSet.byEvent(e);
   if (!action) return;
 
-  // else, run action
   e.preventDefault();
   const cmd = action[0];
   if (cmd !== 'navigate') return;

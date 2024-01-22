@@ -125,7 +125,7 @@ export class CoverGrid {
       return
     }
 
-    if (!keepOpen) Tab.selectedTab.close()
+    if (!keepOpen) Tab.selected.close()
     new Tab('viewer', (v) => v.open(cover.bookPath) )
   }
 

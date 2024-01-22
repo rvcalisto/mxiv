@@ -53,7 +53,7 @@ export class TabHeader {
   
     // compose & append tabBtn, frame to document
     tabBtn.append(playBtn, label)
-    if (Tab.selectedTab) Tab.selectedTab.header.#element.after(tabBtn)
+    if (Tab.selected) Tab.selected.header.#element.after(tabBtn)
     else document.getElementById('newTab').before(tabBtn)
 
     // set tab events
