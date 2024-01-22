@@ -16,30 +16,44 @@ export class Viewer extends GenericFrame {
 
   static tagName = 'viewer-component'
 
-  /** Display flow state, prevents unloaded page flips. */
+  /**
+   * Block go-to calls, prevents unloaded page flips.
+   */
   #loading = false
   
-  /** Last Page flip direction for auto-scroll. */
+  /**
+   * Last Page flip direction for auto-scroll.
+   */
   #lastFlipRight = true
   
   constructor() {
     super()
 
-    /** Currently loaded paths for state replication. @type {String[]} */
+    /**
+     * Currently loaded paths for state replication.
+     * @type {String[]}
+     */
     this.openArgs = []
     
-    /** @type {FileBook} */
+    /**
+     * File paginator and controller.
+     * @type {FileBook}
+     */
     this.fileBook
 
-    /** @type {View} */
+    /**
+     * Multimedia viewer.
+     * @type {View}
+     */
     this.viewComponent
 
-    /** @type {FileExplorer} */
+    /**
+     * File explorer and playlist visualizer.
+     * @type {FileExplorer}
+     */
     this.fileExplorer
   }
 
-
-  // called when element is appended to document 
   connectedCallback() {
     // clone template content into shadow root
     const fragment = document.getElementById('viewerTemplate').content
@@ -55,7 +69,6 @@ export class Viewer extends GenericFrame {
     this.#initEvents()
   }
 
-  // triggered on DOM disconect (tab closed and on quit)
   disconnectedCallback() {
     this.fileBook.closeBook()
   }
@@ -100,12 +113,11 @@ export class Viewer extends GenericFrame {
   }
 
   /** 
-   * Populate fileBook with given paths, sync fileExplorer and display first file.
-   * @param {...String} paths Path arguments. Will display first path if file.
+   * Load files and directories, sync fileExplorer and display first file.
+   * @param {String[]} paths Paths. Will display first path if file.
    */
   async open(...paths) {
-    // Store the exact paths to replicate this instance. Prevents
-    // failed/partial duplication when tab hasn't yet loaded all files.
+    // Prevents state replication failure when duplicating while loading
     this.openArgs = paths
     const startIdx = await this.fileBook.load(...paths)
     if (startIdx < 0) {
@@ -193,12 +205,11 @@ export class Viewer extends GenericFrame {
    * Display random file in fileBook.
    */
   gotoRandom() {
-    // if 2 files or less, flip page
     const fileCount = this.fileBook.files.length
+    let randomIdx = Math.floor( Math.random() * fileCount )
+    
+    // flip if ~2 files, re-roll if randomIdx === current page
     if (fileCount < 3) return this.gotoPage(this.fileBook.page + 1)
-
-    // roll until it's a different index from current one
-    let randomIdx = Math.floor(Math.random() * fileCount)
     if (randomIdx === this.fileBook.page) return this.gotoRandom()
 
     this.gotoPage(randomIdx)
@@ -255,10 +266,8 @@ export class Viewer extends GenericFrame {
     const equivalentIdx = this.fileBook.delistFile(currentFile)
     elecAPI.fileAPI.deleteFile(currentFile.path)
 
-    // update explorer
+    // update explorer and display suggested page
     this.fileExplorer.reload()
-
-    // goto new last-file if current idx is out-bounds, else refresh page
     this.gotoPage(equivalentIdx)
     AppNotifier.notify('removed ' + currentFile.path)
   }
