@@ -191,7 +191,8 @@ export class Viewer extends GenericFrame {
     this.openArgs = [file.path, ...paths] 
 
     // wait for display (loaded) and resolve block
-    let success = await this.viewComponent.display(file.pathURL, file.category)
+    const fileURL = elecAPI.fileAPI.getFileURL(file.path)
+    let success = await this.viewComponent.display(fileURL, file.category)
     this.#loading = false
     
     if (!success) {

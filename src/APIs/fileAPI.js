@@ -231,7 +231,6 @@ async function lsHint(queryPath) {
  * @property {String} path Absolute path to file.
  * @property {String} name Basename. (Ex: duck.png)
  * @property {'image'|'video'|'folder'|'archive'} category File category.
- * @property {String} [pathURL] Same as path, but encoded for HTML. Only present for `image`, `video`.
  */
 
 /**
@@ -242,18 +241,21 @@ async function lsHint(queryPath) {
  * @returns {FileObject} Wrapped file.
  */
 function fileObj(category, name, fullpath) {
-  const obj = {
+  return {
     path : fullpath,
     name : name,
-    category : category,
+    category : category
   }
+}
 
-  if (category === 'image' || category === 'video') {
-    obj.pathURL = pathToFileURL(fullpath).href
-  }
-
-  return obj
+/**
+ * Get path resolved into a POSIX URL for use in HTML.
+ * @param {String} path Absolute path to file.
+ * @returns {String}
+ */
+function getFileURL(path) {
+  return pathToFileURL(path).href
 }
 
 
-module.exports = { clearCache, fileType, expandPath, deleteFile, runOnFile, lsAsync, lsHint, fileObj }
+module.exports = { clearCache, fileType, expandPath, deleteFile, runOnFile, lsAsync, lsHint, fileObj, getFileURL }
