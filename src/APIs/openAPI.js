@@ -26,8 +26,8 @@ const TMPPREFIX = 'mxiv-'   // prefix for temporarily extracted archive folders
  */
 async function open(paths, ownerID = 0) {
 
-  /** Temporary folders leased in current call. */
-  const workingTmpFolders = []
+  /** Archives openned in current call. */
+  const workingArchives = []
 
   /** @type {BookObject} */
   const bookObj = {
@@ -61,7 +61,7 @@ async function open(paths, ownerID = 0) {
 
     // skip if file doesn't exist, else get stat and type
     const stats = await new Promise(resolve => {
-      fs.stat(path, (err, stat) => resolve(stat))
+      fs.stat( path, (err, stat) => resolve(stat) )
     })
     if (!stats) continue
 
@@ -86,9 +86,9 @@ async function open(paths, ownerID = 0) {
 
     // Archive, extract (and prevent trying to extract directories with archive extentions)
     else if ( fileType === 'archive' && !stats.isDirectory() ) {
-      const tmpDir = await tmpFolders.leaseTmpFolder(path, ownerID)
+      const tmpDir = await tmpFolders.leaseArchive(path, ownerID)
       if (tmpDir) {
-        workingTmpFolders.push(tmpDir) // prevent clearing working tmp folder
+        workingArchives.push(path) // prevent surrendering working archive leases later
         const lsObj = await fileAPI.lsAsync(tmpDir)
   
         bookObj.paths.push( fileAPI.fileObj('archive', p.basename(path), path) )
@@ -99,7 +99,7 @@ async function open(paths, ownerID = 0) {
 
   // clear orphan tmp folders on success, if any
   const success = bookObj.paths.length
-  if (success) tmpFolders.surrenderTmpFolders(ownerID, workingTmpFolders)
+  if (success) tmpFolders.surrenderLeases(ownerID, workingArchives)
 
   return bookObj
 }
@@ -111,10 +111,10 @@ async function open(paths, ownerID = 0) {
 const tmpFolders = new class TemporaryFolders {
 
   /**
-   * Keeps track of leased tmpFolders by ownerID's.
-   * @type {Object<string, Set<String>>}
+   * Track archives temporarily extracted and their consumers.
+   * @type {Object<string, {path:String, owners:Set<Number>}>}
    */
-  #leasedFolders = {}
+  #openArchives = {}
 
   /**
    * Return either path is from a temporary folder file.
@@ -129,80 +129,84 @@ const tmpFolders = new class TemporaryFolders {
   }
 
   /**
-   * Create a temporary folder for archive if valid. Returns folder path or empty if invalid.
-   * @param {String} archivePath Absolute path to archive file.
-   * @param {Number} ownerID Owner ID to register folder.
-   * @returns {Promise<String>} Path to temporary folder.
+   * Revoke access to a leased archive. Delete orphaned lease paths.
+   * @param {String} archivePath Archive to revoke access to.
+   * @param {Number} ownerID Consumer UUID.
    */
-  async leaseTmpFolder(archivePath, ownerID = 0) {
+  #revokeAccess(archivePath, ownerID = 0) {
+    this.#openArchives[archivePath].owners.delete(ownerID)
 
-    // only extract archives that contain a viewable file
-    const arcFiles = await arcAPI.fileList(archivePath)
-    const validFileIdx = arcFiles.findIndex(filePath => {
+    if (!this.#openArchives[archivePath].owners.size) {
+      this.#deleteTmpFolder(this.#openArchives[archivePath].path)
+      delete this.#openArchives[archivePath]
+    }
+  }
+
+  /**
+   * Lease temporary folder for archive files. Returns folder path or empty if invalid.
+   * @param {String} archivePath Absolute path to archive.
+   * @param {Number} ownerID Owner ID to register folder.
+   * @returns {Promise<String>} Path to temporary folder. Empty on failure.
+   */
+  async leaseArchive(archivePath, ownerID = 0) {
+
+    const registry = this.#openArchives[archivePath]
+    if (registry) {
+      registry.owners.add(ownerID)
+      return registry.path
+    }
+
+    // filter out archives without viewable files
+    const archivedFiles = await arcAPI.fileList(archivePath)
+    const hasViewableFiles = archivedFiles.some(filePath => {
       const fileType = fileAPI.fileType(filePath)
       return fileType === 'image' || fileType === 'video'
     })
-
-    if (validFileIdx < 0) return ''
+    if (!hasViewableFiles) return ''
 
     // new unique temp folder (ex: /tmp/prefix-dpC7Id)
-    const tmpDir = fs.mkdtempSync(p.join(TMPDIR, TMPPREFIX))
+    const tmpDir = fs.mkdtempSync( p.join(TMPDIR, TMPPREFIX) )
     await arcAPI.extract(archivePath, tmpDir)
     console.log(`Extracted archive to tmp folder ${tmpDir}`)
 
-    // add to #leasedFolders
-    if (!this.#leasedFolders[ownerID]) this.#leasedFolders[ownerID] = new Set()
-    this.#leasedFolders[ownerID].add(tmpDir)
+    this.#openArchives[archivePath] = {
+      path: tmpDir,
+      owners: new Set([ownerID])
+    }
 
     return tmpDir
   }
 
   /**
-   * Remove all temporary folders associated with ownerID. Spare array if given.
+   * Revoke all archive accesses associated with ownerID. Spare archives if given.
    * Called after successfuly generating a new book for viewing or when closing the app.
    * @param {Number} ownerID Tab instance to be cleaned.
-   * @param {String[]} sparePaths Temporary paths to spare.
+   * @param {String[]} spareArchives Archive paths to spare.
    */
-  surrenderTmpFolders(ownerID = 0, sparePaths = []) {
-    const tmpFolders = this.#leasedFolders[ownerID]
-    if (!tmpFolders || !tmpFolders.size) return
-
-    for (const tmpPath of tmpFolders.values() ) {
-      const spare = sparePaths.includes(tmpPath)
-      if (!spare) this.#deleteTmpFolder(tmpPath, ownerID)
+  surrenderLeases(ownerID = 0, spareArchives = []) {
+    for (const archive in this.#openArchives) {
+      const spare = spareArchives.includes(archive)
+      if (!spare) this.#revokeAccess(archive, ownerID)
     }
   }
 
   /**
-   * Delete previously leased temporary folder and its contents.
+   * Delete temporary folder and its contents.
    * @param {String} folder Temporary folder path to remove.
-   * @param {Number} ownerID Owner ID to read from storage.
    */
-  #deleteTmpFolder(folder, ownerID = 0) {
-    let tmpFolders = this.#leasedFolders[ownerID]
-
-    // folder was previously leased?
-    if ( !tmpFolders || !tmpFolders.has(folder) ) {
-      console.error('FORBIDDEN: Tried to delete unleased temporary folder!', 
-      `targeted path: ${folder}`, `ownerID: ${ownerID}`)
-      return
-    }
-    
+  #deleteTmpFolder(folder) {
     // folder resides on TMPDIR, right? RIGHT?
-    if (p.dirname(folder) != TMPDIR) {
-      console.error('FORBIDDEN: Tried to delete non-temporary folder!', 
-      `targeted path: ${folder}`, `ownerID: ${ownerID}`)
-      return
+    if ( p.dirname(folder) !== TMPDIR ) {
+      return console.error('FORBIDDEN: Tried to delete non-temporary folder!\n', 
+        `targeted path: ${folder}`)
     }
 
-    // finally, delete folder recursively and update leasedFolders
+    // delete folder recursively
     try {
       fs.rmSync(folder, { recursive: true })
-      this.#leasedFolders[ownerID].delete(folder)
-      if (!this.#leasedFolders[ownerID].size) delete this.#leasedFolders[ownerID]
       console.log(`Deleted tmp folder at ${folder}`)
-    } catch {
-      console.log('Failed to clear tmp folder')
+    } catch (err) {
+      console.error(`Failed to clear tmp folder at ${folder}\n`, err)
     }
   }
 }
@@ -212,7 +216,7 @@ const tmpFolders = new class TemporaryFolders {
  * @param {Number} ownerID Tab instance to be cleaned.
  */
 function clearTmp(ownerID) {
-  tmpFolders.surrenderTmpFolders(ownerID)
+  tmpFolders.surrenderLeases(ownerID)
 }
 
 
