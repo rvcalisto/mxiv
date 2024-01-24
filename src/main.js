@@ -8,9 +8,9 @@ const { join } = require('path')
  * @returns {String[]}
  */
 function pathsFromArgv(customArgv) {
-  if (customArgv === undefined) customArgv = process.argv
+  if (customArgv == null) customArgv = process.argv
   // filter away chromiun args (--some-chromium-flag)
-  const argArr = customArgv.filter((arg) => arg[0] !== '-')
+  const argArr = customArgv.filter(arg => arg[0] !== '-')
   return argArr.slice(2) // remove node bin & project main.js args
 }
 
@@ -87,18 +87,21 @@ app.on('ready', () => {
   Menu.setApplicationMenu(null) // remove app menu bar
   ipcHandlers()
 
-  newWindow().then((win) => {
+  newWindow().then(win => {
     const pathArgs = pathsFromArgv()
-    pathArgs.forEach(path => win.send('viewer:open', { paths: [path], newTab: true }))
+    if (pathArgs.length)
+      win.send('viewer:open', { paths: pathArgs, newTab: true })
   })
 })
 
 
 // set listener for new instances. Spawn new window and open paths if any
 app.on('second-instance', (ev, argv) => {
-  newWindow().then((win) => {
-    const pathArgs = pathsFromArgv(argv); // console.log('2º instance pathArgs:', pathArgs)
-    pathArgs.forEach(path => win.send('viewer:open', { paths: [path], newTab: true }))
+  newWindow().then(win => {
+    // NOTE: relative paths will still use main process CWD...
+    const pathArgs = pathsFromArgv(argv)
+    if (pathArgs.length)
+      win.send('viewer:open', { paths: pathArgs, newTab: true })
   })
 })
 
