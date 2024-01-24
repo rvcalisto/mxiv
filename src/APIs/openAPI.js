@@ -14,8 +14,8 @@ const TMPPREFIX = 'mxiv-'   // prefix for temporarily extracted archive folders
  * Viewable file structure for path array. Used in `FileBook`.
  * @typedef {Object} BookObject
  * @property {String?} startOn Path substring from file that is supposed to be displayed at start.
- * @property {fileAPI.FileObject[]} paths Files parent directory.
- * @property {fileAPI.FileObject[]} files Target folder fileObject.
+ * @property {fileAPI.FileObject[]} paths Listed files parent directories.
+ * @property {fileAPI.FileObject[]} files All viewable files for given directories.
  */
 
 /**
@@ -26,7 +26,7 @@ const TMPPREFIX = 'mxiv-'   // prefix for temporarily extracted archive folders
  */
 async function open(paths, ownerID = 0) {
 
-  /** Temporary folders leased in current block. */
+  /** Temporary folders leased in current call. */
   const workingTmpFolders = []
 
   /** @type {BookObject} */
@@ -44,20 +44,29 @@ async function open(paths, ownerID = 0) {
 
   // append valid data to bookObj
   for (let path of paths) {
-    // check truthy, expand shortcuts & skip if already processed
+    // skip empty path, turn atomic
     if (!path) continue
     path = fileAPI.expandPath(path)
-    if (bookObj.paths.find(item => item.path === path)) continue
+
+    // filter already processed paths
+    const parentDir = p.dirname(path)
+    const fileType = fileAPI.fileType(path)
+    const isViewable = fileType !== 'archive' && fileType !== 'other'
+    if (bookObj.paths.some(item => {
+      // filter files covered by a previous lsAsync scan 
+      if (isViewable && (parentDir === item.path) ) return true
+      // filter already scanned directory/archive
+      if (item.path === path) return true
+    })) continue
 
     // skip if file doesn't exist, else get stat and type
-    const pathStat = await new Promise((resolve, reject) => {
+    const stats = await new Promise(resolve => {
       fs.stat(path, (err, stat) => resolve(stat))
     })
-    if (!pathStat) continue
-    const fileType = fileAPI.fileType(path)
+    if (!stats) continue
 
     // Directory, build files array from path
-    if (pathStat.isDirectory()) {
+    if ( stats.isDirectory() ) {
       const lsObj = await fileAPI.lsAsync(path)
       if (!lsObj.files.length) continue
 
@@ -66,11 +75,7 @@ async function open(paths, ownerID = 0) {
     }
 
     // Viewable file, build from parent folder and start on itself
-    else if (fileType !== 'archive' && fileType !== 'other') {
-      // don't process the same parent directory more than once
-      const parentDir = p.dirname(path)
-      if (bookObj.paths.find(item => item.path === parentDir)) continue
-
+    else if (isViewable) {
       // only set startOn file for first path
       const lsObj = await fileAPI.lsAsync(parentDir)
       if (!bookObj.paths.length) bookObj.startOn = path
@@ -80,14 +85,13 @@ async function open(paths, ownerID = 0) {
     }
 
     // Archive, extract (and prevent trying to extract directories with archive extentions)
-    else if ( fileType === 'archive' && !pathStat.isDirectory() ) {
+    else if ( fileType === 'archive' && !stats.isDirectory() ) {
       const tmpDir = await tmpFolders.leaseTmpFolder(path, ownerID)
       if (tmpDir) {
         workingTmpFolders.push(tmpDir) // prevent clearing working tmp folder
-  
-        // open folder & append archive filepath to paths
         const lsObj = await fileAPI.lsAsync(tmpDir)
-        bookObj.paths.push(fileAPI.fileObj('archive', p.basename(path), path))
+  
+        bookObj.paths.push( fileAPI.fileObj('archive', p.basename(path), path) )
         bookObj.files = bookObj.files.concat(lsObj.files)
       }
     }
@@ -101,7 +105,9 @@ async function open(paths, ownerID = 0) {
 }
 
 
-/** Manage temporary folders created to view archives. */
+/**
+ * Manage temporary folders created to view archives.
+ */
 const tmpFolders = new class TemporaryFolders {
 
   /**
