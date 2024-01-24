@@ -8,14 +8,14 @@ const { pathToFileURL } = require("url");
 
 
 /**
- * Store LSObjects for previously listed absolute paths.
- * @type {Object<string, LSObject>}
+ * LSObject cache for previously listed paths.
+ * @type {Object<string, {lastModified:Number, lsObject:LSObject}>}
  */
 let lsCache = {}
 
 /**
- * List basenames for files and directories in each absolute path.
- * @type {Object<string, string[]>}
+ * File basenames for previously listed directories.
+ * @type {Object<string, {lastModified:Number, hints:string[]}>}
  */
 let hintCache = {}
 
@@ -26,7 +26,6 @@ function clearCache() {
   lsCache = {}
   hintCache = {}
 }
-
 
 /**
  * Infer type from supported file extentions.
@@ -50,19 +49,15 @@ function fileType(file) {
   return 'other';
 }
 
-
 /**
  * Expand shortcuts and relative paths into absolute, atomic paths.
  * @param {String} path Path to expand.
  * @returns {String}
  */
 function expandPath(path) {
-  // expand home shortcut
   if (path[0] === '~') path = os.homedir() + path.slice(1);
-  // resolve ./ & ../ and handles global & relative paths
-  return p.resolve(path)
+  return p.resolve(path) // resolve "./", "../" & other relative paths
 }
-
 
 /**
  * Delete file at given path. 
@@ -74,21 +69,17 @@ function deleteFile(filePath) {
   console.log(`Deleted ${filePath}`);
 }
 
-
 /**
- * Run user script on default shell. Replace `%F` and `%N` symbols as file's path 
- * and basename respectively. Returns false if symbols are used without a file.
- * 
- * * Example: `runOnFile("dolphin --select %F &", <FileObject>)`
- * 
- * * Note: `%F` & `%N` are double-quoted, so favor using them as arguments to a script
+ * Run user script on default shell. Interpret `%F`, `%N` as filepath and basename.
+ * Aborts if these symbols are used without passing a `FileObject`.
+ * - Example: `runOnFile("dolphin --select %F &", <FileObject>)`
+ * - Note: `%F` & `%N` are double-quoted, so favor using them as arguments to a script
  * file for complex commands. Ex: `runOnFile("~/myScript.sh %F", <FileObject>)`
  * @param {String} script Command script to run.
  * @param {FileObject} file File to run script on.
  * @returns {Boolean} Success.
  */
 function runOnFile(script, file = null) {
-
   const needFile = script.includes('%F') || script.includes('%N')
   if (needFile && !file) return false
 
@@ -102,7 +93,6 @@ function runOnFile(script, file = null) {
   return true
 }
 
-
 /**
  * Object structure from folder's supported files.
  * @typedef {Object} LSObject
@@ -113,20 +103,26 @@ function runOnFile(script, file = null) {
  * @property {FileObject} upperDir Target parent folder fileObject.
  */
 
-/** Asynchronous return object from files listed in folder.
+/**
+ * Asynchronously list directory folders, media contents.
  * @param {String} path Path to folder.
  * @returns {Promise<LSObject>} Listed files separated by category.
  */
 async function lsAsync(path) {
 
-  // expand shortcuts and links
   path = expandPath(path)
 
-  // try cache first (disabled, async is ok and cache may be dirty)
-  // if (lsCache[path]) {
-  //   console.log('has lsCache')
-  //   return lsCache[path]
-  // }
+  /**
+   * Last modified timestamp. Can be null if disabled or broken symlink.
+   * @type {Number?}
+   */
+  const lastModified = await new Promise(resolve => {
+    fs.stat( path, (err, stat) => resolve(stat?.mtimeMs) )
+  })
+  // if previously cached, use it if last modified match
+  const cacheEntry = lsCache[path]
+  if (cacheEntry && cacheEntry.lastModified === lastModified)
+    return cacheEntry.lsObject
 
   const upperDir = p.dirname(path)
   const lsObj = {
@@ -137,9 +133,12 @@ async function lsAsync(path) {
     upperDir: fileObj('folder', p.basename(upperDir), upperDir) // for backward navigation
   }
 
-  /** Dirent array, empty on error. @type {fs.Dirent[]} */
-  const files = await new Promise((resolve, reject) => {
-    fs.readdir(path, { withFileTypes: true }, (err, files) => resolve(files))
+  /**
+   * Dirent array, empty on error.
+   * @type {fs.Dirent[]}
+   */
+  const files = await new Promise(resolve => {
+    fs.readdir( path, { withFileTypes: true }, (err, files) => resolve(files) )
   }) || []
   
   // filter items for desired types
@@ -155,34 +154,47 @@ async function lsAsync(path) {
       lsObj.files.push( fileObj(category, file.name, fullPath) )
   }
 
-  // lsCache[path] = lsObj // store cache for path (disabled)
+  // store/update cache for path
+  if (lastModified != null) lsCache[path] = {
+    lastModified: lastModified,
+    lsObject: lsObj
+  }
 
   return lsObj;
 }
 
-
 /**
- * Treat malformed paths and return a filtered array of similar file paths 
- * to queried path if any, or parent directory files otherwise.
- * * Used on user AppCLI on 'open' to hint folders and directory files.
+ * Return matching file basenames for queried filepath. 
+ * * Used on Viewer 'open' action to hint files in a given directory.
  * @param {String} queryPath Path to list files.
  * @returns {Promise<String[]>}
  */
 async function lsHint(queryPath) {
-  if (!queryPath) queryPath = '~/'
+  // treat working path
+  let workingPath = expandPath( queryPath || process.cwd() )
 
-  // expand query into working path and check existence
-  let workingPath = expandPath(queryPath)
-  const pathExists = await new Promise((resolve, reject) => {
-    fs.stat(workingPath, (err, stat) => resolve(!err && stat))
+  /**
+   * Path FS.Stats. Can be null.
+   * @type {fs.Stats?}
+   */
+  const stats = await new Promise(resolve => {
+    fs.stat( workingPath, (err, stat) => resolve(stat) )
   })
 
-  // correct working path to upper directory
-  if (!pathExists) workingPath = p.dirname(workingPath)
+  // malformed path, use parent dir and cached lastModified timestamp. 
+  // If parent not in cache, fake lastModified to allow caching
+  let lastModified = stats?.mtimeMs
+  if (!stats) {
+    workingPath = p.dirname(workingPath)
+    lastModified = hintCache[workingPath]?.lastModified || 0
+  }
 
-  // try cache, otherwise build and store entry
-  let hints = hintCache[workingPath]
-  if (!hints) {
+  // try cache, otherwise build and store
+  let hints
+  const cacheEntry = hintCache[workingPath]
+  if (cacheEntry && cacheEntry.lastModified === lastModified) {
+    hints = cacheEntry.hints
+  } else {
     const lsObj = await lsAsync(workingPath)
     
     // concat in order, append separator to directories
@@ -191,25 +203,27 @@ async function lsHint(queryPath) {
     const files = lsObj.files.map(i => i.name)
     hints = directories.concat(archives, files)
 
-    // store hints in lsCache
-    hintCache[workingPath] = hints
+    // cache
+    if (lastModified != null) hintCache[workingPath] = {
+      lastModified: lastModified,
+      hints: hints
+    }
   }
   
-  const query = pathExists ? '' : p.basename(queryPath).toLowerCase()
-  const hintRoot = pathExists ? queryPath : p.dirname(queryPath)
-  const queryIsDot = pathExists ? queryPath.endsWith('.') : query[0] === '.'
+  // filter hints skipping query mismatches and unrequested dot files
+  const query = stats ? '' : p.basename(queryPath).toLowerCase()
+  const hintRoot = stats ? queryPath : p.dirname(queryPath)
+  const queryIsDot = stats ? queryPath.endsWith('.') : query[0] === '.'
 
   let filteredHints = []
   for (const file of hints) {
-    // filter hints skipping query mismatches and unrequested dot files
-    if (query && !file.toLowerCase().includes(query)) continue
+    if ( query && !file.toLowerCase().includes(query) ) continue
     if (file[0] === '.' && !queryIsDot) continue
-    filteredHints.push(p.join(hintRoot, file))
+    filteredHints.push( p.join(hintRoot, file) )
   }
 
   return filteredHints
 }
-
 
 /** 
  * Wrapper for common file operations in unprivileged contexts.
@@ -220,21 +234,20 @@ async function lsHint(queryPath) {
  * @property {String} [pathURL] Same as path, but encoded for HTML. Only present for `image`, `video`.
  */
 
-/** Wrap file properties in object for use in unprivileged contexts.
+/**
+ * Wrap file properties in object for use in unprivileged contexts.
  * @param {'image'|'video'|'folder'|'archive'} category File category.
  * @param {String} name Basename. (Ex: `duck.png`)
  * @param {String} fullpath Absolute path. (Ex: `/home/user/Pictures/duck.png`)
  * @returns {FileObject} Wrapped file.
  */
 function fileObj(category, name, fullpath) {
-
   const obj = {
-    path : fullpath, // not-relative, atomic
-    name : name, // duck.png
+    path : fullpath,
+    name : name,
     category : category,
   }
 
-  // encoded url for media tag src property
   if (category === 'image' || category === 'video') {
     obj.pathURL = pathToFileURL(fullpath).href
   }
