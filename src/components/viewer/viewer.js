@@ -373,12 +373,25 @@ export class Viewer extends GenericFrame {
     return status
   }
 
-  /** @override */
-  mediaPlayToggle(forceState) {
+  /**
+   * @override
+   * @param {'play'|'pause'|'stop'|'next'|'previous'} action 
+   */
+  mediaControl(action) {
     const isImg = this.viewComponent.fileType === 'image'
 
-    if (isImg) this.viewComponent.slideshow.toggle(forceState, false)
-    else this.viewComponent.media.playToggle(forceState)
+    switch (action) {
+      case 'play':
+        if (!isImg) this.viewComponent.media.playToggle(true)
+        break
+      case 'pause': case 'stop':
+        if (isImg) this.viewComponent.slideshow.toggle(false, false)
+        else this.viewComponent.media.playToggle(false)
+        break
+      case 'next': case 'previous':
+        if (!isImg) this.flipPage(action === 'next')
+        break
+    }
   }
 }
 

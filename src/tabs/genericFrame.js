@@ -95,9 +95,9 @@ export class GenericFrame extends HTMLElement {
   restoreState(stateObject) {}
 
   /**
-   * Toggle Frame media play state.
+   * Handle media requests for media-session integration. Override to customize.
    * @abstract
-   * @param {Boolean} forceState 
+   * @param {'play'|'pause'|'stop'|'next'|'previous'} action 
    */
-  mediaPlayToggle(forceState) {}
+  mediaControl(action) {}
 }

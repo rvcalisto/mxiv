@@ -44,8 +44,7 @@ export class TabHeader {
     // pause media via tab button
     playBtn.onclick = (e) => {
       e.stopImmediatePropagation()
-      if (this.tabInstance.frame.mediaPlayToggle)
-        this.tabInstance.frame.mediaPlayToggle(false)
+      this.tabInstance.frame.mediaControl('pause')
     }
 
     const label = document.createElement('p')
