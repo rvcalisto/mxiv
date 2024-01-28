@@ -18,7 +18,8 @@ const COVERDIR = process.platform === 'win32' ?
 /**
  * Generic icon to use secondarily.
  */
-const PLACEHOLDERICON = p.join(__dirname, '../../icons/libraryIconPlaceholder.jpg')
+const PLACEHOLDERICON = p.join(__dirname,
+  '../../icons/libraryIconPlaceholder.jpg')
 
 /**
  * Extract tool present. I promise we'll know, eventually.
@@ -98,10 +99,12 @@ async function deleteThumbnailDirectory() {
  * @returns {Promise<String>} Path to generated thumbnail.
  */
 async function createThumbnail(path) {
-  if ( fileType(path) === 'archive' )
-    return await coverFromArc(path)
+  if (!canThumbnail)
+    return await coverPlaceholder()
+  else if ( fileType(path) === 'archive' )
+    return await coverFromArchive(path)
   else
-    return await coverFromDir(path)
+    return await coverFromDirectory(path)
 }
 
 /**
@@ -134,22 +137,26 @@ async function deleteThumbnail(path) {
  * @param {String} path Folder Path.
  * @returns {Promise<String>} Cover Path.
  */
-async function coverFromDir(path) {
-  // get first file from folder
-  const firstFile = await new Promise(resolve => {
-    fs.readdir( path, (err, files) => resolve( p.join(path, files[0]) ) );
+async function coverFromDirectory(path) {
+  /** Directory files, only basenames. @type {string[]} */
+  const directoryFiles = await new Promise(resolve => {
+    fs.readdir( path, (err, files) => resolve(files) )
+  })
+
+  const coverBasename = directoryFiles.find(filepath => {
+    const type = fileType(filepath)
+    return type === 'image' || type === 'video'
   })
   
-  // firstFile may not be an image! use placeholder
-  const isImg = fileType(firstFile) === 'image'
-  if (!isImg || !canThumbnail) return await coverPlaceholder()
+  if (coverBasename == null)
+    return await coverPlaceholder()
 
-  // generate cover path to be used as UUID.extention
-  const ext = p.extname(firstFile)
-  const coverPath = p.join(COVERDIR, `${randomUUID()}${ext}`)
-  const thumbnailOK = await thumbnailTool.generateThumbnail(firstFile, coverPath)
+  // generate cover as UUID.jpg
+  const coverSource = p.join(path, coverBasename)
+  const coverTarget = p.join(COVERDIR, `${randomUUID()}.jpg`)
+  const thumbnailOK = await thumbnailTool.generateThumbnail(coverSource, coverTarget)
 
-  return coverPath
+  return coverTarget
 }
 
 /**
@@ -157,23 +164,24 @@ async function coverFromDir(path) {
  * @param {String} path Folder Path.
  * @returns {Promise<String>} Cover Path.
  */
-async function coverFromArc(path) {
-  // extract first file from archive and get its path
-  const firstFile = ( await archiveTool.fileList(path) )[0]
+async function coverFromArchive(path) {
+  // find cover file from archive
+  const archiveFiles = await archiveTool.fileList(path)
+  const coverBasename = archiveFiles.find(filepath => {
+    const type = fileType(filepath)
+    return type === 'image' || type === 'video'
+  })
 
-  // firstFile may not be an image! use placeholder
-  const isImg = fileType(firstFile) === 'image'
-  if (!isImg || !canThumbnail) return await coverPlaceholder()
+  if (coverBasename == null)
+    return await coverPlaceholder()
 
-  const extractedPath = await archiveTool.extractOnly(firstFile, path, COVERDIR)
-
-  // generate cover path to be used as UUID.extention. Remove extracted source.
-  const ext = p.extname(extractedPath)
-  const coverPath = p.join(COVERDIR, `${randomUUID()}${ext}`)
-  const thumbnailOK = await thumbnailTool.generateThumbnail(extractedPath, coverPath)
-  fs.rmSync(extractedPath)
-
-  return coverPath
+  // extract file and generate cover as UUID.jpg, remove extracted file after
+  const coverSource = await archiveTool.extractOnly(coverBasename, path, COVERDIR)
+  const coverTarget = p.join(COVERDIR, `${randomUUID()}.jpg`)
+  const thumbnailOK = await thumbnailTool.generateThumbnail(coverSource, coverTarget)
+  fs.rmSync(coverSource)
+  
+  return coverTarget
 }
 
 /**
@@ -181,12 +189,12 @@ async function coverFromArc(path) {
  * @returns {Promise<String>} Placeholder thumbnail path.
  */
 async function coverPlaceholder() {
-  // TODO: generate cover for videos, custom icon for audio
-  const placeholderCover = p.join(COVERDIR, `${randomUUID()}.jpg`)
-  await new Promise(resolve => {
-    fs.copyFile( PLACEHOLDERICON, placeholderCover, () => resolve() )
+  // TODO: custom placeholders by filetype (?)
+  const coverTarget = p.join(COVERDIR, `${randomUUID()}.jpg`)
+
+  return await new Promise(resolve => {
+    fs.copyFile( PLACEHOLDERICON, coverTarget, () => resolve(coverTarget) )
   })
-  return placeholderCover
 }
 
 
