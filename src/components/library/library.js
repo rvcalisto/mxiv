@@ -49,10 +49,10 @@ export class Library extends GenericFrame {
    * Sync library to watchlist, update covers.
    */
   async syncToWatchlist() {
-    if ( !await elecAPI.requestLibraryLock() ) return
-
     const watchFolders = Object.values( this.watchlistPanel.getWatchObject() )
-    if (!watchFolders.length) return
+    if (watchFolders.length < 1) return
+
+    if ( !await elecAPI.requestLibraryLock() ) return
     
     // prevent closing window while async population happens
     window.onbeforeunload = () => false
