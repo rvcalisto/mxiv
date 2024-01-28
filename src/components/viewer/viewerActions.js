@@ -12,7 +12,7 @@ ActionDB.setComponentActions('viewer', {
   'open': {
     'desc' : 'open file(s) or folder(s)',
     'run'  : (...paths) => FRAME.open(...paths),
-    'options' : async (query) => await elecAPI.fileAPI.lsHint(query),
+    'options' : async (query) => await elecAPI.queryPath(query),
     'customFilter' : () => () => true // filtered upstream, skip usual filter
   },
 
@@ -243,7 +243,7 @@ ActionDB.setComponentActions('viewer', {
     'desc' : 'filter files by name or tag, pass --exclusive to require a match for every string',
     'run'  : (...queries) => FRAME.filter(...queries),
     'options': (query) => {
-      if (query.slice(0, 4) == 'tag:') return elecAPI.tagAPI.uniqueTags()
+      if (query.slice(0, 4) == 'tag:') return elecAPI.uniqueTags()
       else if (query.slice(0, 2) == '--') return [option('--exclusive', 'files must match every tag')]
       else return FRAME.fileBook.files.map(i => i.name)
     },
@@ -255,17 +255,17 @@ ActionDB.setComponentActions('viewer', {
 
   'delete': {
     'desc' : 'permanently delete current file',
-    'run'  : () => FRAME.deletePage()
+    'run'  : async () => await FRAME.deletePage()
   },
 
   'runScript': {
     'desc' : 'run user script where %F, %N represent current filepath & \
     filename respectively : <script> <displayMsg?>',
-    'run'  : (usrCmd, optMsg) => {
+    'run'  : async (usrCmd, optMsg) => {
       const msgId = 'runScript'
       if (!usrCmd) return AppNotifier.notify('invalid arguments', msgId)
       
-      const wasRan = FRAME.runOnPage(usrCmd, optMsg, msgId)
+      const wasRan = await FRAME.runOnPage(usrCmd, optMsg, msgId)
 
       if (wasRan && optMsg) AppNotifier.notify(optMsg, msgId)
       else if (!wasRan) AppNotifier.notify(`this command needs a file to run`, msgId)
@@ -283,7 +283,7 @@ ActionDB.setComponentActions('viewer', {
           const success = await FRAME.fileBook.tag(true, ...tags)
           AppNotifier.notify(`${success ? '' : 'no '}tags updated`)
         },
-        'options': () => elecAPI.tagAPI.uniqueTags()
+        'options': () => elecAPI.uniqueTags()
       },
       'del': {
         'desc': 'delete one or more tags from current file',
@@ -293,7 +293,7 @@ ActionDB.setComponentActions('viewer', {
         },
         'options': () => {
           if (!FRAME.fileBook.currentFile) return []
-          return elecAPI.tagAPI.getTags(FRAME.fileBook.currentFile.path)
+          return elecAPI.getTags(FRAME.fileBook.currentFile.path)
         }
       }
     }

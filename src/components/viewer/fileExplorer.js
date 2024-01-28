@@ -130,7 +130,7 @@ export class FileExplorer extends HTMLElement {
    */
   async listDirectory(path) {
     /** @type {import("../../APIs/fileAPI.js").LSObject} */
-    const lsObj = await elecAPI.fileAPI.lsAsync(path)
+    const lsObj = await elecAPI.scanPath(path)
     const count = lsObj.directories.length + lsObj.archives.length + lsObj.files.length
     if (count < 1) {
       AppNotifier.notify(`${lsObj.target.name}: no supported files to list`, 'listDirectory')

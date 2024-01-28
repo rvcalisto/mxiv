@@ -15,7 +15,7 @@ ActionDB.setComponentActions('library', {
     'run' : () => {},
     'options' : (query, allArgs) => {
       // inject tag completion if using 'tag:'
-      if (query.slice(0, 4) == 'tag:') return elecAPI.tagAPI.uniqueTags()
+      if (query.slice(0, 4) == 'tag:') return elecAPI.uniqueTags()
 
       // treat queries
       const queries = allArgs.map(str => str.toLowerCase().trim()).filter(str => str)
@@ -41,14 +41,14 @@ ActionDB.setComponentActions('library', {
       'add': {
         'desc': 'add one or more tags to current book',
         'run': (...tags) => tag(true, ...tags),
-        'options': () => elecAPI.tagAPI.uniqueTags()
+        'options': () => elecAPI.uniqueTags()
       },
       'del': {
         'desc': 'delete one or more tags from current book',
         'run': (...tags) => tag(false, ...tags),
         'options': () => {
           if (!CoverGrid.selection) return []
-          return elecAPI.tagAPI.getTags(CoverGrid.selection.bookPath)
+          return elecAPI.getTags(CoverGrid.selection.bookPath)
         }
       }
     }
@@ -73,7 +73,7 @@ ActionDB.setComponentActions('library', {
           Library.watchlistPanel.addPath(path)
           AppNotifier.notify(`added ${path} to Watchlist`)
         },
-        'options': async (query) => await elecAPI.fileAPI.lsHint(query)
+        'options': async (query) => await elecAPI.queryPath(query)
       },
       'remove': {
         'desc': 'remove folder to Watchlist',
@@ -88,7 +88,7 @@ ActionDB.setComponentActions('library', {
       },
       'sync': {
         'desc': 'synchronize books with Watchlist entries',
-        'run': () => Library.syncToWatchlist()
+        'run': async () => await Library.syncToWatchlist()
       },
       'close': {
         'desc': 'close Watchlist if open',
@@ -116,9 +116,9 @@ ActionDB.setComponentActions('library', {
       },
       'delist': {
         'desc': 'delist currently selected book from library',
-        'run': () => {
+        'run': async () => {
           const cover = CoverGrid.selection
-          if (cover) Library.coverGrid.removeCover(cover)
+          if (cover) await Library.coverGrid.removeCover(cover)
           AppNotifier.notify(cover ? 'book delisted' : 'no book selected ', 'bookDelist')
         }
       }
@@ -172,8 +172,8 @@ ActionDB.setComponentActions('library', {
 
   'nukeLibrary' : {
     'desc': 'completely delist entire library',
-    'run': () => {
-      elecAPI.libAPI.clearLibrary()
+    'run': async () => {
+      await elecAPI.clearLibrary()
       Library.coverGrid.reloadCovers()
       AppNotifier.notify('library book entries cleared')
     }
@@ -201,8 +201,8 @@ async function tag(add = true, ...tags) {
   if (!tags.length) return AppNotifier.notify('no tags to update')
 
   let success
-  if (add) success = await elecAPI.tagAPI.tagFile(bookPath, ...tags)
-  else success = await elecAPI.tagAPI.untagFile(bookPath, ...tags)
+  if (add) success = await elecAPI.addTags(bookPath, ...tags)
+  else success = await elecAPI.removeTags(bookPath, ...tags)
 
   AppNotifier.notify(`${success ? '' : 'no '}tags updated`, 'tag')
 }

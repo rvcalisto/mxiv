@@ -23,5 +23,4 @@ onbeforeunload = function clearTempFolders () {
 onload = function StartApp () {
   UserAccelerators.reload()
   Tab.newTab()
-  elecAPI.tagAPI.start()
 }

@@ -1,10 +1,9 @@
-/** Open files, folders and archives. Create, track and delete temporary folders. */
-
 const fs = require('fs');
 const os = require('os');
 const p = require('path');
-const arcAPI = require('./arcAPI')
-const fileAPI = require('./fileAPI')
+const { expandPath, fileType } = require('./fileTools')
+const { listFiles, fileObj } = require('./fileSearch')
+const archiveTool = require('../tool/archive')
 
 const TMPDIR = os.tmpdir()  // OS directory where to temporarily extract archives
 const TMPPREFIX = 'mxiv-'   // prefix for temporarily extracted archive folders
@@ -14,8 +13,8 @@ const TMPPREFIX = 'mxiv-'   // prefix for temporarily extracted archive folders
  * Viewable file structure for path array. Used in `FileBook`.
  * @typedef {Object} BookObject
  * @property {String?} startOn Path substring from file that is supposed to be displayed at start.
- * @property {fileAPI.FileObject[]} paths Listed files parent directories.
- * @property {fileAPI.FileObject[]} files All viewable files for given directories.
+ * @property {import('./fileSearch').FileObject[]} paths Listed files parent directories.
+ * @property {import('./fileSearch').FileObject[]} files All viewable files for given directories.
  */
 
 /**
@@ -46,14 +45,14 @@ async function open(paths, ownerID = 0) {
   for (let path of paths) {
     // skip empty path, turn atomic
     if (!path) continue
-    path = fileAPI.expandPath(path)
+    path = expandPath(path)
 
     // filter already processed paths
     const parentDir = p.dirname(path)
-    const fileType = fileAPI.fileType(path)
-    const isViewable = fileType !== 'archive' && fileType !== 'other'
+    const type = fileType(path)
+    const isViewable = type !== 'archive' && type !== 'other'
     if (bookObj.paths.some(item => {
-      // filter files covered by a previous lsAsync scan 
+      // filter files covered by a previous listFiles scan 
       if (isViewable && (parentDir === item.path) ) return true
       // filter already scanned directory/archive
       if (item.path === path) return true
@@ -67,7 +66,7 @@ async function open(paths, ownerID = 0) {
 
     // Directory, build files array from path
     if ( stats.isDirectory() ) {
-      const lsObj = await fileAPI.lsAsync(path)
+      const lsObj = await listFiles(path)
       if (!lsObj.files.length) continue
 
       bookObj.paths.push(lsObj.target)
@@ -77,7 +76,7 @@ async function open(paths, ownerID = 0) {
     // Viewable file, build from parent folder and start on itself
     else if (isViewable) {
       // only set startOn file for first path
-      const lsObj = await fileAPI.lsAsync(parentDir)
+      const lsObj = await listFiles(parentDir)
       if (!bookObj.paths.length) bookObj.startOn = path
 
       bookObj.paths.push(lsObj.target)
@@ -85,13 +84,13 @@ async function open(paths, ownerID = 0) {
     }
 
     // Archive, extract (and prevent trying to extract directories with archive extentions)
-    else if ( fileType === 'archive' && !stats.isDirectory() ) {
+    else if ( type === 'archive' && !stats.isDirectory() ) {
       const tmpDir = await tmpFolders.leaseArchive(path, ownerID)
       if (tmpDir) {
         workingArchives.push(path) // prevent surrendering working archive leases later
-        const lsObj = await fileAPI.lsAsync(tmpDir)
+        const lsObj = await listFiles(tmpDir)
   
-        bookObj.paths.push( fileAPI.fileObj('archive', p.basename(path), path) )
+        bookObj.paths.push( fileObj('archive', p.basename(path), path) )
         bookObj.files = bookObj.files.concat(lsObj.files)
       }
     }
@@ -123,9 +122,9 @@ const tmpFolders = new class TemporaryFolders {
    */
   isPathFromTmp(path) {
     const pathIsTmp = path.includes( p.join(TMPDIR, TMPPREFIX) )
-    const pathType = fileAPI.fileType(path)
+    const type = fileType(path)
 
-    return pathIsTmp && pathType !== 'other' && pathType !== 'archive'
+    return pathIsTmp && type !== 'other' && type !== 'archive'
   }
 
   /**
@@ -157,17 +156,17 @@ const tmpFolders = new class TemporaryFolders {
     }
 
     // filter out archives without viewable files
-    const archivedFiles = await arcAPI.fileList(archivePath)
+    const archivedFiles = await archiveTool.fileList(archivePath)
     const hasViewableFiles = archivedFiles.some(filePath => {
-      const fileType = fileAPI.fileType(filePath)
-      return fileType === 'image' || fileType === 'video'
+      const type = fileType(filePath)
+      return type === 'image' || type === 'video'
     })
     if (!hasViewableFiles) return ''
 
     // new unique temp folder (ex: /tmp/prefix-dpC7Id)
     const tmpDir = fs.mkdtempSync( p.join(TMPDIR, TMPPREFIX) )
-    await arcAPI.extract(archivePath, tmpDir)
-    console.log(`Extracted archive to tmp folder ${tmpDir}`)
+    await archiveTool.extract(archivePath, tmpDir)
+    console.log(`MXIV: Created tmp folder at ${tmpDir}`)
 
     this.#openArchives[archivePath] = {
       path: tmpDir,
@@ -197,16 +196,16 @@ const tmpFolders = new class TemporaryFolders {
   #deleteTmpFolder(folder) {
     // folder resides on TMPDIR, right? RIGHT?
     if ( p.dirname(folder) !== TMPDIR ) {
-      return console.error('FORBIDDEN: Tried to delete non-temporary folder!\n', 
+      return console.error('MXIV::FORBIDDEN: Tried to delete non-temporary folder!\n', 
         `targeted path: ${folder}`)
     }
 
     // delete folder recursively
     try {
       fs.rmSync(folder, { recursive: true })
-      console.log(`Deleted tmp folder at ${folder}`)
+      console.log(`MXIV: Deleted tmp folder at ${folder}`)
     } catch (err) {
-      console.error(`Failed to clear tmp folder at ${folder}\n`, err)
+      console.error(`MXIV: Failed to clear tmp folder at ${folder}\n`, err)
     }
   }
 }

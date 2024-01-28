@@ -14,6 +14,11 @@ export class Library extends GenericFrame {
   static tagName = 'library-component'
   static allowDuplicate = false
 
+  /**
+   * Lock to prevent simultaneous sync calls.
+   */
+  #blockSync = false
+
   constructor() {
     super()
 
@@ -49,10 +54,13 @@ export class Library extends GenericFrame {
    * Sync library to watchlist, update covers.
    */
   async syncToWatchlist() {
+    if (this.#blockSync) return
+
     const watchFolders = Object.values( this.watchlistPanel.getWatchObject() )
     if (!watchFolders.length) return
     
     // prevent closing window while async population happens
+    this.#blockSync = true
     window.onbeforeunload = () => false
     this.syncProgressNotifier.toggleVisibility()
 
@@ -60,7 +68,7 @@ export class Library extends GenericFrame {
     let addedPaths = 0
     for (const item of watchFolders) {
       console.log('sync ' + item.path)
-      addedPaths += await elecAPI.libAPI.addToLibrary(item.path, item.recursive)
+      addedPaths += await elecAPI.addToLibrary(item.path, item.recursive)
       this.coverGrid.reloadCovers() // repaint
     }
 
@@ -68,6 +76,7 @@ export class Library extends GenericFrame {
     AppNotifier.notify(`${addedPaths} new book(s) added`, 'syncToWatchlist')
     this.syncProgressNotifier.toggleVisibility(false)
     window.onbeforeunload = null
+    this.#blockSync = false
   }
 
   /**
@@ -88,7 +97,7 @@ export class Library extends GenericFrame {
 
     for (const file of files) {
       console.log('add ' + file + ' to library')
-      await elecAPI.libAPI.addToLibrary(file)
+      await elecAPI.addToLibrary(file)
     }
 
     this.coverGrid.reloadCovers() // repaint

@@ -3,23 +3,21 @@
  */
 export class FileBook {
   
-  static #lastBookID = 0
-
   /** 
    * FileBook UUID
-   * @type {Number}
+   * @type {String}
    */
-  #bookID = ++FileBook.#lastBookID
+  #bookID = crypto.randomUUID()
 
   /**
    * All files loaded.
-   * @type {import("../../APIs/fileAPI").FileObject[]}
+   * @type {import("../../APIs/file/fileSearch").FileObject[]}
    */
   #allFiles = []
   
   /**
    * All files from current filter.
-   * @type {import("../../APIs/fileAPI").FileObject[]}
+   * @type {import("../../APIs/file/fileSearch").FileObject[]}
    */
   #filterFiles = []
 
@@ -34,7 +32,7 @@ export class FileBook {
   constructor() {
     /**
      * All loaded paths.
-     * @type {import("../../APIs/fileAPI").FileObject[]}
+     * @type {import("../../APIs/file/fileSearch").FileObject[]}
      */
     this.paths = []
 
@@ -54,7 +52,7 @@ export class FileBook {
     console.time(`bookID#${this.#bookID} open`)
 
     /** @type {import("../../APIs/openAPI").BookObject} */
-    const book = await elecAPI.open(paths, this.#bookID)
+    const book = await elecAPI.openFile(paths, this.#bookID)
 
     if (!book.paths.length) {
       console.timeEnd(`bookID#${this.#bookID} open`)
@@ -94,7 +92,7 @@ export class FileBook {
 
   /**
    * All visible files in current state.
-   * @returns {import("../../APIs/fileAPI").FileObject[]}
+   * @returns {import("../../APIs/file/fileSearch").FileObject[]}
    */
   get files() {
     return this.#filterQuery.length ? this.#filterFiles : this.#allFiles
@@ -102,7 +100,7 @@ export class FileBook {
 
   /**
    * Get FileObject from current page index.
-   * @returns {import("../../APIs/fileAPI").FileObject?}
+   * @returns {import("../../APIs/file/fileSearch").FileObject?}
    */
   get currentFile() {
     return this.files[this.page]
@@ -111,7 +109,7 @@ export class FileBook {
   /**
    * Filter files and update page. Abort if no file passes, clear filter if called without args.
    * @param {String[]} query Filter keys to display.
-   * @param {(file:import("../../APIs/fileAPI").FileObject)=>Boolean} filterFunc 
+   * @param {(file:import("../../APIs/file/fileSearch").FileObject)=>Boolean} filterFunc 
    * Filter function, must return boolean.
    * @returns {Number} Files in filter count. `0` on abort, `-1` on filter cleared.
    */
@@ -156,7 +154,7 @@ export class FileBook {
 
     const filteredCount = this.#applyFilter(queries, (file) => {
       const path = file.path.toLowerCase()
-      const fileTags = elecAPI.tagAPI.getTags(file.path)
+      const fileTags = elecAPI.getTags(file.path)
       
       // match on substring in path or for whole tags
       let match = false
@@ -186,8 +184,8 @@ export class FileBook {
     if (!currentFile || !tags.length) return false
 
     let success
-    if (add) success = await elecAPI.tagAPI.tagFile(currentFile.path, ...tags)
-    else success = await elecAPI.tagAPI.untagFile(currentFile.path, ...tags)
+    if (add) success = await elecAPI.addTags(currentFile.path, ...tags)
+    else success = await elecAPI.removeTags(currentFile.path, ...tags)
 
     return success
   }
@@ -195,7 +193,7 @@ export class FileBook {
   /** 
    * Set new page idx while wrapping around if out-of-bound.
    * @param {Number} pageIdx Normalized index FileObject.
-   * @returns {import("../../APIs/fileAPI").FileObject?} 
+   * @returns {import("../../APIs/file/fileSearch").FileObject?} 
    */
   setPageIdx(pageIdx) {
     const pageLength = this.files.length
@@ -239,7 +237,7 @@ export class FileBook {
 
   /**
    * Delist file from inner listings.
-   * @param {import("../../APIs/fileAPI").FileObject} file FileBook object.
+   * @param {import("../../APIs/file/fileSearch").FileObject} file FileBook object.
    * @returns {Number} Equivalent idx sugestion.`-1` if file to delist was not found.
    */
   delistFile(file) {

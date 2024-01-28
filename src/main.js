@@ -42,19 +42,25 @@ async function newWindow(options = {}) {
 };
 
 
-/** Setup IPC handlers. */
+/**
+ * Setup window IPC handlers.
+ */
 function ipcHandlers() {
 
-  // handle: open file dialog
-  ipcMain.handle('dialog', (e, options) => {
+  // IPC modules handlers as side-effect
+  require('./APIs/library/ipcHandlers')
+  require('./APIs/file/ipcHandlers')
+  require('./APIs/tag/ipcHandlers')
+
+  // window handlers
+  ipcMain.handle('window:new', (e) => {
+    newWindow()
+  })
+
+  ipcMain.handle('window:dialog', (e, options) => {
     const window = BrowserWindow.fromWebContents(e.sender)
     const files = dialog.showOpenDialogSync(window, options)
     if (files) return files
-  })
-
-  // handle: new window
-  ipcMain.handle('window:new', (e) => {
-    newWindow()
   })
 
   ipcMain.handle('window:fullscreen', (e) => {
@@ -76,7 +82,7 @@ if ( process.platform === 'win32' && require('electron-squirrel-startup') ) {
 
 // enforce single instance, avoid localStorage lock and resource duplication
 if ( !app.requestSingleInstanceLock() ) {
-  console.log('Another instance is already running. Closing.')
+  console.log('MXIV: Another instance is already running. Closing.')
   app.quit()
   return
 }
@@ -84,13 +90,15 @@ if ( !app.requestSingleInstanceLock() ) {
 
 // Electron initalization complete, setup IPC handlers and create first window
 app.on('ready', () => {
-  Menu.setApplicationMenu(null) // remove app menu bar
+  // remove app menu bar
+  Menu.setApplicationMenu(null)
+
   ipcHandlers()
 
   newWindow().then(win => {
     const pathArgs = pathsFromArgv()
     if (pathArgs.length)
-      win.send('viewer:open', { paths: pathArgs, newTab: true })
+      win.send('window:open', { paths: pathArgs, newTab: true })
   })
 })
 
@@ -101,7 +109,7 @@ app.on('second-instance', (ev, argv) => {
     // NOTE: relative paths will still use main process CWD...
     const pathArgs = pathsFromArgv(argv)
     if (pathArgs.length)
-      win.send('viewer:open', { paths: pathArgs, newTab: true })
+      win.send('window:open', { paths: pathArgs, newTab: true })
   })
 })
 

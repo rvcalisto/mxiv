@@ -191,7 +191,7 @@ export class Viewer extends GenericFrame {
     this.openArgs = [file.path, ...paths] 
 
     // wait for display (loaded) and resolve block
-    const fileURL = elecAPI.fileAPI.getFileURL(file.path)
+    const fileURL = elecAPI.getFileURL(file.path)
     let success = await this.viewComponent.display(fileURL, file.category)
     this.#loading = false
     
@@ -245,18 +245,23 @@ export class Viewer extends GenericFrame {
    * Run user defined script on current file.
    * @param {String} userScript User script.
    * @param {String} optMsg Message to display on execution.
-   * @returns {boolean} Either command was run or not.
+   * @returns {Promise<boolean>} Either command was run or not.
    */
-  runOnPage(userScript) {
+  async runOnPage(userScript) {
     const currentFile = this.fileBook.currentFile
-    const success = elecAPI.fileAPI.runOnFile(userScript, currentFile)
+    const success = await elecAPI.runOnFile(userScript, currentFile)
+    if (success) console.log(`Ran user script:`, {
+      script: userScript,
+      file: currentFile
+    })
+    
     return success
   }
   
   /**
    * Delete current file from filesystem.
    */
-  deletePage() {
+  async deletePage() {
     const currentFile = this.fileBook.currentFile
     if (!currentFile) return AppNotifier.notify('no loaded file to delete', 'pageDel')
     
@@ -265,11 +270,12 @@ export class Viewer extends GenericFrame {
 
     // delist current file and delete it from filesystem
     const equivalentIdx = this.fileBook.delistFile(currentFile)
-    elecAPI.fileAPI.deleteFile(currentFile.path)
+    await elecAPI.deleteFile(currentFile.path)
 
     // update explorer and display suggested page
     this.fileExplorer.reload()
-    this.gotoPage(equivalentIdx)
+    await this.gotoPage(equivalentIdx)
+    this.fileExplorer.syncSelection()
     AppNotifier.notify('removed ' + currentFile.path)
   }
 

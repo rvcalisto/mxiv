@@ -1,32 +1,42 @@
 const { contextBridge, ipcRenderer } = require("electron")
 const { webFrame } = require("electron/renderer")
-const tagAPI = require("./APIs/tagAPI.js")
-const arcAPI = require('./APIs/arcAPI') // exposed for debugging, remove later
-const libAPI = require('./APIs/libAPI')
-const fileAPI = require('./APIs/fileAPI')
-const openAPI = require("./APIs/openAPI")
+const { pathToFileURL } = require('url')
+const library = require('./APIs/library/renderer')
+const localTagStorage = require('./APIs/tag/renderer')
 
 
 contextBridge.exposeInMainWorld('elecAPI', {
 
-  tagAPI:  tagAPI,      // tag, untag, filter files. [book.js] 
-  arcAPI:  arcAPI,      // exposed for debugging, remove later
-  libAPI:  libAPI,      // library, cover thumbnails [library.js]
-  fileAPI: fileAPI,     // everything file related [book.js, fileExplorer.js, statusBar.js]
+  // library
+  addToLibrary: async (path, recursively) => library.addToLibrary(path, recursively),
+  getLibraryEntries: () => library.getLibraryEntries(),
+  removeFromLibrary: async (path) => library.removeFromLibrary(path),
+  clearLibrary: async () => library.clearLibrary(),
 
-  // open files/dirs/archives on book.js [book.js]
-  open: (path, ownerID) => openAPI.open(path, ownerID), // maybe merge with fileAPI
-  clearTmp: (ownerID) => openAPI.clearTmp(ownerID),
+  // open files
+  openFile: async (path, ownerID) => ipcRenderer.invoke('file:open', path, ownerID),
+  clearTmp: async (ownerID) => ipcRenderer.invoke('file:clearTmp', ownerID),
   clearCache: () => webFrame.clearCache(),
 
-  // open tabs from main.js (cmdline) [index.js]
-  onOpen: (details) => ipcRenderer.on('viewer:open', details),
+  // operate on file
+  getFileURL: (path) => pathToFileURL(path).href,
+  runOnFile: async (userScript, currentFile) => ipcRenderer.invoke('file:runScript', userScript, currentFile),
+  deleteFile: async (path) => ipcRenderer.invoke('file:delete', path),
 
-  // open native file dialog [library.js]
-  dialog: (options) => ipcRenderer.invoke('dialog', options),
+  // discover files
+  queryPath: async (path) => ipcRenderer.invoke('file:queryPath', path),
+  scanPath: async (path) => ipcRenderer.invoke('file:scanPath', path),
 
+  // manage file tags
+  uniqueTags: () => localTagStorage.uniqueTags(), // renderer, for non-blocking sync
+  getTags: (path) => localTagStorage.getTags(path), // renderer, for non-blocking sync
+  addTags: async (path, ...tags) => ipcRenderer.invoke('tags:add', path, ...tags),
+  removeTags: async (path, ...tags) => ipcRenderer.invoke('tags:remove', path, ...tags),
+  
   // app window
-  newWindow: () => ipcRenderer.invoke('window:new'), // new window instance [commands.js]
-  toggleFullscreen: () => ipcRenderer.invoke('window:fullscreen'), // [viewer.js, commands.js]
+  newWindow: async () => ipcRenderer.invoke('window:new'),
+  dialog: (options) => ipcRenderer.invoke('window:dialog', options),
+  onOpen: (details) => ipcRenderer.on('window:open', details),
+  toggleFullscreen: async () => ipcRenderer.invoke('window:fullscreen'),
   onFullscreen: (isFullscreen) => ipcRenderer.on('window:onFullscreen', isFullscreen),
 })

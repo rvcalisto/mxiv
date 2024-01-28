@@ -8,19 +8,11 @@ import { Library } from "./library.js";
  */
 export class CoverGrid {
 
-  static #libraryStorage = 'libraryPaths'
-
   /**
    * Cached library entry collection.
-   * @type {import('../../APIs/libAPI.js'.LibraryObject)}
+   * @type {import('../../APIs/library/renderer.js').LibraryEntry[]}
    */
-  static #libraryCache = {}
-
-  /**
-   * Library entry keys sorted by path.
-   * @type {String[]}
-   */
-  static #sortedLibraryKeys = []
+  static #libraryCache = []
 
   /**
    * Either library entry cache needs to be rebuilt on next draw.
@@ -39,7 +31,7 @@ export class CoverGrid {
    */
   #list
 
-  #library; #collator
+  #library
   
   /**
    * @param {Library} library Host component.
@@ -47,19 +39,13 @@ export class CoverGrid {
   constructor(library) {
     this.#list = library.shadowRoot.getElementById('library')
     this.#library = library
-    this.#collator = new Intl.Collator('en', { numeric: true })
   }
 
   /**
-   * Read and store library entry collection and order in cache.
+   * Cache sorted library entry collection.
    */
   #buildCache() {
-    const localEntry = localStorage.getItem(CoverGrid.#libraryStorage)
-    CoverGrid.#libraryCache = localEntry ? JSON.parse(localEntry) : {}
-  
-    CoverGrid.#sortedLibraryKeys = Object.keys(CoverGrid.#libraryCache)
-    CoverGrid.#sortedLibraryKeys.sort( (pathA, pathB) => this.#collator.compare(pathA, pathB) ) 
-  
+    CoverGrid.#libraryCache = elecAPI.getLibraryEntries()
     CoverGrid.#dirtyCache = false
     console.log('Library cache (re)built.');
   }
@@ -72,10 +58,9 @@ export class CoverGrid {
     if (CoverGrid.#dirtyCache) this.#buildCache()
 
     // all queries must match either path or a tag. Exclusive.
-    const filterFunc = !queries ? undefined : (key) => {
-      const bookObj = CoverGrid.#libraryCache[key]
-      const bookTags = elecAPI.tagAPI.getTags(bookObj.path)
-      const bookPath = bookObj.path.toLowerCase()
+    const filterFunc = !queries ? undefined : (entry) => {
+      const bookTags = elecAPI.getTags(entry.path)
+      const bookPath = entry.path.toLowerCase()
 
       for (let query of queries) {
         if (query[0] === '-') {
@@ -92,8 +77,8 @@ export class CoverGrid {
     }
 
     // console.time('populate library')
-    this.#list.populate(CoverGrid.#sortedLibraryKeys, (key) => {
-      const { name, path, coverPath, coverURL } = CoverGrid.#libraryCache[key]
+    this.#list.populate(CoverGrid.#libraryCache, (entry) => {
+      const { name, path, coverPath, coverURL } = entry
       const cover = Cover.from(name, path, coverPath, coverURL)
       
       cover.onclick = () => this.selectCover(cover)
@@ -106,7 +91,9 @@ export class CoverGrid {
 
     // recover last selection
     if (CoverGrid.selection) {
-      const lastSelected = this.#list.findItemElement(item => item === CoverGrid.selection.bookPath)
+      const lastSelected = this.#list
+        .findItemElement(item => item.path === CoverGrid.selection.bookPath)
+      
       if (lastSelected) this.selectCover(lastSelected)
     }
 
@@ -148,8 +135,8 @@ export class CoverGrid {
    * Delist cover and remove it from library.
    * @param {Cover} cover 
    */
-  removeCover(cover) {
-    elecAPI.libAPI.removeFromLibrary(cover.bookPath)
+  async removeCover(cover) {
+    await elecAPI.removeFromLibrary(cover.bookPath)
 
     if (CoverGrid.selection === cover) this.nextCoverHorizontal()
     cover.remove()

@@ -1,10 +1,6 @@
-/** Expand path shortcuts, list files and hint directory trees */
-
-const child_process = require("child_process");
 const fs = require('fs');
-const os = require('os');
 const p = require('path');
-const { pathToFileURL } = require("url");
+const { expandPath, fileType } = require('./fileTools')
 
 
 /**
@@ -28,72 +24,6 @@ function clearCache() {
 }
 
 /**
- * Infer type from supported file extentions.
- * For others such as folders, use async `fs.stat` instead.
- * @param {String} file File path or basename.
- * @returns Type String.
- */
-function fileType(file) {
-
-  switch ( p.extname(file) ) {
-    case '.jpg': case '.jpeg': case '.png':
-    case '.gif': case '.apng': case '.webp':
-    case '.svg': case '.icns': case '.ico':
-      return 'image';
-    case '.mp4': case '.webm':
-    case '.mp3': case '.ogg': // lump together for now
-      return 'video';
-    case '.zip': case '.cbz':
-      return 'archive'
-  }
-  return 'other';
-}
-
-/**
- * Expand shortcuts and relative paths into absolute, atomic paths.
- * @param {String} path Path to expand.
- * @returns {String}
- */
-function expandPath(path) {
-  if (path[0] === '~') path = os.homedir() + path.slice(1);
-  return p.resolve(path) // resolve "./", "../" & other relative paths
-}
-
-/**
- * Delete file at given path. 
- * * Used by Viewer to delete current file at user order.
- * @param {String} filePath Absolute file path.
- */
-function deleteFile(filePath) {
-  fs.rmSync(filePath)
-  console.log(`Deleted ${filePath}`);
-}
-
-/**
- * Run user script on default shell. Interpret `%F`, `%N` as filepath and basename.
- * Aborts if these symbols are used without passing a `FileObject`.
- * - Example: `runOnFile("dolphin --select %F &", <FileObject>)`
- * - Note: `%F` & `%N` are double-quoted, so favor using them as arguments to a script
- * file for complex commands. Ex: `runOnFile("~/myScript.sh %F", <FileObject>)`
- * @param {String} script Command script to run.
- * @param {FileObject} file File to run script on.
- * @returns {Boolean} Success.
- */
-function runOnFile(script, file = null) {
-  const needFile = script.includes('%F') || script.includes('%N')
-  if (needFile && !file) return false
-
-  if (file) {
-    script = script.replaceAll('%F', `"${file.path}"`)
-    script = script.replaceAll('%N', `"${file.name}"`)
-  }
-
-  console.log(`ran user command on file:\n${script}`)
-  child_process.exec(script) // not sync
-  return true
-}
-
-/**
  * Object structure from folder's supported files.
  * @typedef {Object} LSObject
  * @property {FileObject[]} directories Listed directories.
@@ -108,7 +38,7 @@ function runOnFile(script, file = null) {
  * @param {String} path Path to folder.
  * @returns {Promise<LSObject>} Listed files separated by category.
  */
-async function lsAsync(path) {
+async function listFiles(path) {
 
   path = expandPath(path)
 
@@ -169,7 +99,7 @@ async function lsAsync(path) {
  * @param {String} queryPath Path to list files.
  * @returns {Promise<String[]>}
  */
-async function lsHint(queryPath) {
+async function listPaths(queryPath) {
   // treat working path
   let workingPath = expandPath( queryPath || process.cwd() )
 
@@ -195,7 +125,7 @@ async function lsHint(queryPath) {
   if (cacheEntry && cacheEntry.lastModified === lastModified) {
     hints = cacheEntry.hints
   } else {
-    const lsObj = await lsAsync(workingPath)
+    const lsObj = await listFiles(workingPath)
     
     // concat in order, append separator to directories
     const directories = lsObj.directories.map(i => i.name + p.sep)
@@ -248,14 +178,5 @@ function fileObj(category, name, fullpath) {
   }
 }
 
-/**
- * Get path resolved into a POSIX URL for use in HTML.
- * @param {String} path Absolute path to file.
- * @returns {String}
- */
-function getFileURL(path) {
-  return pathToFileURL(path).href
-}
 
-
-module.exports = { clearCache, fileType, expandPath, deleteFile, runOnFile, lsAsync, lsHint, fileObj, getFileURL }
+module.exports = { listFiles, listPaths, clearCache, fileObj }
