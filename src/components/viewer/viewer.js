@@ -100,8 +100,8 @@ export class Viewer extends GenericFrame {
     // load media state
     this.viewComponent.state(stateObj.mediaState)
 
-    // don't autoplay if restoring video
-    this.viewComponent.autoplay = this.viewComponent.fileType != 'video'
+    // don't autoplay if restoring audio/video
+    this.viewComponent.autoplay = this.viewComponent.fileType === 'image'
 
     // re-apply filter (idx based, file order/count may have changed)
     if (stateObj.filterQuery.length) this.filter(...stateObj.filterQuery)

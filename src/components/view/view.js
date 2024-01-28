@@ -18,7 +18,7 @@ export class View extends HTMLElement {
 
     /**
      * Currently loaded file type.
-     * @type {'image'|'video'}
+     * @type {'image'|'audio'|'video'}
      */
     this.fileType = 'image'
 
@@ -147,12 +147,10 @@ export class View extends HTMLElement {
       const cantFurtherX = xAdds && scrollPosX == 1 || !xAdds && scrollPosX == 0 || scrollPosX == null
 
       if (!cantFurtherX) this.scrollBox.slide('x', deltaPxls)
-      else if (this.fileType == 'video') {
-        if (deltaSecs) this.media.skipBy(deltaSecs)
-      } else {
-        // can't slide and isn't video, skip page
-        if (xAdds) this.signalEvent('view:next')
-        else this.signalEvent('view:previous')
+      else if (this.fileType === 'image') {
+        this.signalEvent(`view:${xAdds ? 'next' : 'previous'}`) // flip page
+    } else {
+        if (deltaSecs) this.media.skipBy(deltaSecs) // move track
       }
     }
 

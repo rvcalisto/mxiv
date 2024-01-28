@@ -16,14 +16,15 @@ function fileType(file) {
     case '.jpg': case '.jpeg': case '.png':
     case '.gif': case '.apng': case '.webp':
     case '.svg': case '.icns': case '.ico':
-      return 'image';
+      return 'image'
+    case '.mp3': case '.ogg':
+      return 'audio'
     case '.mp4': case '.webm':
-    case '.mp3': case '.ogg': // lump together for now
       return 'video';
     case '.zip': case '.cbz':
       return 'archive'
   }
-  return 'other';
+  return 'other'
 }
 
 /**

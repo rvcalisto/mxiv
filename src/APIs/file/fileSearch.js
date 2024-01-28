@@ -160,12 +160,12 @@ async function listPaths(queryPath) {
  * @typedef {Object} FileObject
  * @property {String} path Absolute path to file.
  * @property {String} name Basename. (Ex: duck.png)
- * @property {'image'|'video'|'folder'|'archive'} category File category.
+ * @property {'image'|'audio'|'video'|'folder'|'archive'} category File category.
  */
 
 /**
  * Wrap file properties in object for use in unprivileged contexts.
- * @param {'image'|'video'|'folder'|'archive'} category File category.
+ * @param {'image'|'audio'|'video'|'folder'|'archive'} category File category.
  * @param {String} name Basename. (Ex: `duck.png`)
  * @param {String} fullpath Absolute path. (Ex: `/home/user/Pictures/duck.png`)
  * @returns {FileObject} Wrapped file.
