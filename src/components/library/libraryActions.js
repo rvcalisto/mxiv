@@ -118,8 +118,11 @@ ActionDB.setComponentActions('library', {
         'desc': 'delist currently selected book from library',
         'run': async () => {
           const cover = CoverGrid.selection
-          if (cover) await Library.coverGrid.removeCover(cover)
-          AppNotifier.notify(cover ? 'book delisted' : 'no book selected ', 'bookDelist')
+          if (!cover) 
+            return AppNotifier.notify('no book selected ', 'bookDelist')
+
+          const success = await Library.coverGrid.removeCover(cover)
+          if (success) AppNotifier.notify('book delisted', 'bookDelist')
         }
       }
     }
@@ -173,9 +176,11 @@ ActionDB.setComponentActions('library', {
   'nukeLibrary' : {
     'desc': 'completely delist entire library',
     'run': async () => {
-      await elecAPI.clearLibrary()
-      Library.coverGrid.reloadCovers()
+      const success = await elecAPI.clearLibrary()
+      if (!success) return
+
       AppNotifier.notify('library book entries cleared')
+      Library.coverGrid.reloadCovers()
     }
   },
 

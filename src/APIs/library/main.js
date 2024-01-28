@@ -1,198 +1,131 @@
-const fs = require('fs');
-const os = require('os');
-const p = require('path');
-const { listFiles } = require('../file/fileSearch')
-const { fileType } = require('../file/fileTools')
-const archiveTool = require('../tool/archive');
-const thumbnailTool = require('../tool/thumbnail');
-const { randomUUID } = require('crypto');
+const utils = require('./mainUtils');
+const { libraryStorage } = require('./libraryStorage');
 
 
 /**
- * Local folder for cover thumbnail storage.
+ * Library mutual exclusivity lock object.
  */
-const COVERDIR = process.platform === 'win32' ?
-  p.join(process.env.LOCALAPPDATA, 'mxiv', 'covers') :
-  p.join(os.homedir(), '.cache', 'mxiv', 'covers')
-
-/**
- * Generic icon to use secondarily.
- */
-const PLACEHOLDERICON = p.join(__dirname, '../../icons/libraryIconPlaceholder.jpg')
-
-/**
- * Extract tool present. I promise we'll know, eventually.
- * @type {boolean|undefined}
- */
-let canExtract = archiveTool.hasTool().then(value => canExtract = value)
-
-/**
- * Thumbnail tool present. I promise we'll know, eventually.
- * @type {boolean|undefined}
- */
-let canThumbnail = thumbnailTool.hasTool().then(value => canThumbnail = value)
-
-
-/**
- * Return library folder/archive candidates.
- * @param {String} folderPath Path to folder to be mapped recursively.
- * @param {Number} depth How many levels to recurse. Defaults to `Infinity`.
- * @param {String[]} mappedPaths Used internally on recursive calls.
- * @returns {Promise<String[]>} Mapped paths.
- */
-async function getCandidates(folderPath, depth = Infinity, mappedPaths = []) {
-  const ls = await listFiles(folderPath)
-
-  // add archives
-  if (canExtract)
-    for (const archive of ls.archives)
-      mappedPaths.push(archive.path)
-
-  // path has viewable files, add absolute path
-  if (ls.files.length)
-    mappedPaths.push(ls.target.path)
-
-  // process subfolders recursively
-  if (depth-- > 0)
-    for (const dir of ls.directories) 
-      await getCandidates(dir.path, depth, mappedPaths)
-  
-  return mappedPaths
+const mutexLock = {
+  locked: false,
+  owner: null
 }
 
 /**
- * Check if cover thumbnail path exists, try to create it if not found.
- * @returns {Promise<Boolean>} Either path exists or not at the end of execution.
+ * Request library mutex.
+ * @param {Number} senderID Sender number ID.
+ * @returns {Boolean}
  */
-async function createThumbnailDirectory() {
-  const folderExists = await new Promise(resolve => {
-    fs.stat( COVERDIR, (err, stat) => resolve(!err && stat != null) )
-  })
-  
-  return folderExists || new Promise(resolve => {
-    fs.mkdir( COVERDIR, { recursive: true }, (err) => {
-      if (err) console.log('MXIV: Couldn\'t create thumbnails folder\n', err)
-      else console.log(`MXIV: Created thumbnails folder at '${COVERDIR}'`)
-      resolve(!err)
+function requestLock(senderID) {
+  if (mutexLock.locked) return false
+  mutexLock.locked = true
+  mutexLock.owner = senderID
+  return true
+}
+
+/**
+ * Release library mutex.
+ * @param {Number} senderID Sender number ID.
+ * @returns {Boolean}
+ */
+function releaseLock(senderID) {
+  if (mutexLock.locked && mutexLock.owner === senderID) {
+    mutexLock.locked = false
+    mutexLock.owner = null
+    return true
+  }
+  return false
+}
+
+/**
+ * Store archive or folder recursively.
+ * @param {Electron.BrowserWindow} senderWin Electron sender window.
+ * @param {String} folderPath Folder/archive path to add.
+ * @param {true} recursively Either to evaluate subfolders recursively.
+ * @returns {Promise<Number>} New paths added.
+ */
+async function addToLibrary(senderWin, folderPath, recursively = true) {
+
+  // check cover directory, try creating if not found
+  if ( !await utils.createThumbnailDirectory() ) {
+    console.error('MXIV::ERROR: Couldn\'t create thumbnail directory')
+    return 0
+  }
+
+  // map folder and filter-out ineligible paths
+  await libraryStorage.getPersistence()
+  const collection = libraryStorage.storageObject
+  const candidates = await utils.getCandidates(folderPath, 
+    recursively ? Infinity : 1)
+
+  // filter out already cataloged paths
+  const newCandidates = candidates.filter(path => collection[path] == null )
+
+  // store new paths and emit event for library display 
+  for (let i = 0; i < newCandidates.length; i++) {
+    const path = newCandidates[i]
+    const thumbnail = await utils.createThumbnail(path)
+    libraryStorage.addEntry(path, thumbnail)
+
+    senderWin.send('library:new', {
+      total: newCandidates.length,
+      current: i,
+      newPath: path
     })
-  })
+  }
+
+  // store new library object
+  if (newCandidates.length) await libraryStorage.persist()
+  return newCandidates.length
+}
+
+/**
+ * Return sorted Library entries for displaying.
+ * @returns {Promise<LibraryEntry[]>}
+ */
+async function getLibraryEntries() {
+  return await libraryStorage.getEntries()
+}
+
+/**
+ * Remove a library entry and delete cover thumbnail from cache.
+ * @param {String} path Library object key. Path to stored book.
+ * @returns {Promise<Boolean>} Success.
+ */
+async function removeFromLibrary(path) {
+  const collection = libraryStorage.storageObject
+  const entry = collection[path]
+
+  if (!entry) {
+    console.warn(`MXIV::WARN: Can't delete entry. "${path}" is not in library.`)
+    return true
+  }
+
+  const success = await utils.deleteThumbnail(entry.coverPath)
+  if (!success)
+    console.warn(`MXIV::WARN: Failed to delete thumbnail at "${entry.coverPath}". Orphaning.`)
+
+  delete collection[path]
+  await libraryStorage.persist()
+
+  return true
 }
 
 /**
  * Delete entire library & cover thumbnail folder.
  * @returns {Promise<Boolean>} Success.
  */
-async function deleteThumbnailDirectory() {
-  return await new Promise(resolve => {
-    fs.rm(COVERDIR, { recursive: true }, (err) => {
-      if (!err) console.log('MXIV: successfuly deleted thumbnail covers folder')
-      else console.log('MXIV: couldn\'t delete thumbnail covers folder', err)
-      resolve(!err)
-    })
-  })
-}
-
-/**
- * Create thumbnail from file. Returns thumbnail path.
- * @param {String} path Folder/archive path.
- * @returns {Promise<String>} Path to generated thumbnail.
- */
-async function createThumbnail(path) {
-  if ( fileType(path) === 'archive' )
-    return await coverFromArc(path)
-  else
-    return await coverFromDir(path)
-}
-
-/**
- * Delete thumbnail.
- * @param {String} path Path to thumbnail.
- * @returns {Promise<Boolean>} Success.
- */
-async function deleteThumbnail(path) {
-  if (!path) return false
-
-  const insideCoverDir = p.dirname(path) === COVERDIR
-  if (!insideCoverDir) {
-    console.error(`MXIV::FORBIDDEN: Tried to delete non-thumbnail file!\ntargeted path: ${path}`)
-    return false
+async function clearLibrary() {
+  const success = await utils.deleteThumbnailDirectory()
+  if (success) {
+    libraryStorage.storageObject = {}
+    await libraryStorage.persist()
   }
- 
-  return new Promise(resolve => {
-    fs.rm(path, err => {
-      // ENOENT happens when spamming the async 'removeFromLibrary()'.
-      // The thumbnail has already been deleted by a previous call, ignore.
-      if (!err || err.code === 'ENOENT') return resolve(true)
-      
-      console.error(`MXIV: Failed to delete thumbnail at: ${path}\n`, err)
-      resolve(false)
-    })
-  })
-}
 
-/**
- * Asynchronously creates cover from folder's first file.
- * @param {String} path Folder Path.
- * @returns {Promise<String>} Cover Path.
- */
-async function coverFromDir(path) {
-  // get first file from folder
-  const firstFile = await new Promise(resolve => {
-    fs.readdir( path, (err, files) => resolve( p.join(path, files[0]) ) );
-  })
-  
-  // firstFile may not be an image! use placeholder
-  const isImg = fileType(firstFile) === 'image'
-  if (!isImg || !canThumbnail) return await coverPlaceholder()
-
-  // generate cover path to be used as UUID.extention
-  const ext = p.extname(firstFile)
-  const coverPath = p.join(COVERDIR, `${randomUUID()}${ext}`)
-  const thumbnailOK = await thumbnailTool.generateThumbnail(firstFile, coverPath)
-
-  return coverPath
-}
-
-/**
- * Asynchronously creates cover from archive's first file.
- * @param {String} path Folder Path.
- * @returns {Promise<String>} Cover Path.
- */
-async function coverFromArc(path) {
-  // extract first file from archive and get its path
-  const firstFile = ( await archiveTool.fileList(path) )[0]
-
-  // firstFile may not be an image! use placeholder
-  const isImg = fileType(firstFile) === 'image'
-  if (!isImg || !canThumbnail) return await coverPlaceholder()
-
-  const extractedPath = await archiveTool.extractOnly(firstFile, path, COVERDIR)
-
-  // generate cover path to be used as UUID.extention. Remove extracted source.
-  const ext = p.extname(extractedPath)
-  const coverPath = p.join(COVERDIR, `${randomUUID()}${ext}`)
-  const thumbnailOK = await thumbnailTool.generateThumbnail(extractedPath, coverPath)
-  fs.rmSync(extractedPath)
-
-  return coverPath
-}
-
-/**
- * Generate a cover placeholder and return its path.
- * @returns {Promise<String>} Placeholder thumbnail path.
- */
-async function coverPlaceholder() {
-  // TODO: generate cover for videos, custom icon for audio
-  const placeholderCover = p.join(COVERDIR, `${randomUUID()}.jpg`)
-  await new Promise(resolve => {
-    fs.copyFile( PLACEHOLDERICON, placeholderCover, () => resolve() )
-  })
-  return placeholderCover
+  return success
 }
 
 
-// create thumbnail directory as side-effect
-createThumbnailDirectory()
+// TODO: procedure to clean orphaned entries on sync (end of addToLibrary)
 
 
-module.exports = { getCandidates, createThumbnail, deleteThumbnail, createThumbnailDirectory, deleteThumbnailDirectory }
+module.exports = { getLibraryEntries, addToLibrary, removeFromLibrary, clearLibrary, requestLock, releaseLock }

@@ -10,7 +10,7 @@ export class CoverGrid {
 
   /**
    * Cached library entry collection.
-   * @type {import('../../APIs/library/renderer.js').LibraryEntry[]}
+   * @type {import('../../APIs/library/libraryStorage.js').LibraryEntry[]}
    */
   static #libraryCache = []
 
@@ -44,8 +44,8 @@ export class CoverGrid {
   /**
    * Cache sorted library entry collection.
    */
-  #buildCache() {
-    CoverGrid.#libraryCache = elecAPI.getLibraryEntries()
+  async #buildCache() {
+    CoverGrid.#libraryCache = await elecAPI.getLibraryEntries()
     CoverGrid.#dirtyCache = false
     console.log('Library cache (re)built.');
   }
@@ -54,8 +54,8 @@ export class CoverGrid {
    * Draw covers whose path or tags includes query. Draws all if not given.
    * @param {String[]?} queries Filter covers.
    */
-  drawCovers(queries) {
-    if (CoverGrid.#dirtyCache) this.#buildCache()
+  async drawCovers(queries) {
+    if (CoverGrid.#dirtyCache) await this.#buildCache()
 
     // all queries must match either path or a tag. Exclusive.
     const filterFunc = !queries ? undefined : (entry) => {
@@ -133,16 +133,23 @@ export class CoverGrid {
 
   /**
    * Delist cover and remove it from library.
-   * @param {Cover} cover 
+   * @param {Cover} cover
+   * @returns {Promise<Boolean>} Success.
    */
   async removeCover(cover) {
-    await elecAPI.removeFromLibrary(cover.bookPath)
+    if ( !await elecAPI.requestLibraryLock() ) return false
 
-    if (CoverGrid.selection === cover) this.nextCoverHorizontal()
-    cover.remove()
-
-    CoverGrid.#dirtyCache = true
-    this.#library.refreshStatus()
+    const success = await elecAPI.removeFromLibrary(cover.bookPath)
+    if (success) {
+      if (CoverGrid.selection === cover) this.nextCoverHorizontal()
+      cover.remove()
+  
+      CoverGrid.#dirtyCache = true
+      this.#library.refreshStatus()
+    }
+  
+    await elecAPI.releaseLibraryLock()
+    return success
   }
 
   /**

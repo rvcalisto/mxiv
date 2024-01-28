@@ -14,11 +14,6 @@ export class Library extends GenericFrame {
   static tagName = 'library-component'
   static allowDuplicate = false
 
-  /**
-   * Lock to prevent simultaneous sync calls.
-   */
-  #blockSync = false
-
   constructor() {
     super()
 
@@ -54,35 +49,41 @@ export class Library extends GenericFrame {
    * Sync library to watchlist, update covers.
    */
   async syncToWatchlist() {
-    if (this.#blockSync) return
+    if ( !await elecAPI.requestLibraryLock() ) return
 
     const watchFolders = Object.values( this.watchlistPanel.getWatchObject() )
     if (!watchFolders.length) return
     
     // prevent closing window while async population happens
-    this.#blockSync = true
     window.onbeforeunload = () => false
     this.syncProgressNotifier.toggleVisibility()
 
+    console.time(`syncToWatchlist`)
+    
     // use keys for now as no recursive check is in place
     let addedPaths = 0
     for (const item of watchFolders) {
       console.log('sync ' + item.path)
       addedPaths += await elecAPI.addToLibrary(item.path, item.recursive)
-      this.coverGrid.reloadCovers() // repaint
     }
 
-    // hide ProgressNotifier allow to close window again
+    console.timeEnd(`syncToWatchlist`)
+    
+    // hide ProgressNotifier, allow to close window again
     AppNotifier.notify(`${addedPaths} new book(s) added`, 'syncToWatchlist')
     this.syncProgressNotifier.toggleVisibility(false)
+    this.coverGrid.reloadCovers()
     window.onbeforeunload = null
-    this.#blockSync = false
+
+    await elecAPI.releaseLibraryLock()
   }
 
   /**
-   * add files to library without adding to watchlist.
+   * add files to library without adding to watchlist. (Remove?)
    */
   async addToLibrary() {
+    if ( !await elecAPI.requestLibraryLock() ) return
+
     const files = await elecAPI.dialog({
       title: "Add to Watchlist",
       properties: ['multiSelections'], // 'openDirectory' invalidate archives
@@ -93,14 +94,16 @@ export class Library extends GenericFrame {
       ]
     })
 
-    if (!files || !files.length) return
+    if (files != null && files.length) {
+      for (const file of files) {
+        console.log(`adding ${file} to library`)
+        await elecAPI.addToLibrary(file)
+      }
 
-    for (const file of files) {
-      console.log('add ' + file + ' to library')
-      await elecAPI.addToLibrary(file)
+      this.coverGrid.reloadCovers()
     }
 
-    this.coverGrid.reloadCovers() // repaint
+    await elecAPI.releaseLibraryLock()
   }
 
   #initEvents() {
@@ -198,12 +201,12 @@ class ProgressNotifier {
 }
 
 
-// listen to libAPI process and notify progress
-addEventListener('bookAdded', function onNewBook(ev) {
+// notify progress while new library entries are added
+elecAPI.onLibraryNew(function onNewBook(e, infoObj) {
   /** @type {Library} */
   const libraryComponent = document.getElementsByTagName(Library.tagName)[0]
   
-  const { current, total, newPath } = ev.detail
+  const { current, total, newPath } = infoObj
   libraryComponent.syncProgressNotifier.updateLabel(newPath)
   libraryComponent.syncProgressNotifier.updateBar(current, total)
 })

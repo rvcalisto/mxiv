@@ -1,17 +1,22 @@
 const { contextBridge, ipcRenderer } = require("electron")
 const { webFrame } = require("electron/renderer")
 const { pathToFileURL } = require('url')
-const library = require('./APIs/library/renderer')
 const localTagStorage = require('./APIs/tag/renderer')
+
+// TODO: Remove later.
+require('./APIs/library/storageMigration')
 
 
 contextBridge.exposeInMainWorld('elecAPI', {
 
   // library
-  addToLibrary: async (path, recursively) => library.addToLibrary(path, recursively),
-  getLibraryEntries: () => library.getLibraryEntries(),
-  removeFromLibrary: async (path) => library.removeFromLibrary(path),
-  clearLibrary: async () => library.clearLibrary(),
+  requestLibraryLock: async () => ipcRenderer.invoke('library:lock'),
+  releaseLibraryLock: async () => ipcRenderer.invoke('library:unlock'),
+  addToLibrary: async (path, recursively) => ipcRenderer.invoke('library:add', path, recursively),
+  getLibraryEntries: () => ipcRenderer.invoke('library:get'),
+  removeFromLibrary: async (path) => ipcRenderer.invoke('library:remove', path),
+  clearLibrary: async () => ipcRenderer.invoke('library:clear'),
+  onLibraryNew: (infoObj) => ipcRenderer.on('library:new', infoObj),
 
   // open files
   openFile: async (path, ownerID) => ipcRenderer.invoke('file:open', path, ownerID),
