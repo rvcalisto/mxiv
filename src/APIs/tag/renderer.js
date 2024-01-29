@@ -1,21 +1,11 @@
-const os = require('os');
-const path = require('path');
 const { TagStorage } = require('./tagStorage');
 const { ipcRenderer } = require('electron');
 
 
 /**
- * Persistent tag storage file. 
- */
-const storageFile = process.platform === 'win32' ?
-  path.join(process.env.LOCALAPPDATA, 'mxiv', 'tagDB.json') :
-  path.join(os.homedir(), '.cache', 'mxiv', 'tagDB.json')
-
-
-/**
  * Tag Storage to read-only in renderer process.
  */
-const tagDB = new TagStorage(storageFile)
+const tagStorage = new TagStorage()
 
 
 /**
@@ -24,7 +14,7 @@ const tagDB = new TagStorage(storageFile)
  * @returns {String[]}
  */
 function getTags(filePath) {
-  return tagDB.getTags(filePath)
+  return tagStorage.getTags(filePath)
 }
 
 /**
@@ -32,21 +22,21 @@ function getTags(filePath) {
  * @returns {String[]}
  */
 function uniqueTags() {
-  return tagDB.uniqueTags()
+  return tagStorage.uniqueTags()
 }
 
 /**
  * Return information object about the current DB state.
  */
 function info() {
-  return tagDB.info()
+  return tagStorage.info()
 }
 
 /**
  * List database entries whose files are no longer accessible.
  */
 async function listOrphans() {
-  tagDB.listOrphans(false)
+  tagStorage.listOrphans(false)
 }
 
 /**
@@ -54,7 +44,7 @@ async function listOrphans() {
  * Sync tag storage state to persistent JSON file.
  */
 ipcRenderer.on('tags:sync', async () => {
-  await tagDB.loadDB()
+  await tagStorage.getPersistence()
   console.log('MXIV::Tag Controller: synced')
 })
 

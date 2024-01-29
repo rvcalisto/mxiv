@@ -1,4 +1,3 @@
-const os = require('os');
 const path = require('path');
 const { mkdir } = require('fs');
 const { TagStorage } = require('./tagStorage');
@@ -6,17 +5,9 @@ const { BrowserWindow } = require('electron');
 
 
 /**
- * Persistent tag storage file. 
- */
-const storageFile = process.platform === 'win32' ?
-  path.join(process.env.LOCALAPPDATA, 'mxiv', 'tagDB.json') :
-  path.join(os.homedir(), '.cache', 'mxiv', 'tagDB.json')
-
-
-/**
  * Tag Storage to atomically transact with in main process.
  */
-const tagDB = new TagStorage(storageFile)
+const tagStorage = new TagStorage()
 
 
 /**
@@ -27,10 +18,10 @@ const tagDB = new TagStorage(storageFile)
  */
 async function tagFile(filePath, ...tags) {
   // sync before
-  await tagDB.loadDB()
+  await tagStorage.getPersistence()
 
   let tagsAdded = 0
-  const newTags = tagDB.getTags(filePath)
+  const newTags = tagStorage.getTags(filePath)
   
   // don't add duplicates
   for (const tag of tags) {
@@ -40,8 +31,8 @@ async function tagFile(filePath, ...tags) {
   }
 
   // save to storage
-  tagDB.setTags(filePath, newTags)
-  if (tagsAdded) return await tagDB.storeDB()
+  tagStorage.setTags(filePath, newTags)
+  if (tagsAdded) return await tagStorage.persist()
   else return false
 }
 
@@ -53,10 +44,10 @@ async function tagFile(filePath, ...tags) {
  */
 async function untagFile(filePath, ...tags) {
   // sync before
-  await tagDB.loadDB()
+  await tagStorage.getPersistence()
 
   let tagsRemoved = 0
-  const newTags = tagDB.getTags(filePath)
+  const newTags = tagStorage.getTags(filePath)
   if (newTags.length === 0) return false
   
   for (const tag of tags) {
@@ -68,8 +59,8 @@ async function untagFile(filePath, ...tags) {
   }
 
   // save to storage
-  tagDB.setTags(filePath, newTags)
-  if (tagsRemoved) return await tagDB.storeDB()
+  tagStorage.setTags(filePath, newTags)
+  if (tagsRemoved) return await tagStorage.persist()
   else return false
 }
 
@@ -78,7 +69,7 @@ async function untagFile(filePath, ...tags) {
  * @param {false} deleteOrphans Either to delete orphans entries if found.
  */
 async function listOrphans(deleteOrphans = false) {
-  await tagDB.listOrphans(deleteOrphans)
+  await tagStorage.listOrphans(deleteOrphans)
 }
 
 /**
@@ -86,13 +77,15 @@ async function listOrphans(deleteOrphans = false) {
  * @returns {Promise<boolean>} Success.
  */
 async function createTagStorageFile() {
+  const storageDirectory = path.dirname(tagStorage.storageFile)
+
   return await new Promise(resolve => {
-    mkdir( path.dirname(storageFile), { recursive: true }, async (err) => {
+    mkdir( storageDirectory, { recursive: true }, async (err) => {
       if (err) {
         console.log('MXIV: Failed to create storage directory.\n', err)
       } else {
-        console.log('MXIV: Created tag JSON storage at:', storageFile) 
-        await tagDB.storeDB()
+        await tagStorage.persist()
+        console.log('MXIV: Created tag JSON storage at:', tagStorage.storageFile) 
       }
       resolve(!err)
     })
@@ -104,21 +97,21 @@ async function createTagStorageFile() {
  * and broadcast sync IPC request on detected fileStorage changes.
  */
 async function initialize() {
-  const success = await tagDB.loadDB()
+  const success = await tagStorage.getPersistence()
   if (!success) {
     console.log('MXIV: Tag storage file not found. Creating...') 
     if ( !await createTagStorageFile() ) return
   }
 
-  tagDB.monitorChanges(() => {
-    tagDB.loadDB()
+  tagStorage.monitorPersistenceFile(() => {
+    tagStorage.getPersistence()
 
     // console.log('MXIV::Main process broadcast: tag sync')
     BrowserWindow.getAllWindows().forEach(win => {
       win.send('tags:sync')
     })
   })
-  console.log('MXIV: Monitoring tag file changes.')
+  console.log('MXIV: Monitoring tag persistence file.')
 }
 
 

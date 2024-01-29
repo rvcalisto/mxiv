@@ -1,21 +1,29 @@
 const { JsonStorage } = require("../tool/jsonStorage");
-const fs = require('fs')
+const { homedir } = require("os");
+const path = require("path");
+const fs = require('fs');
+
+
+/**
+ * Default MXIV tag storage file.
+ * @type {String}
+ */
+const defaultStorageFile = process.platform === 'win32' ?
+  path.join(process.env.LOCALAPPDATA, 'mxiv', 'tagDB.json') :
+  path.join(homedir(), '.cache', 'mxiv', 'tagDB.json')
 
 
 /**
  * Persistent tag storage.
  */
-class TagStorage {
+class TagStorage extends JsonStorage {
 
   /**
-   * Tag storage persistent JSON file.
+   * Initialized persistent JSON filepath. Read-only.
+   * @readonly
+   * @type {String}
    */
-  #persistentFile
-
-  /**
-   * Inner JsonStorage instance.
-   */
-  #storage
+  storageFile
 
   /** 
    * Store computed unique tags for consecutive calls.
@@ -31,12 +39,13 @@ class TagStorage {
   #uniqueTagsDirty = true
 
   /**
-   * @param {String} persistentFile JSON file to persist storage.
+   * Use `user/cache/mxiv/tagDB.json` path by default.
+   * @param {String} storageFile Custom persistence file.
    */
-  constructor(persistentFile) {
-    this.#persistentFile = persistentFile
-    this.#storage = new JsonStorage(persistentFile)
-    this.#storage.getPersistence()
+  constructor(storageFile = defaultStorageFile) {
+    super(storageFile)
+    this.storageFile = storageFile
+    this.getPersistence()
   }
 
   /**
@@ -45,8 +54,8 @@ class TagStorage {
    * @param {String[]} tags File tags.
    */
   setTags(filePath, tags) {
-    if (tags.length < 1) delete this.#storage.storageObject[filePath]
-    else this.#storage.storageObject[filePath] = tags
+    if (tags.length < 1) delete this.storageObject[filePath]
+    else this.storageObject[filePath] = tags
   }
 
   /**
@@ -55,7 +64,7 @@ class TagStorage {
    * @returns {String[]}
    */
   getTags(filePath) {
-    return this.#storage.storageObject[filePath] || []
+    return this.storageObject[filePath] || []
   }
 
   /**
@@ -64,7 +73,7 @@ class TagStorage {
   uniqueTags() {
     if (this.#uniqueTagsDirty) {
       console.time('computeUniqueTags')
-      this.#uniqueTagsCache = [ ...new Set( Object.values(this.#storage.storageObject).flat() ) ]
+      this.#uniqueTagsCache = [ ...new Set( Object.values(this.storageObject).flat() ) ]
       this.#uniqueTagsDirty = false
       console.timeEnd('computeUniqueTags')
     }
@@ -73,24 +82,19 @@ class TagStorage {
   }
 
   /**
-   * Read and sync tag from file.
-   * @returns {Promise<boolean>} Success.
+   * @override
    */
-  async loadDB() {
-    const alreadySynced = await this.#storage.isInSync()
-    if (alreadySynced) return true
-
-    const success = await this.#storage.getPersistence()
+  async getPersistence() {
+    const success = await super.getPersistence()
     if (success) this.#uniqueTagsDirty = true
     return success
   }
   
   /**
-   * Write and sync tags to file.
-   * @returns {Promise<boolean>} Success.
+   * @override
    */
-  async storeDB() {
-    const success = await this.#storage.persist()
+  async persist() {
+    const success = await super.persist()
     if (success) this.#uniqueTagsDirty = true
     return success
   }
@@ -100,26 +104,10 @@ class TagStorage {
    */
   info() {
     return {
-      persistentFile: this.#persistentFile,
-      entryCount: Object.keys(this.#storage.storageObject).length,
+      storageFile: this.storageFile,
+      entryCount: Object.keys(this.storageObject).length,
       tagCount: this.uniqueTags().length
     }
-  }
-
-  /**
-   * Return all entry keys.
-   * @returns {String[]}
-   */
-  getEntries() {
-    return Object.keys(this.#storage.storageObject)
-  }
-
-  /**
-   * Monitor persistence file and run callback on detected changes.
-   * @param {()=>} callback Callback function.
-   */
-  async monitorChanges(callback) {
-    await this.#storage.monitorPersistenceFile(callback)
   }
 
   /**
@@ -127,9 +115,9 @@ class TagStorage {
    * @param {false} deleteOrphans Either to delete orphaned entries if found.
    */
   async listOrphans(deleteOrphans = false) {
-    const taskPromises = [], orphans = [], entries = this.getEntries()
+    const taskPromises = [], orphans = []
 
-    for (const keyPath of entries) {
+    for (const keyPath in this.storageObject) {
       const task = new Promise(resolve => {
         fs.access(keyPath, (err) => {
           if (err) orphans.push(keyPath)
@@ -145,9 +133,9 @@ class TagStorage {
     else console.log(`${orphans.length} orphan entries found:`, orphans)
 
     if (deleteOrphans && orphans.length) {
-      for (const entry of orphans) delete this.#storage.storageObject[entry]
+      for (const entry of orphans) delete this.storageObject[entry]
       console.log('Cleaned', orphans.length, 'orphan entries.')
-      this.storeDB()
+      this.persist()
     }
   }
 }
