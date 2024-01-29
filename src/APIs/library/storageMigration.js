@@ -29,7 +29,7 @@ newLibrary.getPersistence().catch(async error => {
     newLibrary.storageObject = oldLibrary
     
     await newLibrary.persist()
-      .catch( () => console.log(`Library migration: Failed to create JSON file.`) )
       .then( () => console.log(`Library migration: Created JSON file. Completed.`) )
+      .catch( () => console.log(`Library migration: Failed to create JSON file.`) )
   }
 })
