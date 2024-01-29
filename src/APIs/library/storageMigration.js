@@ -21,12 +21,15 @@ const newLibrary = new JsonStorage(storageFile)
  * Migrate existing library entry object from localStorage to JsonStorage.
  * TODO: Remove, some commits later.
  */
-newLibrary.getPersistence().then(async gotPersistence => {
+newLibrary.getPersistence().catch(async error => {
   const oldLibrary = JSON.parse( localStorage.getItem('libraryPaths') )
 
-  if (!gotPersistence && oldLibrary != null) {
+  if (oldLibrary != null) {
+    console.log(`Library migration: Found localStorage, creating JSON file.`)
     newLibrary.storageObject = oldLibrary
-    const migrated = await newLibrary.persist()
-    console.log(`library migration: ${migrated ? 'OK' : 'NOK'}`)
+    
+    await newLibrary.persist()
+      .catch( () => console.log(`Library migration: Failed to create JSON file.`) )
+      .then( () => console.log(`Library migration: Created JSON file. Completed.`) )
   }
 })

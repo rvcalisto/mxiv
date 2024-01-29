@@ -31,9 +31,12 @@ async function tagFile(filePath, ...tags) {
   }
 
   // save to storage
-  tagStorage.setTags(filePath, newTags)
-  if (tagsAdded) return await tagStorage.persist()
-  else return false
+  if (tagsAdded > 0) {
+    tagStorage.setTags(filePath, newTags)
+    await tagStorage.persist()
+  }
+
+  return tagsAdded > 0
 }
 
 /**
@@ -59,9 +62,12 @@ async function untagFile(filePath, ...tags) {
   }
 
   // save to storage
-  tagStorage.setTags(filePath, newTags)
-  if (tagsRemoved) return await tagStorage.persist()
-  else return false
+  if (tagsRemoved > 0) {
+    tagStorage.setTags(filePath, newTags)
+    await tagStorage.persist()
+  }
+
+  return tagsRemoved > 0
 }
 
 /**
@@ -97,11 +103,11 @@ async function createTagStorageFile() {
  * and broadcast sync IPC request on detected fileStorage changes.
  */
 async function initialize() {
-  const success = await tagStorage.getPersistence()
-  if (!success) {
-    console.log('MXIV: Tag storage file not found. Creating...') 
-    if ( !await createTagStorageFile() ) return
-  }
+  const error = await tagStorage.getPersistence()
+    .catch( async () => !await createTagStorageFile() )
+  
+  if (error)
+    return console.error(`MXIV: Failed to create tag storage.`)
 
   tagStorage.monitorPersistenceFile(() => {
     tagStorage.getPersistence()

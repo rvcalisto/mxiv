@@ -44,8 +44,10 @@ class TagStorage extends JsonStorage {
    */
   constructor(storageFile = defaultStorageFile) {
     super(storageFile)
-    this.storageFile = storageFile
     this.getPersistence()
+      .catch( err => console.log('MXIV: TagStorage not found or initialized.') )
+
+    this.storageFile = storageFile
   }
 
   /**
@@ -85,18 +87,16 @@ class TagStorage extends JsonStorage {
    * @override
    */
   async getPersistence() {
-    const success = await super.getPersistence()
-    if (success) this.#uniqueTagsDirty = true
-    return success
+    return await super.getPersistence()
+      .then( () => { this.#uniqueTagsDirty = true } )
   }
   
   /**
    * @override
    */
   async persist() {
-    const success = await super.persist()
-    if (success) this.#uniqueTagsDirty = true
-    return success
+    return await super.persist()
+      .then( () => { this.#uniqueTagsDirty = true })
   }
 
   /**

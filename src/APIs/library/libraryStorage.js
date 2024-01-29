@@ -25,12 +25,12 @@ const libraryStorageFile = process.platform === 'win32' ?
  */
 const libraryStorage = new class extends JsonStorage {
 
-  #collator
+  #collator = new Intl.Collator('en', { numeric: true })
 
   constructor() {
     super(libraryStorageFile)
     this.getPersistence()
-    this.#collator = new Intl.Collator('en', { numeric: true })
+      .catch( err => console.log('MXIV: LibraryStorage not found or initialized.') )
   }
 
   /**
@@ -53,6 +53,7 @@ const libraryStorage = new class extends JsonStorage {
    */
   async getEntries() {
     await this.getPersistence()
+      .catch( err => console.log('MXIV: LibraryStorage not found or initialized.') )
 
     return Object.values(this.storageObject)
       .sort( (a, b) => this.#collator.compare(a.path, b.path) )

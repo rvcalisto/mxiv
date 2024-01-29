@@ -51,8 +51,10 @@ async function addToLibrary(senderWin, folderPath, recursively = true) {
     return 0
   }
 
+  // sync storage, ignore if uninitialized
+  await libraryStorage.getPersistence().catch( () => {} ) 
+  
   // map folder and filter-out ineligible paths
-  await libraryStorage.getPersistence()
   const collection = libraryStorage.storageObject
   const candidates = await utils.getCandidates(folderPath, 
     recursively ? Infinity : 1)

@@ -66,42 +66,42 @@ class JsonStorage {
   }
 
   /**
-   * Load storage object from JSON file and sync, if not already.
-   * @returns {Promise<Boolean>} In sync.
+   * Load storage object from JSON file and sync, if not already. Reject on error.
+   * @throws {PromiseRejectionEvent} On failure.
+   * @returns {Promise<void>}
    */
   async getPersistence() {
 
     if ( await this.isInSync() ) 
       return true
 
-    return await new Promise(resolve => {
+    return await new Promise( (resolve, reject) => {
       fs.readFile(this.#storageFile, 'utf8', async (err, data) => {
-        if (!err) {
+        if (err) reject(err)
+        else {
           this.#lastModifiedMS = await this.#readLastModified()
           this.storageObject = JSON.parse(data)
           this.#knownDirty = false
-        } else {
-          console.error(`${this.constructor.name}: Failed to get Persistence:\n`, err)
+          resolve()
         }
-        resolve(!err)
       })
     })
   }
 
   /**
-   * Persist storageObject to json file and sync.
-   * @returns {Promise<Boolean>} Success.
+   * Persist storageObject to json file and sync. Reject on error.
+   * @throws {PromiseRejectionEvent} On failure.
+   * @returns {Promise<void>}
    */
   async persist() {
-    return await new Promise(resolve => {
+    return await new Promise( (resolve, reject) => {
       fs.writeFile(this.#storageFile, JSON.stringify(this.storageObject), 'utf8', async (err) => {
-        if (!err) {
+        if (err) reject(err)
+        else {
           this.#lastModifiedMS = await this.#readLastModified()
           this.#knownDirty = false
-        } else {
-          console.error(`${this.constructor.name}: Failed to Persist:\n`, err)
+          resolve()
         }
-        resolve(!err)
       })
     })
   }
