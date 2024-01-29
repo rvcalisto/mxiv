@@ -85,12 +85,12 @@ export class Library extends GenericFrame {
     if ( !await elecAPI.requestLibraryLock() ) return
 
     const files = await elecAPI.dialog({
-      title: "Add to Watchlist",
-      properties: ['multiSelections'], // 'openDirectory' invalidate archives
+      title: "Add Folders to Library",
+      properties: ['multiSelections'],
       buttonLabel: "Add Selected",
       filters: [
-        { name: 'Folders', extensions: ['*'] },
-        { name: 'Archives', extensions: ['zip', 'cbz'] }
+        { name: 'Folders', extensions: [''] },
+        // { name: 'Archives', extensions: ['zip', 'cbz'] } // not handling yet
       ]
     })
 
