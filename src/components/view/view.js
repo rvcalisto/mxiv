@@ -122,46 +122,43 @@ export class View extends HTMLElement {
   }
 
   /**
-   * Navigate view display depending of media and state.
-   * First slides scroll bar if any and handle not at border. Next seeks video track. 
-   * Last, triggers a `view:next/previous` event. If delta is zero, ends slide interval.
-   * @param {'x' | 'y'} axis Either to navigate horizontally or vertically
+   * Start/Stop scrollbar slide interval, flip pages and seek audio/video tracks on context.
+   * - Media has scrollbar: Slide scroll by `deltaPxls` in intervals and while not at border.
+   * - No scrollbar/sliding against border: Flip images by `deltaPxls` sign, 
+   *   skip audio/video by `deltaSecs`.
+   * - `deltaPxls` is zero: Clear slide interval, skip audio/video by `deltaSecs`.
+   * @param {'x'|'y'} axis Either to navigate horizontally or vertically
    * @param {Number} deltaPxls Pixels to move, either positive or negative.
    * @param {Number} deltaSecs Seconds to skip, either positive or negative.
    */
   navigate(axis, deltaPxls, deltaSecs = 0) {
 
-    // null deltaPxls, cancel slide
-    if (deltaPxls === 0) {
+    // cancel slide for axis, skip track if not zero
+    if (deltaPxls === 0)
       this.scrollBox.slide(axis, 0)
 
-      // try to seek if given a number
-      if (deltaSecs !== 0) this.media.skipBy(deltaSecs)
-
-      return
-    }
-
     // horizontal
-    if (axis == 'x') {
+    else if (axis === 'x') {
       const xAdds = deltaPxls > 0, scrollPosX = this.scrollBox.pos.x
-      const cantFurtherX = xAdds && scrollPosX == 1 || !xAdds && scrollPosX == 0 || scrollPosX == null
+      const canScrollX = xAdds && scrollPosX < 1 || !xAdds && scrollPosX > 0
 
-      if (!cantFurtherX) this.scrollBox.slide('x', deltaPxls)
-      else if (this.fileType === 'image') {
-        this.signalEvent(`view:${xAdds ? 'next' : 'previous'}`) // flip page
-    } else {
-        if (deltaSecs) this.media.skipBy(deltaSecs) // move track
-      }
+      if (canScrollX)
+        return this.scrollBox.slide('x', deltaPxls)
+      else if (this.fileType === 'image')
+        return this.signalEvent(`view:${xAdds ? 'next' : 'previous'}`) // flip page
     }
 
-    // vertical (cantFurtherY modified to let Y > 0 = UP)
-    if (axis == 'y') {
+    // vertical (canScrollY modified to let deltaPxls(Y) > 0 = UP)
+    else if (axis === 'y') {
       const yAdds = deltaPxls > 0, scrollPosY = this.scrollBox.pos.y
-      const cantFurtherY = yAdds && scrollPosY == 0 || !yAdds && scrollPosY == 1 || scrollPosY == null
+      const canScrollY = yAdds && scrollPosY > 0 || !yAdds && scrollPosY < 1
 
-      if (!cantFurtherY) this.scrollBox.slide('y', deltaPxls * -1)
-      else if (deltaSecs) this.media.skipBy(deltaSecs)
+      if (canScrollY)
+        return this.scrollBox.slide('y', deltaPxls * -1)
     }
+
+    if (this.fileType !== 'image' && deltaSecs !== 0)
+      this.media.skipBy(deltaSecs)
   }
 
 
