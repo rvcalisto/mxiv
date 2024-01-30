@@ -110,12 +110,11 @@ export class WatchlistPanel {
     // populate list
     for (const item of Object.values(this.getWatchObject())) {
       const div = document.createElement('div');
+      div.className = 'folderItem'
       div.innerHTML = `
-      <div class="folderItem">
         <p>${item.path}</p>
         <p title="evaluate subfolders">recursive<input type="checkbox""></p>
-        <button>remove folder</button>
-      </div>`;
+        <button>remove folder</button>`;
 
       folderList.appendChild(div);
       const recursiveCheck = div.getElementsByTagName('input')[0];
@@ -140,7 +139,7 @@ export class WatchlistPanel {
    * @param {Boolean} show Either to force visibilit on or off.
    * @param {Number} duration Animation duration in ms.
    */
-  toggleVisibility(show = true, duration = 150) {
+  toggleVisibility(show = !this.isVisible, duration = 150) {
     if (show) this.#drawList();
 
     this.#overlay.style.display = '';
@@ -167,11 +166,8 @@ export class WatchlistPanel {
     addtoBtn.onclick = async () => {
       const files = await elecAPI.dialog({
         title: "Add Folders to Watchlist",
-        properties: ['multiSelections'],
-        buttonLabel: "Add Selected",
-        filters: [
-          { name: 'Folders', extensions: [''] }
-        ]
+        properties: ['openDirectory'],
+        buttonLabel: "Add Selected"
       });
 
       if (!files) return;

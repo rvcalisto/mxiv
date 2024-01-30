@@ -848,44 +848,42 @@
         align-items: center;
       }
 
-      #folderListHeader {
-        background: #141414;
-        border-radius: 10px 10px 0px 0px;
+      #watchListPanel {
         display: flex;
-        width: 80%;
+        flex-direction: column;
+        width: 75%;
+        height: 50%;
+        box-shadow: 2px 2px 15px 5px black;
+      }
+
+      #folderListHeader {
+        background: #080808;
+        display: flex;
         align-items: center;
-        padding: 4px;
+        padding: 0.5em 1.5em;
         color: gray;
-        border: solid medium gray;
-        border-bottom: none;
-        justify-content: center;
-        gap: 2em;
+        justify-content: space-between;
       }
 
       #folderList {
-        background: #282828;
-        border-radius: 0px 0px 10px 10px;
         display: flex;
-        width: 80%;
-        height: 50%;
-        padding: 4px;
         flex-direction: column;
-        gap: 4px;
+        background: #282828;
+        padding: .5em;
+        height: 100%;
+        gap: .5em;
         overflow: auto;
-        border: solid medium gray;
-        border-top: none;
       }
 
       .folderItem {
         display: flex;
         gap: 1em;
-        padding: .2em;
+        padding: .2em 1em;
         height: fit-content;
         color: silver;
         background: #0000002e;
         align-items: center;
         border-radius: 4px;
-        overflow-wrap: anywhere;
       }
 
       .folderItem > p:nth-child(2) {
@@ -893,10 +891,7 @@
         gap: .2em;
         flex-direction: row-reverse;
         margin-left: auto;
-      }
-
-      .folderItem > button {
-        margin-right: 0px;
+        width: fit-content;
       }
 
       /* scroll styling */
@@ -926,11 +921,13 @@
         <button id="syncBtn" title="sync library to watchlist folders"></button>
       </div>
       <div class="overlay" style="display: none; opacity: 0;">
-        <div id="folderListHeader">
-          <p>watchlist</p>
-          <button id="addToWatch">add to watchlist</button>
+        <div id="watchListPanel">
+          <div id="folderListHeader">
+            <p>watchlist</p>
+            <button id="addToWatch">add folder</button>
+          </div>
+          <div id="folderList"></div>
         </div>
-        <div id="folderList"></div>
       </div>
     </div>
   </template>

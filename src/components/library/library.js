@@ -87,13 +87,9 @@ export class Library extends GenericFrame {
 
     if (files.length < 1) {
       files = await elecAPI.dialog({
-        title: "Add Folders/Archives to Library",
-        properties: ['multiSelections'],
-        buttonLabel: "Add Selected",
-        filters: [
-          { name: 'Folders', extensions: [''] },
-          { name: 'Archives', extensions: ['zip', 'cbz'] }
-        ]
+        title: "Add Folder to Library",
+        properties: ['openDirectory'],
+        buttonLabel: "Add Selected"
       })
     }
 
@@ -129,6 +125,17 @@ export class Library extends GenericFrame {
     // sync watch folders
     const syncBtn = this.shadowRoot.getElementById('syncBtn')
     syncBtn.onclick = () => this.syncToWatchlist()
+
+    // drag'n'drop into library
+    const wrapper = this.shadowRoot.getElementById('wrapper')
+    wrapper.ondrop = async (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const files = e.dataTransfer.files
+      await this.addToLibrary( ...Object.values(files).map(file => file.path) )
+    }
+    wrapper.ondragover = (e) => {
+      e.preventDefault(); e.stopPropagation();
+    }
     
     // populate coverGrid and setup button events 
     // [Workaround] Wait 0 so cover.focus() isn't ignored as frame becomes visible

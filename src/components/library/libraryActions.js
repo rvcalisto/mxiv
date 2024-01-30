@@ -56,7 +56,7 @@ ActionDB.setComponentActions('library', {
 
   'addToLibrary': {
     'desc' : 'add folders/archives to library',
-    'run' : (...paths) => Library.addToLibrary(...paths),
+    'run' : async (...paths) => await Library.addToLibrary(...paths),
     'options': async (query) => await elecAPI.queryPath(query)
   },
 
