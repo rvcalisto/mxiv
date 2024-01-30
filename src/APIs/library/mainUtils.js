@@ -45,9 +45,13 @@ async function getCandidates(folderPath, depth = Infinity, mappedPaths = []) {
   const ls = await listFiles(folderPath)
 
   // add archives
-  if (canExtract)
+  if (canExtract) {
+    if ( fileType(folderPath) === 'archive' )
+      mappedPaths.push(folderPath)
+
     for (const archive of ls.archives)
       mappedPaths.push(archive.path)
+  }
 
   // path has viewable files, add absolute path
   if (ls.files.length)

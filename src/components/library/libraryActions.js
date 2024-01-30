@@ -54,9 +54,10 @@ ActionDB.setComponentActions('library', {
     }
   },
 
-  'addFolder': {
-    'desc' : 'add folder to library',
-    'run' : () => Library.addToLibrary()
+  'addToLibrary': {
+    'desc' : 'add folders/archives to library',
+    'run' : (...paths) => Library.addToLibrary(...paths),
+    'options': async (query) => await elecAPI.queryPath(query)
   },
 
   'watchlist': {

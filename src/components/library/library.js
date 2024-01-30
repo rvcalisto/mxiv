@@ -60,7 +60,6 @@ export class Library extends GenericFrame {
 
     console.time(`syncToWatchlist`)
     
-    // use keys for now as no recursive check is in place
     let addedPaths = 0
     for (const item of watchFolders) {
       console.log('sync ' + item.path)
@@ -79,34 +78,50 @@ export class Library extends GenericFrame {
   }
 
   /**
-   * add files to library without adding to watchlist. (Remove?)
+   * Add files to library, skip watchlist. 
+   * - Spawns file-dialog window if no files are given.
+   * @param {String[]} [files] Filepaths to add to library
    */
-  async addToLibrary() {
+  async addToLibrary(...files) {
     if ( !await elecAPI.requestLibraryLock() ) return
 
-    const files = await elecAPI.dialog({
-      title: "Add Folders to Library",
-      properties: ['multiSelections'],
-      buttonLabel: "Add Selected",
-      filters: [
-        { name: 'Folders', extensions: [''] },
-        // { name: 'Archives', extensions: ['zip', 'cbz'] } // not handling yet
-      ]
-    })
+    if (files.length < 1) {
+      files = await elecAPI.dialog({
+        title: "Add Folders/Archives to Library",
+        properties: ['multiSelections'],
+        buttonLabel: "Add Selected",
+        filters: [
+          { name: 'Folders', extensions: [''] },
+          { name: 'Archives', extensions: ['zip', 'cbz'] }
+        ]
+      })
+    }
 
-    if (files != null && files.length) {
+    if (files != null && files.length > 0) {
+      // prevent closing window while async population happens
+      window.onbeforeunload = () => false
+      this.syncProgressNotifier.toggleVisibility()
+
+      let addedPaths = 0
       for (const file of files) {
         console.log(`adding ${file} to library`)
-        await elecAPI.addToLibrary(file)
+        addedPaths += await elecAPI.addToLibrary(file)
       }
 
+      AppNotifier.notify(`${addedPaths} new book(s) added`, 'addToLibrary')
+      this.syncProgressNotifier.toggleVisibility(false)
       this.coverGrid.reloadCovers()
+      window.onbeforeunload = null
     }
 
     await elecAPI.releaseLibraryLock()
   }
 
   #initEvents() {
+    // add file to library using file-dialog
+    const addBtn = this.shadowRoot.getElementById('addBtn')
+    addBtn.onclick = () => this.addToLibrary()
+
     // open folder management
     const manageWatchlistBtn = this.shadowRoot.getElementById('watchBtn')
     manageWatchlistBtn.onclick = () => this.watchlistPanel.toggleVisibility()

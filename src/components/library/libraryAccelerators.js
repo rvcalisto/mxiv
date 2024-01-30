@@ -3,7 +3,7 @@ import { AcceleratorDB } from "../../actions/acceleratorDB.js"
 
 AcceleratorDB.setComponentDefaults('library', {
   
-  'o'   : ['addFolder'],
+  'o'   : ['addToLibrary'],
   'r'   : ['random'],
   'F5'  : ['watchlist', 'sync'],
   'Escape' : ['watchlist', 'close'],
