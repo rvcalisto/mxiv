@@ -105,7 +105,7 @@ export class Library extends GenericFrame {
       let addedPaths = 0
       for (const file of files) {
         console.log(`adding ${file} to library`)
-        addedPaths += await elecAPI.addToLibrary(file)
+        addedPaths += await elecAPI.addToLibrary(file, false) // non-recursive
       }
 
       AppNotifier.notify(`${addedPaths} new book(s) added`, 'addToLibrary')
