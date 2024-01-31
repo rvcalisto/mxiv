@@ -58,7 +58,7 @@ export class View extends HTMLElement {
   /**
    * Display multimedia file. Show logo if `filePath` is `null`.
    * @param {String} filePath Media resource path.
-   * @param {'image'|'video'} type Media type.
+   * @param {'image'|'audio'|'video'} type Media type.
    * @returns {Promise<Boolean>} Either display content has changed. 
    */
   async display(filePath, type) {

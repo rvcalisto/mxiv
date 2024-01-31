@@ -8,15 +8,15 @@ import { FRAME } from "../../tabs/tab.js";
 addEventListener('fileExplorerKeyEvent', function handleFileExplorer(e) {
   const keyEvent = e.detail;
 
-  const fileExpAccel = AcceleratorDB.getAccel('fileExplorer', 'default');
-  const action = fileExpAccel.byEvent(keyEvent);
+  const action = AcceleratorDB.getAccel('fileExplorer', 'default')
+    .byEvent(keyEvent);
 
-  // no match, bubble up
-  if (!action) return onkeydown(keyEvent);
+  // bubble-up on null, call function directly on match
+  if (action == null)
+    return onkeydown(keyEvent);
 
   keyEvent.preventDefault();
   const [cmd, ...args] = action;
-
   FRAME.fileExplorer[cmd](...args);
 });
 
@@ -25,17 +25,14 @@ addEventListener('fileExplorerKeyEvent', function handleFileExplorer(e) {
  * [Workaround] Release slide interval for Viewer's View component.
  */
 addEventListener('keyup', function releaseViewSlide(e) {
-  if (!FRAME || FRAME.type !== 'viewer') return;
+  if (FRAME == null || FRAME.type !== 'viewer') return;
 
-  const viewerAccelSet = AcceleratorDB.getAccel('viewer');
-  const action = viewerAccelSet.byEvent(e);
-  if (!action) return;
+  const action = AcceleratorDB.getAccel('viewer').byEvent(e);
+  if (action != null && action[0] === 'navigate') {
+    e.preventDefault();
 
-  e.preventDefault();
-  const cmd = action[0];
-  if (cmd !== 'navigate') return;
-
-  const axis = action[1];
-  if (['left', 'right'].includes(axis)) FRAME.viewComponent.navigate('x', 0);
-  else if (['up', 'down'].includes(axis)) FRAME.viewComponent.navigate('y', 0);
+    const axis = action[1];
+    if (['left', 'right'].includes(axis)) FRAME.viewComponent.navigate('x', 0);
+    else if (['up', 'down'].includes(axis)) FRAME.viewComponent.navigate('y', 0);
+  }
 });

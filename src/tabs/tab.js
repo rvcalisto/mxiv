@@ -9,7 +9,7 @@ import "../components/library/library.js"
 
 /** 
  * Returns reference to currently active frame component.
- * @type {GenericFrame}
+ * @type {GenericFrame?}
  */
 export var FRAME 
 
@@ -21,7 +21,7 @@ export class Tab {
 
   /**
    * Currently selected tab reference.
-   * @type {Tab}
+   * @type {Tab?}
    */
   static selected
 
