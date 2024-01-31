@@ -69,10 +69,10 @@ export class CmdPrompt {
   /** @param {HTMLElement} host */
   constructor(host) {
 
-    /** @type {(Event)} */
+    /** @type {(ev: Event) => any} */
     this.oninput = () => null;
 
-    /** @type {(KeyboardEvent)} */
+    /** @type {(ev: KeyboardEvent) => any} */
     this.onkeydown = () => null;
 
     this.#input = host.getElementById('cmdInput');

@@ -19,10 +19,16 @@ class AppCmdLine extends HTMLElement {
 
   static tagName = 'app-cli'
 
-  /** Hint element list. @type {ItemList} */
+  /**
+   * Hint element list.
+   * @type {ItemList}
+   */
   #list
 
-  /** Prompt element. @type {CmdPrompt} */
+  /**
+   * Prompt element.
+   * @type {CmdPrompt}
+   */
   #prompt
 
   constructor() {
@@ -39,20 +45,20 @@ class AppCmdLine extends HTMLElement {
     this.#prompt = new CmdPrompt(this.shadowRoot)
 
     CmdHistory.sync()
-    this.#initializeInputs()
+    this.#initEvents()
   }
 
   /**
-   * Toggle cmd element visibility.
-   * @param {Boolean} open Open or close cmd element.
-   * @param {String} optionalStr Open on command string.
+   * Toggle visibility. Focus prompt if opening while already open.
+   * @param {Boolean} open Open or close CLI.
+   * @param {String} optionalStr Open on custom string.
    */
   toggle(open, optionalStr = '') {
     // make elements visible and focusable
     const cmdOverlay = this.shadowRoot.getElementById('cmdOverlay')
     cmdOverlay.style.display = ''
 
-    // focus input, set optionalStr & list hints. Exit after focus if already open
+    // focus prompt, set optionalStr & list hints.
     if (open) {
       this.#prompt.focus()
       if (this.active) return
@@ -84,7 +90,6 @@ class AppCmdLine extends HTMLElement {
     inputStr = inputStr || this.#prompt.getText()
 
     const action = CmdPrompt.unescapeIntoArray(inputStr)
-    
     const success = ActionDB.currentFrameActions.run(action)
     if (success) return CmdHistory.store(inputStr)
     
@@ -119,38 +124,36 @@ class AppCmdLine extends HTMLElement {
     let command = currentActions[cmd]
 
     // hint action methods / options
-    if (command && args.length) {
+    if (command != null && args.length > 0) {
       let options = [], lastArg = args.at(-1)
-
-      if (command.methods && args.length === 1) {
-        options = Object.keys(command.methods)
-        .map( key => option(key, command.methods[key].desc) )
+      
+      if (command.methods != null) {
+        // hint methods
+        if (args.length === 1) 
+          options = Object.keys(command.methods)
+            .map( key => option(key, command.methods[key].desc) )
+        // evaluate method instead of root command
+        else if (command.methods[args[0]] != null) {
+          command = command.methods[args[0]]
+          args = args.slice(1)
+        }
       }
+      // set options if any and not already populated (by methods)
+      if (options.length < 1 && command.options != null)
+        options = await command.options(lastArg, args)
 
-      else if (command.methods && command.methods[args[0]]) {
-        command = command.methods[args[0]]
-        args = args.slice(1)
-      }
-
-      if (!options.length && command.options) options = await command.options(lastArg, args)
-
-      // list options
-      // console.time('populate')
-      this.#list.populate(options, item => this.#renderElement(item), 
-      command.customFilter ? command.customFilter(lastArg) : standardFilter(lastArg))
-      // console.timeEnd('populate')
-      return 
+      return this.#list.populate(options, item => this.#renderElement(item), 
+        command.customFilter ? command.customFilter(lastArg) : standardFilter(lastArg) )
     }
 
     // hint history + root actions
     const cmdList = Object.keys(currentActions)
-    .map( cmd => option(cmd, currentActions[cmd].desc, 'action', true) )
-
+      .map( cmd => option(cmd, currentActions[cmd].desc, 'action', true) )
     const histList = CmdHistory.items
-    .map( cmd => option(cmd, '', 'history', true) )
+      .map( cmd => option(cmd, '', 'history', true) )
 
-    this.#list.populate(histList.concat(cmdList), 
-    (item) => this.#renderElement(item), standardFilter(cmd || ''))
+    this.#list.populate( histList.concat(cmdList), 
+      item => this.#renderElement(item), standardFilter(cmd || '') )
   }
 
   /**
@@ -190,7 +193,7 @@ class AppCmdLine extends HTMLElement {
     this.#prompt.setText(selection.hint.name, replace)
   }
 
-  #initializeInputs() {
+  #initEvents() {
     // close CLI if clicking out of focus
     const overlay = this.shadowRoot.getElementById('cmdOverlay')
     overlay.onclick = (e) => {
@@ -211,24 +214,25 @@ class AppCmdLine extends HTMLElement {
         if (element) element.scrollIntoView(false)
       }
 
-      // close when cmd is fully erased
-      if (e.key === 'Backspace' && !this.#prompt.getText().length) this.toggle(false)
+      // close when prompt is fully erased
+      else if (e.key === 'Backspace' && this.#prompt.getText().length < 1) 
+        this.toggle(false)
 
-      // delete history type hint
-      if (e.key === 'Delete') {
+      // delete history-type hint
+      else if (e.key === 'Delete') {
         const selection = this.#list.pageContainerDiv.getElementsByClassName('selected')[0]
-        if (!selection || selection.hint.type !== 'history') return
+        if (selection && selection.hint.type === 'history') {
+          e.preventDefault()
+          const element = this.#list.navItems()
+          if (element) element.scrollIntoView(false)
 
-        e.preventDefault()
-        const element = this.#list.navItems()
-        if (element) element.scrollIntoView(false)
-
-        this.clearCmdHistory(selection.hint.name)
-        selection.remove()
+          this.clearCmdHistory(selection.hint.name)
+          selection.remove()
+        }
       }
 
-      // completion & confirmation 
-      if (e.key === 'Enter' || e.key === ' ' && e.shiftKey) {
+      // complete, confirm
+      else if (e.key === 'Enter' || e.key === ' ' && e.shiftKey) {
         e.preventDefault()
         e.stopImmediatePropagation()
         
@@ -236,11 +240,10 @@ class AppCmdLine extends HTMLElement {
         if (selection) {
           this.#completeSelection()
           this.#displayHints()
-          return
+        } else {
+          this.toggle(false)
+          this.#runCmd()
         }
-
-        this.toggle(false)
-        this.#runCmd()
       }
     }
   }
