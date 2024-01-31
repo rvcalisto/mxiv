@@ -1,5 +1,6 @@
 const utils = require('./mainUtils');
 const { libraryStorage } = require('./libraryStorage');
+const { createThumbnailMultiThreaded } = require('./thumbnailWorker');
 
 
 /**
@@ -61,23 +62,21 @@ async function addToLibrary(senderWin, folderPath, recursively = true) {
 
   // filter out already cataloged paths
   const newCandidates = candidates.filter(path => collection[path] == null )
-
-  // store new paths and emit event for library display 
-  for (let i = 0; i < newCandidates.length; i++) {
-    const path = newCandidates[i]
-    const thumbnail = await utils.createThumbnail(path)
-    libraryStorage.addEntry(path, thumbnail)
-
+  let entriesAddded = 0
+  
+  await createThumbnailMultiThreaded(newCandidates, (value) => {
+    libraryStorage.addEntry(value.path, value.thumbnail)
+  
     senderWin.send('library:new', {
       total: newCandidates.length,
-      current: i,
-      newPath: path
+      current: ++entriesAddded,
+      newPath: value.path
     })
-  }
+  }, 2)
 
   // store new library object
-  if (newCandidates.length) await libraryStorage.persist()
-  return newCandidates.length
+  if (entriesAddded) await libraryStorage.persist()
+  return entriesAddded
 }
 
 /**

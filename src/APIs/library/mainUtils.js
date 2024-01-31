@@ -99,14 +99,17 @@ async function deleteThumbnailDirectory() {
 
 /**
  * Create thumbnail from file. Returns thumbnail path.
+ * - Use `id` on concurrent threads to prevent overwrites
+ *   when extracting archive files. (ex: 01.jpg)
  * @param {String} path Folder/archive path.
+ * @param {number} [id=0] Extraction folder name, used by threads.
  * @returns {Promise<String>} Path to generated thumbnail.
  */
-async function createThumbnail(path) {
+async function createThumbnail(path, id = 0) {
   if (!canThumbnail)
     return await coverPlaceholder()
   else if ( fileType(path) === 'archive' )
-    return await coverFromArchive(path)
+    return await coverFromArchive(path, id)
   else
     return await coverFromDirectory(path)
 }
@@ -137,7 +140,7 @@ async function deleteThumbnail(path) {
 }
 
 /**
- * Asynchronously creates cover from folder's first file.
+ * Asynchronously creates cover from directory.
  * @param {String} path Folder Path.
  * @returns {Promise<String>} Cover Path.
  */
@@ -164,11 +167,14 @@ async function coverFromDirectory(path) {
 }
 
 /**
- * Asynchronously creates cover from archive's first file.
+ * Asynchronously creates cover from archives.
+ * - Use `id` on concurrent threads to prevent overwrites
+ *   when extracting archive files. (ex: 01.jpg)
  * @param {String} path Folder Path.
+ * @param {number} [id=0] Extraction folder name, used by threads.
  * @returns {Promise<String>} Cover Path.
  */
-async function coverFromArchive(path) {
+async function coverFromArchive(path, id = 0) {
   // find cover file from archive
   const archiveFiles = await archiveTool.fileList(path)
   const coverBasename = archiveFiles.find(filepath => {
@@ -180,7 +186,8 @@ async function coverFromArchive(path) {
     return await coverPlaceholder()
 
   // extract file and generate cover as UUID.jpg, remove extracted file after
-  const coverSource = await archiveTool.extractOnly(coverBasename, path, COVERDIR)
+  const extractionFolder = p.join( COVERDIR, String(id) )
+  const coverSource = await archiveTool.extractOnly(coverBasename, path, extractionFolder)
   const coverTarget = p.join(COVERDIR, `${randomUUID()}.jpg`)
   const thumbnailOK = await thumbnailTool.generateThumbnail(coverSource, coverTarget)
   fs.rmSync(coverSource)
