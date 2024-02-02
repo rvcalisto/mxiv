@@ -55,7 +55,7 @@ export class Library extends GenericFrame {
     if ( !await elecAPI.requestLibraryLock() ) return
     
     // prevent closing window while async population happens
-    window.onbeforeunload = () => false
+    this.hold(true)
     this.syncProgressNotifier.toggleVisibility()
 
     console.time(`syncToWatchlist`)
@@ -72,7 +72,7 @@ export class Library extends GenericFrame {
     AppNotifier.notify(`${addedPaths} new book(s) added`, 'syncToWatchlist')
     this.syncProgressNotifier.toggleVisibility(false)
     this.coverGrid.reloadCovers()
-    window.onbeforeunload = null
+    this.hold(false)
 
     await elecAPI.releaseLibraryLock()
   }
@@ -95,7 +95,7 @@ export class Library extends GenericFrame {
 
     if (files != null && files.length > 0) {
       // prevent closing window while async population happens
-      window.onbeforeunload = () => false
+      this.hold(true)
       this.syncProgressNotifier.toggleVisibility()
 
       let addedPaths = 0
@@ -107,7 +107,7 @@ export class Library extends GenericFrame {
       AppNotifier.notify(`${addedPaths} new book(s) added`, 'addToLibrary')
       this.syncProgressNotifier.toggleVisibility(false)
       this.coverGrid.reloadCovers()
-      window.onbeforeunload = null
+      this.hold(false)
     }
 
     await elecAPI.releaseLibraryLock()

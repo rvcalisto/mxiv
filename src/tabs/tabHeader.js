@@ -150,22 +150,29 @@ export class TabHeader {
   }
 
   /**
-   * Move header element to the right or to the left.
-   * @param {Boolean} right Either to move right or left.
+   * Insert header after or before current header.
+   * @param {TabHeader} header Header to insert.
+   * @param {Boolean} [after=true] Either to insert after or before current header.
    */
-  move(right) {
-    let next = right ? this.#element.nextElementSibling : this.#element.previousElementSibling
-    
-    if (!next || !next.classList.contains('tab')) return
-    right ? this.#element.before(next) : next.before(this.#element)
+  insert(header, after = true) {
+    if (after) this.#element.after(header.#element)
+    else this.#element.before(header.#element)
   }
 
   /**
-   * Move this header element after target header element.
-   * @param {TabHeader} targetHeader 
+   * Neighbor header on the left, if any.
+   * @returns {TabHeader?}
    */
-  after(targetHeader) {
-    this.#element.after(targetHeader.#element)
+  get left() {
+    return this.#element.previousElementSibling?.classObj
+  }
+
+  /**
+   * Neighbor header on the right, if any.
+   * @returns {TabHeader?}
+   */
+  get right() {
+    return this.#element.nextElementSibling?.classObj
   }
 
   /**

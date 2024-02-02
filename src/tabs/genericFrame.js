@@ -57,7 +57,7 @@ export class GenericFrame extends HTMLElement {
    * @param {Boolean} playing Either tab is playing.
    */
   setFrameIsPlaying(playing) {
-    this.setAttribute("playing", playing)
+    this.toggleAttribute("playing", playing)
   }
 
   /**
@@ -78,6 +78,14 @@ export class GenericFrame extends HTMLElement {
    */
   refreshStatus() {
     this.setAttribute("updatestatus", true)
+  }
+
+  /**
+   * Hold frame open, prevent closing tab/window.
+   * @param {Boolean} value Either to hold frame open.
+   */
+  hold(value) {
+    this.toggleAttribute('hold', value)
   }
 
   /**

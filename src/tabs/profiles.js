@@ -71,8 +71,8 @@ export function loadProfile(name, clearSession = true) {
     return
   }
 
-  // clear current session first?
-  if (clearSession) Tab.closeAll(true)
+  if (clearSession)
+    Tab.allTabs.forEach( tab => tab.close(false) )
 
   // re-create session
   for (const tabStateObj of profiles[name].tabs) {

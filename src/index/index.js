@@ -14,9 +14,13 @@ elecAPI.onOpen(function openInViewer(e, details) {
   else FRAME.open(...paths)
 })
 
-// clear tmp folders, if any, on quit/reload
-onbeforeunload = function clearTempFolders () {
-  Tab.closeAll(true)
+/**
+ * "Destruct" each tab. Keep open when tabs on hold.
+ * @returns {false?}
+ */
+onbeforeunload = function onClose() {
+  Tab.allTabs.forEach( tab => tab.close(false) )
+  return Tab.allTabs.length > 0 ? false : null
 }
 
 // load user key map and create first tab

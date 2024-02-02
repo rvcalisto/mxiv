@@ -56,7 +56,7 @@ export class Tab {
         if (attribute === 'frametitle')
           this.header.rename( this.frame.getAttribute('frametitle') )
         if (attribute === 'playing')
-          this.header.setPlayingIcon( this.frame.getAttribute('playing') === 'true' )
+          this.header.setPlayingIcon( this.frame.hasAttribute('playing') )
         if (attribute === 'updatestatus' && FRAME === this.frame)
           StatusBar.updateStatus( this.frame.status() )
       }
@@ -91,7 +91,9 @@ export class Tab {
    * @param {Boolean} right 
    */
   move(right = true) {
-    this.header.move(right)
+    const next = right ? this.header.right : this.header.left
+    if (next != null)
+      next.insert(this.header, right)
   }
 
   /**
@@ -120,23 +122,27 @@ export class Tab {
     }, this.frame.tabName)
 
     // move duplicate behind currentTab
-    this.header.after(newTab.header)
+    this.header.insert(newTab.header, true)
   }
 
   /**
-   * Closes tab. Quit window if last remaining instance.
-   * - If currently selected, pass selection to the left or right instance.
+   * Close tab. Pass selection (left, right) if currently selected.
+   * @param {boolean} [closeWindowOnLast=true] Also close window if on last tab.
    */
-  close() {
-    const allTabs = Tab.allTabs
-    const thisIdx = allTabs.findIndex(tab => tab === this)
-    const next = allTabs[thisIdx -1] || allTabs[thisIdx +1]
+  close(closeWindowOnLast = true) {
+    if ( this.frame.hasAttribute('hold') ) {
+      this.frame.animate([{ filter: 'brightness(1)' }, { filter: 'brightness(1.5)' }, 
+      { filter: 'brightness(1)' }], { duration: 200 })
+      return
+    }
 
+    const nextHeader = this.header.left || this.header.right
     this.frame.remove()
     this.header.remove()
 
-    if (!Tab.allTabs.length) window.close()
-    else if (Tab.selected === this) next.select()
+    if (nextHeader != null && Tab.selected === this) nextHeader.tabInstance.select()
+    else if (nextHeader == null && closeWindowOnLast) window.close()
+    else if (Tab.selected === this) Tab.selected = FRAME = null
   }
 
   /**
@@ -162,16 +168,13 @@ export class Tab {
    * @param {Boolean} forward 
    */
   static cycleTabs(forward = true) {
-    const selected = Tab.selected
+    const header = Tab.selected.header
+    const nextHeader = forward ? header.right : header.left
 
-    const allTabs = Tab.allTabs
-    const thisIdx = allTabs.findIndex(tab => tab === selected)
-
-    let nextIdx = forward ? (thisIdx +1) : (thisIdx -1)
-    if (nextIdx < 0) nextIdx = allTabs.length -1 // wrap around negatives
-
-    const nextTab = allTabs[nextIdx % allTabs.length]
-    nextTab.select()
+    if (nextHeader == null)
+      Tab.allTabs.at(forward ? 0 : -1).select()
+    else
+      nextHeader.tabInstance.select()
   }
 
   /**
@@ -181,22 +184,6 @@ export class Tab {
   static get allTabs() {
     const tabs = TabHeader.allHeaders
     return tabs.map(header => header.tabInstance)
-  }
-
-  /**
-   * Close all tabs. Closes window on end by default.
-   * @param {Boolean} keepWindowOpen Either to keep the window open after closing all tabs.
-   */
-  static closeAll(keepWindowOpen = false) {
-    for (const tab of Tab.allTabs) {
-      tab.frame.remove()
-      tab.header.remove()
-    }
-    
-    // update Tab class properties 
-    Tab.selected = FRAME = null
-
-    if (!keepWindowOpen) window.close()
   }
 
   /**
