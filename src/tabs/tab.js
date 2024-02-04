@@ -72,11 +72,12 @@ export class Tab {
    * Present and update tab references as selected.
    */
   select() {
-    // hide all frame instances but this one (which count as focus)
-    Tab.allTabs.forEach(tab => tab.frame.style.display = 'none')
-    this.frame.style.display = ''
+    if (Tab.selected) {
+      Tab.selected.frame.style.display = 'none'
+      Tab.selected.header.select(false)
+    }
 
-    if (Tab.selected) Tab.selected.header.select(false)
+    this.frame.style.display = ''
     this.header.select()
 
     Tab.selected = this
