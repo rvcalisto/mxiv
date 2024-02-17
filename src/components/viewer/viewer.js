@@ -271,11 +271,11 @@ export class Viewer extends GenericFrame {
     // try and delete target file from filesystem
     const success = await elecAPI.deleteFile(targetFile.path)
 
-    // delist target file, update explorer and display suggested page
+    // delist target file, display suggested page and update explorer
     if (success) {
       const equivalentIdx = this.fileBook.delistFile(targetFile)
-      this.fileExplorer.reload()
       await this.gotoPage(equivalentIdx)
+      await this.fileExplorer.reload()
       this.fileExplorer.syncSelection()
     }
 
