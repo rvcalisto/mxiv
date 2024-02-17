@@ -39,12 +39,17 @@ function expandPath(path) {
 
 /**
  * Delete file at given path. 
- * * Used by Viewer to delete current file at user order.
+ * - Used in Viewer to delete current file at user order.
  * @param {String} filePath Absolute file path.
+ * @returns {Boolean} Success.
  */
 function deleteFile(filePath) {
-  rmSync(filePath)
-  console.log(`MXIV: Deleted ${filePath}`);
+  try {
+    rmSync(filePath)
+    return true
+  } catch (err) {
+    return err.code === 'ENOENT' // already deleted, return true
+  }
 }
 
 /**

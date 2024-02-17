@@ -19,7 +19,7 @@ ipcMain.handle('file:runScript', (e, userScript, currentFile) => {
 })
 
 ipcMain.handle('file:delete', (e, path) => {
-  fileTools.deleteFile(path)
+  return fileTools.deleteFile(path)
 })
 
 // file discovery

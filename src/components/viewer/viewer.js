@@ -262,21 +262,25 @@ export class Viewer extends GenericFrame {
    * Delete current file from filesystem.
    */
   async deletePage() {
-    const currentFile = this.fileBook.currentFile
-    if (!currentFile) return AppNotifier.notify('no loaded file to delete', 'pageDel')
+    const targetFile = this.fileBook.currentFile
+    if (!targetFile) return AppNotifier.notify('no loaded file to delete', 'pageDel')
     
-    const forReal = confirm(`Permanently delete current file:\n${currentFile.name}?`)
+    const forReal = confirm(`Permanently delete current file:\n${targetFile.name}?`)
     if (!forReal) return
 
-    // delist current file and delete it from filesystem
-    const equivalentIdx = this.fileBook.delistFile(currentFile)
-    await elecAPI.deleteFile(currentFile.path)
+    // try and delete target file from filesystem
+    const success = await elecAPI.deleteFile(targetFile.path)
 
-    // update explorer and display suggested page
-    this.fileExplorer.reload()
-    await this.gotoPage(equivalentIdx)
-    this.fileExplorer.syncSelection()
-    AppNotifier.notify('removed ' + currentFile.path)
+    // delist target file, update explorer and display suggested page
+    if (success) {
+      const equivalentIdx = this.fileBook.delistFile(targetFile)
+      this.fileExplorer.reload()
+      await this.gotoPage(equivalentIdx)
+      this.fileExplorer.syncSelection()
+    }
+
+    console.log(`${success ? 'deleted' : 'failed to delete'} ${targetFile.path}`)
+    AppNotifier.notify(`${success ? 'deleted' : 'failed to delete'} ${targetFile.path}`)
   }
 
   /**
