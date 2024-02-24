@@ -17,7 +17,7 @@ function fileType(file) {
     case '.gif': case '.apng': case '.webp':
     case '.svg': case '.icns': case '.ico':
       return 'image'
-    case '.mp3': case '.ogg':
+    case '.mp3': case '.ogg': case '.wav':
       return 'audio'
     case '.mp4': case '.webm':
       return 'video';
