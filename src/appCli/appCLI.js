@@ -215,8 +215,10 @@ class AppCmdLine extends HTMLElement {
       }
 
       // close when prompt is fully erased
-      else if (e.key === 'Backspace' && this.#prompt.getText().length < 1) 
+      else if (e.key === 'Backspace' && this.#prompt.getText().length < 1) {
+        e.stopImmediatePropagation()
         this.toggle(false)
+      }
 
       // delete history-type hint
       else if (e.key === 'Delete') {
