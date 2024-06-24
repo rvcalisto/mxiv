@@ -62,7 +62,7 @@ export class GenericFrame extends HTMLElement {
 
   /**
    * Return Frame status object to be presented in bar. Override to customize.
-   * @returns {import("../tabs/statusBar.js").StatusObjectType}
+   * @returns {import("../components/statusBar.js").StatusObjectType}
    */
   status() {
     return {

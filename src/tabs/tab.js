@@ -1,5 +1,5 @@
 import { TabHeader } from "./tabHeader.js"
-import * as StatusBar from "./statusBar.js"
+import { StatusBar } from "../components/statusBar.js"
 import { GenericFrame } from "../frames/genericFrame.js"
 
 // concrete frames
