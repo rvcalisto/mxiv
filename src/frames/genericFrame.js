@@ -30,7 +30,7 @@ export class GenericFrame extends HTMLElement {
   /**
    * Returns the class associated to a customElement.
    * @param {String} type Component type.
-   * @returns {typeof GenericFrame?}
+   * @returns {typeof GenericFrame}
    */
   static getClass(type) {
     return customElements.get(`${type}-component`)

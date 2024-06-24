@@ -1,7 +1,7 @@
 import { ActionDB } from "../actions/actionDB.js"
 import { Tab } from "../tabs/tab.js"
 import { StatusBar } from "../components/statusBar.js"
-import * as Profiles from "../tabs/profiles.js"
+import { SessionProfiles } from "../tabs/profiles.js"
 import { AppCLI, option, standardFilter } from "../components/appCli/appCLI.js"
 import { UserAccelerators } from "../actions/userAccelerators.js"
 import { AppNotifier } from "../components/notifier.js"
@@ -88,9 +88,9 @@ ActionDB.setBaseActions({
     'methods': {
       'load': {
         'desc': 'load session profile',
-        'run': (name, clearSession = 'default') => Profiles.loadProfile(name, clearSession == 'default'),
+        'run': (name, clearSession = 'default') => SessionProfiles.load(name, clearSession == 'default'),
         'options': (query, args) => {
-          if (args.length === 1) return Profiles.listProfiles()
+          if (args.length === 1) return SessionProfiles.list()
           if (args.length === 2) return [
             option('default', 'close current tabs on profile load'),
             option('keepSession', 'keep current tabs on profile load')
@@ -100,16 +100,16 @@ ActionDB.setBaseActions({
       },
       'store': {
         'desc': 'store current session as profile',
-        'run': (name) => Profiles.storeProfile(name),
+        'run': (name) => SessionProfiles.store(name),
         'options': (lastArg, allArgs) => {
-          return allArgs.length === 1 ? Profiles.listProfiles() : []
+          return allArgs.length === 1 ? SessionProfiles.list() : []
         }
       },
       'erase': {
         'desc': 'erase a session profile',
-        'run': (name) => Profiles.eraseProfile(name),
+        'run': (name) => SessionProfiles.erase(name),
         'options': (lastArg, allArgs) => {
-          return allArgs.length === 1 ? Profiles.listProfiles() : []
+          return allArgs.length === 1 ? SessionProfiles.list() : []
         }
       }
     }

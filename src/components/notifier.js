@@ -8,7 +8,7 @@ export const AppNotifier = new class {
   /**
    * Display message on screen.
    * @param {String} msg Message to display.
-   * @param {String?} typeId Identifier avoid duplicates.
+   * @param {String} [typeId] Identifier avoid duplicates.
    */
   notify(msg, typeId) {
     
