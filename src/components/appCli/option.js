@@ -1,4 +1,4 @@
-import { AcceleratorDB } from "../actions/acceleratorDB.js";
+import { AcceleratorDB } from "../../actions/acceleratorDB.js";
 import { AppCLI } from "./appCLI.js";
 
 

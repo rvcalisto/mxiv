@@ -1,5 +1,5 @@
-import { ItemList } from "../../app/itemList.js"
-import { AppNotifier } from "../../app/notifier.js";
+import { ItemList } from "../../components/itemList.js"
+import { AppNotifier } from "../../components/notifier.js";
 
 
 /**

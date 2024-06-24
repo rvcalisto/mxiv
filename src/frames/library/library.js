@@ -1,9 +1,9 @@
-import { GenericFrame } from "../../tabs/genericFrame.js"
+import { GenericFrame } from "../genericFrame.js"
 import { CoverGrid } from "./coverGrid.js"
 import { WatchlistPanel } from "./watchlistPanel.js"
 import "./libraryActions.js"
 import "./libraryAccelerators.js"
-import { AppNotifier } from "../../app/notifier.js"
+import { AppNotifier } from "../../components/notifier.js"
 
 
 /**

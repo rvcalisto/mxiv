@@ -1,8 +1,8 @@
 import { ActionDB } from "../../actions/actionDB.js"
 import { CoverGrid } from "./coverGrid.js"
-import { option, standardFilter } from "../../appCli/appCLI.js"
+import { option, standardFilter } from "../../components/appCli/appCLI.js"
 import { FRAME as Library }  from "../../tabs/tab.js"
-import { AppNotifier } from "../../app/notifier.js"
+import { AppNotifier } from "../../components/notifier.js"
 
 
 /**

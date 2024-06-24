@@ -1,5 +1,5 @@
-import { AppNotifier } from "../app/notifier.js"
-import { GenericFrame } from "./genericFrame.js"
+import { AppNotifier } from "../components/notifier.js"
+import { GenericFrame } from "../frames/genericFrame.js"
 import { Tab } from "./tab.js"
 
 const storageEntry = 'profiles'

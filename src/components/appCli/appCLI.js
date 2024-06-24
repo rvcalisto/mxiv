@@ -1,6 +1,6 @@
-import { ItemList } from "../app/itemList.js";
-import { ActionDB } from "../actions/actionDB.js";
-import { AppNotifier } from "../app/notifier.js";
+import { ItemList } from "../itemList.js";
+import { ActionDB } from "../../actions/actionDB.js";
+import { AppNotifier } from "../notifier.js";
 import { CmdPrompt, CmdHistory } from "./appCLIPrompt.js";
 import { option, optionElement } from "./option.js";
 export { option };

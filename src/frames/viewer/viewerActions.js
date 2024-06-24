@@ -1,7 +1,7 @@
 import { ActionDB } from "../../actions/actionDB.js"
 import { FRAME } from "../../tabs/tab.js"
-import { option, standardFilter } from "../../appCli/appCLI.js"
-import { AppNotifier } from "../../app/notifier.js"
+import { option, standardFilter } from "../../components/appCli/appCLI.js"
+import { AppNotifier } from "../../components/notifier.js"
 
 
 /**

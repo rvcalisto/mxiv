@@ -1,10 +1,10 @@
 import { TabHeader } from "./tabHeader.js"
 import * as StatusBar from "./statusBar.js"
-import { GenericFrame } from "./genericFrame.js"
+import { GenericFrame } from "../frames/genericFrame.js"
 
 // concrete frames
-import "../components/viewer/viewer.js"
-import "../components/library/library.js"
+import "../frames/viewer/viewer.js"
+import "../frames/library/library.js"
 
 
 /** 

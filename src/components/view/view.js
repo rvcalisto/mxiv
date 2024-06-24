@@ -3,7 +3,7 @@ import { ViewScreen } from "./screen.js"
 import { TrackBar } from "./trackBar.js"
 import { ViewMedia } from "./media.js"
 import { Slideshow } from "./slideshow.js"
-import { AppNotifier } from "../../app/notifier.js"
+import { AppNotifier } from "../notifier.js"
 
 
 /**

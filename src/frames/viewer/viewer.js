@@ -1,12 +1,12 @@
-import { GenericFrame } from "../../tabs/genericFrame.js"
+import { GenericFrame } from "../genericFrame.js"
 import { FileBook } from "./fileBook.js"
 import { FileExplorer } from "./fileExplorer.js"
-import { View } from "../view/view.js"
+import { View } from "../../components/view/view.js"
 
 import "./viewerActions.js"
 import "./viewerAccelerators.js"
 import "./keyEventController.js"
-import { AppNotifier } from "../../app/notifier.js"
+import { AppNotifier } from "../../components/notifier.js"
 
 
 /**

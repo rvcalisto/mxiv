@@ -2,9 +2,9 @@ import { ActionDB } from "../actions/actionDB.js"
 import { Tab } from "../tabs/tab.js"
 import * as StatusBar from "../tabs/statusBar.js"
 import * as Profiles from "../tabs/profiles.js"
-import { AppCLI, option, standardFilter } from "../appCli/appCLI.js"
+import { AppCLI, option, standardFilter } from "../components/appCli/appCLI.js"
 import { UserAccelerators } from "../actions/userAccelerators.js"
-import { AppNotifier } from "../app/notifier.js"
+import { AppNotifier } from "../components/notifier.js"
 
 
 /**

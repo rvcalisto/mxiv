@@ -1,5 +1,5 @@
 import { FRAME } from "../tabs/tab.js"
-import { AppCLI } from "../appCli/appCLI.js"
+import { AppCLI } from "../components/appCli/appCLI.js"
 import { ActionDB } from "../actions/actionDB.js"
 import { AcceleratorDB } from "../actions/acceleratorDB.js"
 

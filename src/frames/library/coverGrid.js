@@ -1,4 +1,4 @@
-import { ItemList } from "../../app/itemList.js"
+import { ItemList } from "../../components/itemList.js"
 import { Tab } from "../../tabs/tab.js";
 import { Library } from "./library.js";
 
