@@ -1,4 +1,4 @@
-import { AcceleratorDB } from "../../actions/acceleratorDB.js";
+import { AcceleratorController } from "../../actions/acceleratorController.js";
 import { AppCLI } from "./appCLI.js";
 
 
@@ -64,7 +64,7 @@ export function optionElement(item) {
  * @returns {HTMLElement?} 
  */
 function acceleratorHints(action) {
-  const frameAccelSet = AcceleratorDB.currentFrameAccelerator;
+  const frameAccelSet = AcceleratorController.currentFrameAccelerators;
   const acceleratedBy = frameAccelSet.byAction(action);
 
   if (acceleratedBy.length < 1) return null

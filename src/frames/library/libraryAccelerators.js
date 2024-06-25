@@ -1,7 +1,7 @@
-import { AcceleratorDB } from "../../actions/acceleratorDB.js"
+import { AcceleratorController } from "../../actions/acceleratorController.js"
 
 
-AcceleratorDB.setComponentDefaults('library', {
+AcceleratorController.setComponentDefaults('library', {
   
   'o'   : ['addToLibrary'],
   'r'   : ['random'],

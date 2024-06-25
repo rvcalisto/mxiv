@@ -1,4 +1,4 @@
-import { ActionDB } from "../actions/actionDB.js"
+import { ActionController } from "../actions/actionController.js"
 import { Tab } from "../tabs/tab.js"
 import { StatusBar } from "../components/statusBar.js"
 import { SessionProfiles } from "../tabs/profiles.js"
@@ -10,7 +10,7 @@ import { AppNotifier } from "../components/notifier.js"
 /**
  * Commands that can be user invoked by shortcuts on keyHandler or AppCLI.
  */
-ActionDB.setBaseActions({
+ActionController.setBaseActions({
 
   'cli': {
     'desc': 'app command line interface methods',
@@ -153,7 +153,7 @@ ActionDB.setBaseActions({
           ]
 
           // hint stored user accelerators for component
-          const accelObject = UserAccelerators.getAccelObj(allArgs[0])
+          const accelObject = UserAccelerators.getAcceleratorSet(allArgs[0])
           const options = []
 
           for (const [keycombo, actionArg] of Object.entries(accelObject) ) {

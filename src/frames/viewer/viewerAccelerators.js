@@ -1,7 +1,7 @@
-import { AcceleratorDB } from "../../actions/acceleratorDB.js"
+import { AcceleratorController } from "../../actions/acceleratorController.js"
 
 
-AcceleratorDB.setComponentDefaults('viewer', {
+AcceleratorController.setComponentDefaults('viewer', {
 	// navigation
 	'w' : ['navigate', 'up'],
 	's' : ['navigate', 'down'],
@@ -45,7 +45,7 @@ AcceleratorDB.setComponentDefaults('viewer', {
 })
 
 // to be managed by local controller
-AcceleratorDB.setComponentDefaults('fileExplorer', {
+AcceleratorController.setComponentDefaults('fileExplorer', {
   'w' : ['navItems', 'up'],
   'ArrowUp' : ['navItems', 'up'],
 

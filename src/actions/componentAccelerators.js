@@ -1,11 +1,12 @@
 /**
- * @typedef {Object.<string, string[]>} AcceleratorSet
+ * @typedef {Object<string, string[]>} AcceleratorSet
  */
+
 
 /**
  * Accelerators for a given component.
  */
-export class Accelerators {
+export class ComponentAccelerators {
 
   /**
    * Keycombo keys, action & args as values.
@@ -43,6 +44,7 @@ export class Accelerators {
       // re-assemble combo in predefined order [key+Shift+Control]
       treatedKey = treatedKey
         .replaceAll('+', '').replace('shift', '').replace('control', '');
+      
       if (hasShift) treatedKey += '+shift';
       if (hasCtrl) treatedKey += '+control';
     }
@@ -58,11 +60,11 @@ export class Accelerators {
   /**
    * Extend accelerator entries for polymorphism.
    * @param {AcceleratorSet} accelerators Accelerator properties to overwrite.
-   * @param {true} deleteEmpty Delete keys whose value is an empty array.
+   * @param {boolean} [deleteEmpty=true] Delete keys whose value is an empty array.
    */
   extend(accelerators, deleteEmpty = true) {
     for (const [key, value] of Object.entries(accelerators)) {
-      let treatedKey = Accelerators.parseKeycombo(key);
+      let treatedKey = ComponentAccelerators.parseKeycombo(key);
 
       if (deleteEmpty && value.length < 1) delete this.#byKeycombo[treatedKey];
       else this.#byKeycombo[treatedKey] = value;
@@ -72,19 +74,20 @@ export class Accelerators {
   }
 
   /**
-   * Get accelerator key-value object.
+   * Get accelerator set object.
    * @returns {AcceleratorSet}
    */
   asObject() {
-    const accelSetClone = {}
+    /** @type {AcceleratorSet} */
+    const accelSetClone = {};
 
     // assign entries to clone while translating-back aliased keys
     for ( let [key, action] of Object.entries(this.#byKeycombo) ) {
       if ( key.startsWith(' ') ) {
-        key = key.replace(' ', 'space')
+        key = key.replace(' ', 'space');
       }
       
-      accelSetClone[key] = action
+      accelSetClone[key] = action;
     }
 
     return accelSetClone;
@@ -94,6 +97,7 @@ export class Accelerators {
    * Builds a relation of actions and accelerating keyCombos.
    */
   #buildAcceleratedActions() {
+    /** @type {AcceleratorSet} */
     const acceleratedCmds = {};
 
     for (const [accelKey, cmdArgs] of Object.entries(this.#byKeycombo)) {
@@ -129,7 +133,7 @@ export class Accelerators {
    */
   byEvent(keyEvent) {
     for (const keyCombo in this.#byKeycombo) {
-      if (Accelerators.#matchEvent(keyCombo, keyEvent))
+      if (ComponentAccelerators.#matchEvent(keyCombo, keyEvent))
         return this.#byKeycombo[keyCombo];
     }
     return null;
@@ -138,7 +142,7 @@ export class Accelerators {
   /**
    * Return an array of keycombos accelarating a given action.
    * @param {String[]} actions Command strings accelerated by keys.
-   * @param {false} exact Either to include all intersecting actions or exact matches only.
+   * @param {boolean} [exact=false] Either to include all intersecting actions or exact matches only.
    * @returns {String[]}
    */
   byAction(actions, exact = false) {

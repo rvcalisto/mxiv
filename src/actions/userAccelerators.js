@@ -1,19 +1,19 @@
-import { AcceleratorDB } from './acceleratorDB.js'
-import { Accelerators } from "./accelerators.js"
+import { AcceleratorController } from './acceleratorController.js';
+import { ComponentAccelerators } from "./componentAccelerators.js";
 
 
 /**
  * Persist, apply and update user-defined accelerators.
  */
-export const UserAccelerators = new class _UserAccelerators {
+export const UserAccelerators = new class {
 
   /**
    * LocalStorage key name.
    */
-  #storageEntry = 'userHotkeys'
+  #storageEntry = 'userHotkeys';
 
   /**
-   * @typedef {import('./accelerators.js').AcceleratorSet} AcceleratorSet
+   * @typedef {import('./componentAccelerators.js').AcceleratorSet} AcceleratorSet
    * @typedef {Object<string, AcceleratorSet>} UserAccelerators
    */
 
@@ -22,8 +22,8 @@ export const UserAccelerators = new class _UserAccelerators {
    * @returns {UserAccelerators}
    */
   #getStorageObj() {
-    let userAccelerators = JSON.parse( localStorage.getItem(this.#storageEntry) )
-    return userAccelerators || {}
+    const userAcceleratorsJSON = localStorage.getItem(this.#storageEntry);
+    return userAcceleratorsJSON ? JSON.parse(userAcceleratorsJSON) : {};
   }
 
   /**
@@ -31,18 +31,18 @@ export const UserAccelerators = new class _UserAccelerators {
    * @param {UserAccelerators} userAccelerators Profile object.
    */
   #setStorageObj(userAccelerators) {
-    localStorage.setItem( this.#storageEntry, JSON.stringify(userAccelerators) )
+    localStorage.setItem( this.#storageEntry, JSON.stringify(userAccelerators) );
   }
 
   /**
-   * Get user-defined accelerators object for component.
+   * Get user-defined accelerator set for component.
    * @returns {AcceleratorSet} 
    */
-  getAccelObj(component = 'base') {
-    const userAccelerators = this.#getStorageObj()
-    const accelerators = userAccelerators[component] 
+  getAcceleratorSet(component = 'base') {
+    const userAccelerators = this.#getStorageObj();
+    const accelerators = userAccelerators[component];
 
-    return new Accelerators( accelerators || {} ).asObject()
+    return new ComponentAccelerators( accelerators || {} ).asObject();
   }
 
   /**
@@ -51,47 +51,47 @@ export const UserAccelerators = new class _UserAccelerators {
    * - Entries whose value's first item equals `mask` are nulled.
    * @param {string} component Component to modify.
    * @param {AcceleratorSet} acceleratorSet User defined accelerators.
-   * @param {true} store Either to persist changes after apply.
+   * @param {boolean} [store=true] Either to persist changes after apply.
    */
   set(component, acceleratorSet, store = true) {
-    const userAccelerators = this.#getStorageObj()
-    if (!userAccelerators[component]) userAccelerators[component] = {}
+    const userAccelerators = this.#getStorageObj();
+    if (!userAccelerators[component]) userAccelerators[component] = {};
     
     // delete keys purposefully nulled before assignment & storing
     // otherwise, overwrite key value
     for ( let [key, actionArr] of Object.entries(acceleratorSet) ) {
-      key = Accelerators.parseKeycombo(key)
-      const toDelete = actionArr[0] === 'default'
-      const toMask = actionArr[0] === 'mask'
+      key = ComponentAccelerators.parseKeycombo(key);
+      const toDelete = actionArr[0] === 'default';
+      const toMask = actionArr[0] === 'mask';
 
-      if (toDelete) delete userAccelerators[component][key]
-      else userAccelerators[component][key] = toMask ? [] : actionArr
+      if (toDelete) delete userAccelerators[component][key];
+      else userAccelerators[component][key] = toMask ? [] : actionArr;
     }
 
     if (component === 'base')
-      AcceleratorDB.setBaseCustoms(userAccelerators[component])
+      AcceleratorController.setBaseCustoms(userAccelerators[component]);
     else
-      AcceleratorDB.setComponentCustoms(component, userAccelerators[component])
+      AcceleratorController.setComponentCustoms(component, userAccelerators[component]);
 
-    if (store) this.#setStorageObj(userAccelerators)
+    if (store) this.#setStorageObj(userAccelerators);
     
-    this.#updateCLIaccelCSSvar()
+    this.#updateCLIaccelCSSvar();
   }
 
   /**
    * (Re)Apply previously stored user accelerators for every component.
    */
   reload() {
-    const userAccelerators = this.#getStorageObj()
+    const userAccelerators = this.#getStorageObj();
 
     // no user accelerators to apply, generate CSS var only
-    if ( Object.keys(userAccelerators).length < 1 ) return this.#updateCLIaccelCSSvar()
+    if ( Object.keys(userAccelerators).length < 1 ) return this.#updateCLIaccelCSSvar();
 
     for (const component in userAccelerators) {
-      const acceleratorSet = userAccelerators[component]
-      if ( !Object.keys(acceleratorSet).length ) continue
+      const acceleratorSet = userAccelerators[component];
+      if ( !Object.keys(acceleratorSet).length ) continue;
       
-      this.set(component, acceleratorSet, false)
+      this.set(component, acceleratorSet, false);
     }
   }
 
@@ -102,13 +102,15 @@ export const UserAccelerators = new class _UserAccelerators {
    * - Elements using CSS variables in their style get updated automatically on change.
    */
   #updateCLIaccelCSSvar() {
-    const action = ['cli', 'show']
+    const action = ['cli', 'show'];
     
     // try keycombo for specific action, otherwise any intersection
-    const baseAccelSet = AcceleratorDB.getAccel('base')
-    const keycombo = baseAccelSet.byAction(action, true)[0] ||
-    baseAccelSet.byAction(action)[0] || '???'
-  
-    document.documentElement.style.setProperty('--msg-cliAccel', `"${keycombo}"`)
+    const baseAccelSet = AcceleratorController.getAccelerators('base');
+
+    if (baseAccelSet != null) {
+      const keycombo = baseAccelSet.byAction(action, true)[0] ||
+      baseAccelSet.byAction(action)[0] || '???';
+      document.documentElement.style.setProperty('--msg-cliAccel', `"${keycombo}"`);
+    }
   }
 }

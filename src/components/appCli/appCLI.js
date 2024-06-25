@@ -1,5 +1,5 @@
 import { ItemList } from "../itemList.js";
-import { ActionDB } from "../../actions/actionDB.js";
+import { ActionController } from "../../actions/actionController.js";
 import { AppNotifier } from "../notifier.js";
 import { CmdPrompt, CmdHistory } from "./appCLIPrompt.js";
 import { option, optionElement } from "./option.js";
@@ -90,7 +90,7 @@ class AppCmdLine extends HTMLElement {
     inputStr = inputStr || this.#prompt.getText()
 
     const action = CmdPrompt.unescapeIntoArray(inputStr)
-    const success = ActionDB.currentFrameActions.run(action)
+    const success = ActionController.currentFrameActions.run(action)
     if (success) return CmdHistory.store(inputStr)
     
     AppNotifier.notify(`"${action[0]}" is not an action in current context`, 'appCLI')
@@ -98,7 +98,7 @@ class AppCmdLine extends HTMLElement {
 
   /**
    * Erase past commands from history.
-   * @param {String?} specificEntry If given, remove only this string from history.
+   * @param {String} [specificEntry] If given, remove only this string from history.
    */
   clearCmdHistory(specificEntry) {
     CmdHistory.remove(specificEntry)
@@ -119,7 +119,7 @@ class AppCmdLine extends HTMLElement {
    * Genereate hint list based on current this.#prompt text.
    */
   async #displayHints() {
-    const currentActions = ActionDB.currentFrameActions.asObject()
+    const currentActions = ActionController.currentFrameActions.asObject()
     let [cmd, ...args] = this.#prompt.getText(true)
     let command = currentActions[cmd]
 

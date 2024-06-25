@@ -49,7 +49,7 @@ export const CmdHistory = new class {
 
   /**
    * Erase exact item from history. Erase all items if undefined.
-   * @param {String?} specificEntry If given, remove only this string from history.
+   * @param {String} [specificEntry] If given, remove only this string from history.
    */
   remove(specificEntry) {
     this.#history = specificEntry ? this.#history.filter(entry => entry !== specificEntry) : []

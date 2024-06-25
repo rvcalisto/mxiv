@@ -1,4 +1,4 @@
-import { AcceleratorDB } from "../../actions/acceleratorDB.js";
+import { AcceleratorController } from "../../actions/acceleratorController.js";
 import { FRAME } from "../../tabs/tab.js";
 
 
@@ -8,7 +8,8 @@ import { FRAME } from "../../tabs/tab.js";
 addEventListener('fileExplorerKeyEvent', function handleFileExplorer(e) {
   const keyEvent = e.detail;
 
-  const action = AcceleratorDB.getAccel('fileExplorer', 'default')
+  const action = AcceleratorController
+    .getAccelerators('fileExplorer', 'default')
     .byEvent(keyEvent);
 
   // bubble-up on null, call function directly on match
@@ -27,7 +28,10 @@ addEventListener('fileExplorerKeyEvent', function handleFileExplorer(e) {
 addEventListener('keyup', function releaseViewSlide(e) {
   if (FRAME == null || FRAME.type !== 'viewer') return;
 
-  const action = AcceleratorDB.getAccel('viewer').byEvent(e);
+  const action = AcceleratorController
+    .getAccelerators('viewer')
+    .byEvent(e);
+  
   if (action != null && action[0] === 'navigate') {
     e.preventDefault();
 

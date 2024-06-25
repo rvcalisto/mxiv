@@ -1,7 +1,7 @@
-import { AcceleratorDB } from "../actions/acceleratorDB.js";
+import { AcceleratorController } from "../actions/acceleratorController.js";
 
 
-AcceleratorDB.setBaseDefaults({
+AcceleratorController.setBaseDefaults({
 
   // cmds
   'x': ['cli', 'show'],
