@@ -3,7 +3,7 @@
  * @property {String} title Title to display on application window.
  * @property {String} infoLeft Information to display on the left.
  * @property {String} infoRight Information to display on the right.
- * @property {()=>} infoLeftFunc Function to run on right-click on the left.
+ * @property {()=>void} infoLeftFunc Function to run on right-click on the left.
  */
 
 
@@ -17,20 +17,11 @@ export const StatusBar = new class {
    */
   #titleSuffix = 'MXIV';
 
-  /**
-   * @type {HTMLDivElement}
-   */
-  #barElement = document.getElementById('bar');
+  #barElement = /** @type {HTMLDivElement} */ (document.getElementById('bar'));
 
-  /**
-   * @type {HTMLLabelElement}
-   */
-  #nameElement = document.getElementById('barName');
+  #nameElement = /** @type {HTMLLabelElement} */ (document.getElementById('barName'));
 
-  /**
-   * @type {HTMLLabelElement}
-   */
-  #infoElement = document.getElementById('barInfo');
+  #infoElement = /** @type {HTMLLabelElement} */ (document.getElementById('barInfo'));
 
   /**
    * Old visibility value before fullscreen.
