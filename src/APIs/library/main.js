@@ -39,7 +39,7 @@ function releaseLock(senderID) {
 
 /**
  * Store archive or folder recursively.
- * @param {Electron.BrowserWindow} senderWin Electron sender window.
+ * @param {Electron.WebContents} senderWin Electron sender window.
  * @param {String} folderPath Folder/archive path to add.
  * @param {true} recursively Either to evaluate subfolders recursively.
  * @returns {Promise<Number>} New paths added.
@@ -81,7 +81,7 @@ async function addToLibrary(senderWin, folderPath, recursively = true) {
 
 /**
  * Return sorted Library entries for displaying.
- * @returns {Promise<LibraryEntry[]>}
+ * @returns {Promise<import("./libraryStorage").LibraryEntry[]>}
  */
 async function getLibraryEntries() {
   return await libraryStorage.getEntries()

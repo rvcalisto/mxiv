@@ -114,7 +114,7 @@ async function initialize() {
 
     // console.log('MXIV::Main process broadcast: tag sync')
     BrowserWindow.getAllWindows().forEach(win => {
-      win.send('tags:sync')
+      win.webContents.send('tags:sync')
     })
   })
   console.log('MXIV: Monitoring tag persistence file.')

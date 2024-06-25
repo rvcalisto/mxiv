@@ -16,7 +16,7 @@ if (!isMainThread)
 /**
  * Create thumbnails with worker threads.
  * @param {String[]} files Path array to thumbnail, split between threads.
- * @param {((value:ThumbnailWorkerMessage)=>)} callback Callback to run on thread message.
+ * @param {((value:ThumbnailWorkerMessage)=>void)} callback Callback to run on thread message.
  * @param {Number} [threads=2] Threads to use. 2 by default. 
  */
 async function createThumbnailMultiThreaded(files, callback, threads = 2) {

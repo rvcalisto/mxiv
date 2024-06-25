@@ -112,7 +112,7 @@ class TagStorage extends JsonStorage {
 
   /**
    * List database entries whose files are no longer accessible.
-   * @param {false} deleteOrphans Either to delete orphaned entries if found.
+   * @param {boolean} [deleteOrphans=false] Either to delete orphaned entries if found.
    */
   async listOrphans(deleteOrphans = false) {
     const taskPromises = [], orphans = []

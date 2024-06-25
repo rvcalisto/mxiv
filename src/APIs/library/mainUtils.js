@@ -23,13 +23,13 @@ const PLACEHOLDERICON = p.join(__dirname,
 
 /**
  * Extract tool present. I promise we'll know, eventually.
- * @type {boolean|undefined}
+ * @type {boolean|Promise<boolean>}
  */
 let canExtract = archiveTool.hasTool().then(value => canExtract = value)
 
 /**
  * Thumbnail tool present. I promise we'll know, eventually.
- * @type {boolean|undefined}
+ * @type {boolean|Promise<boolean>}
  */
 let canThumbnail = thumbnailTool.hasTool().then(value => canThumbnail = value)
 

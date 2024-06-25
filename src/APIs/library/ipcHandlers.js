@@ -1,4 +1,4 @@
-const { ipcMain, BrowserWindow } = require("electron");
+const { ipcMain } = require("electron");
 const libraryMain = require("./main");
 
 
@@ -11,8 +11,7 @@ ipcMain.handle('library:unlock', (e) => {
 })
 
 ipcMain.handle('library:add', async (e, path, recursively) => {
-  const senderWin = BrowserWindow.fromWebContents(e.sender)
-  return await libraryMain.addToLibrary(senderWin, path, recursively)
+  return await libraryMain.addToLibrary(e.sender, path, recursively)
 })
 
 ipcMain.handle('library:get', async (e) => {

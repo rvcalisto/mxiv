@@ -68,7 +68,7 @@ class JsonStorage {
   /**
    * Load storage object from JSON file and sync, if not already. Reject on error.
    * @throws {PromiseRejectionEvent} On failure.
-   * @returns {Promise<void>}
+   * @returns {Promise<true|void>}
    */
   async getPersistence() {
 
@@ -108,7 +108,7 @@ class JsonStorage {
 
   /**
    * Monitor persistence file and run callback on detected changes. 
-   * @param {()=>} callback Callback function.
+   * @param {()=>void} callback Callback function.
    */
   async monitorPersistenceFile(callback) {
     
