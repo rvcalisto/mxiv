@@ -13,7 +13,7 @@ export const AppNotifier = new class {
   notify(message, typeId) {
 
     // recycle notification element for if typeId attribute matches
-    const element = this.#rootElement.querySelector(`[type-id=${typeId}]`);
+    const element = this.#rootElement.querySelector(`[type-id="${typeId}"]`);
     if (element != null) {
       element.textContent = message;
       
