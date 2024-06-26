@@ -1,4 +1,13 @@
 /**
+ * @typedef {import("../../APIs/file/fileSearch").FileObject} FileObject
+ */
+
+/**
+ * @typedef {import("../../APIs/file/openFile").BookObject} BookObject
+ */
+
+
+/**
  * Load files and manage logical pagination state.
  */
 export class FileBook {
@@ -11,13 +20,13 @@ export class FileBook {
 
   /**
    * All files loaded.
-   * @type {import("../../APIs/file/fileSearch").FileObject[]}
+   * @type {FileObject[]}
    */
   #allFiles = []
   
   /**
    * All files from current filter.
-   * @type {import("../../APIs/file/fileSearch").FileObject[]}
+   * @type {FileObject[]}
    */
   #filterFiles = []
 
@@ -32,7 +41,7 @@ export class FileBook {
   constructor() {
     /**
      * All loaded paths.
-     * @type {import("../../APIs/file/fileSearch").FileObject[]}
+     * @type {FileObject[]}
      */
     this.paths = []
 
@@ -51,7 +60,7 @@ export class FileBook {
   async load(...paths) {
     console.time(`bookID#${this.#bookID} open`)
 
-    /** @type {import("../../APIs/openAPI").BookObject} */
+    /** @type {BookObject} */
     const book = await elecAPI.openFile(paths, this.#bookID)
 
     if (!book.paths.length) {
@@ -92,7 +101,7 @@ export class FileBook {
 
   /**
    * All visible files in current state.
-   * @returns {import("../../APIs/file/fileSearch").FileObject[]}
+   * @returns {FileObject[]}
    */
   get files() {
     return this.#filterQuery.length ? this.#filterFiles : this.#allFiles
@@ -100,7 +109,7 @@ export class FileBook {
 
   /**
    * Get FileObject from current page index.
-   * @returns {import("../../APIs/file/fileSearch").FileObject?}
+   * @returns {FileObject?}
    */
   get currentFile() {
     return this.files[this.page]
@@ -109,7 +118,7 @@ export class FileBook {
   /**
    * Filter files and update page. Abort if no file passes, clear filter if called without args.
    * @param {String[]} query Filter keys to display.
-   * @param {(file:import("../../APIs/file/fileSearch").FileObject)=>Boolean} filterFunc 
+   * @param {(file:FileObject)=>Boolean} [filterFunc] 
    * Filter function, must return boolean.
    * @returns {Number} Files in filter count. `0` on abort, `-1` on filter cleared.
    */
@@ -174,7 +183,7 @@ export class FileBook {
    * Add and remove tags for current file.
    * @param {Boolean} add Add tags instead of removing them.
    * @param {String[]} tags Tags to associate to current file.
-   * @returns {Boolean} Either any tags where updated.
+   * @returns {Promise<Boolean>} Either any tags where updated.
    */
   async tag(add = true, ...tags) {
     tags = tags.map(tag => tag.toLocaleLowerCase().trim())
@@ -193,11 +202,11 @@ export class FileBook {
   /** 
    * Set new page idx while wrapping around if out-of-bound.
    * @param {Number} pageIdx Normalized index FileObject.
-   * @returns {import("../../APIs/file/fileSearch").FileObject?} 
+   * @returns {FileObject?} 
    */
   setPageIdx(pageIdx) {
     const pageLength = this.files.length
-    if (!pageLength) return
+    if (!pageLength) return null
 
     let newPage = (pageIdx >= pageLength) ? 0 : pageIdx
     if (pageIdx < 0) newPage = pageLength -1
@@ -237,7 +246,7 @@ export class FileBook {
 
   /**
    * Delist file from inner listings.
-   * @param {import("../../APIs/file/fileSearch").FileObject} file FileBook object.
+   * @param {FileObject} file FileBook object.
    * @returns {Number} Equivalent idx sugestion.`-1` if file to delist was not found.
    */
   delistFile(file) {
