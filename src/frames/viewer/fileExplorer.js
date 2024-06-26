@@ -3,6 +3,11 @@ import { AppNotifier } from "../../components/notifier.js";
 
 
 /**
+ * @typedef {import("../../APIs/file/fileSearch.js").FileObject} FileObject
+ */
+
+
+/**
  * File explorer and playlist navigator.
  */
 export class FileExplorer extends HTMLElement {
@@ -11,7 +16,7 @@ export class FileExplorer extends HTMLElement {
   
   /**
    * Last populated object list cache.
-   * @type {import("../../APIs/fileAPI.js").FileObject[]}
+   * @type {FileObject[]}
    */
   #explorerCache = []
 
@@ -22,7 +27,7 @@ export class FileExplorer extends HTMLElement {
 
   /**
    * File item list.
-   * @type {ItemList}
+   * @type {ItemList<FileObject, HTMLElement>}
    */
   #list
 
@@ -80,7 +85,7 @@ export class FileExplorer extends HTMLElement {
 
   /** 
    * Returns file item element.
-   * @param {import("../../APIs/fileAPI.js").FileObject} file 
+   * @param {FileObject} file 
    */
   #fileItem(file) {
     const item = document.createElement('p')
@@ -110,7 +115,7 @@ export class FileExplorer extends HTMLElement {
    * @param {String} secondaryLabel De-empasized label.
    * @param {String} primaryLabel Emphasized label.
    * @param {String} title Text on mouse hover.
-   * @param {Function?} clickFunc On click function.
+   * @param {()=>void} [clickFunc] On click function.
    */
   #updateHeader(icon, secondaryLabel, primaryLabel, title, clickFunc) {
     const parentLabel = this.shadowRoot.getElementById('parDir')
@@ -121,7 +126,7 @@ export class FileExplorer extends HTMLElement {
 
     const header = this.shadowRoot.getElementById('dirBar')
     header.setAttribute('icon', icon)
-    header.onclick = clickFunc
+    header.onclick = () => { clickFunc ? clickFunc() : null }
     header.title = title
   }
 
@@ -129,7 +134,7 @@ export class FileExplorer extends HTMLElement {
    * List files in given path in explorer mode.
    */
   async listDirectory(path) {
-    /** @type {import("../../APIs/fileAPI.js").LSObject} */
+    /** @type {import("../../APIs/file/fileSearch.js").LSObject} */
     const lsObj = await elecAPI.scanPath(path)
     const count = lsObj.directories.length + lsObj.archives.length + lsObj.files.length
     if (count < 1) {
@@ -169,7 +174,8 @@ export class FileExplorer extends HTMLElement {
     // update header elements
     const pathFiles = this.viewer.fileBook.paths
     this.#updateHeader('playlist', 'playlist', 
-      pathFiles.map(i => i.name), pathFiles.map(i => i.path), null)
+      pathFiles.map(i => i.name).toString(), 
+      pathFiles.map(i => i.path).toString())
 
     // draw playlist
     this.mode = 'playlist'
@@ -184,7 +190,7 @@ export class FileExplorer extends HTMLElement {
 
   /**
    * Sync selection with fileBook current page file.
-   * @param {String} filePath Custom filepath to select instead.
+   * @param {String} [filePath] Custom filepath to select instead.
    * @returns {Boolean} Success.
    */
   syncSelection(filePath) {

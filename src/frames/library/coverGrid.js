@@ -4,13 +4,18 @@ import { Library } from "./library.js";
 
 
 /**
+ * @typedef {import('../../APIs/library/libraryStorage.js').LibraryEntry} LibraryEntry
+ */
+
+
+/**
  * List covers and navigate them.
  */
 export class CoverGrid {
 
   /**
    * Cached library entry collection.
-   * @type {import('../../APIs/library/libraryStorage.js').LibraryEntry[]}
+   * @type {LibraryEntry[]}
    */
   static #libraryCache = []
 
@@ -27,7 +32,7 @@ export class CoverGrid {
 
   /**
    * List as cover grid.
-   * @type {ItemList}
+   * @type {ItemList<LibraryEntry, Cover>}
    */
   #list
 
@@ -52,7 +57,7 @@ export class CoverGrid {
 
   /**
    * Draw covers whose path or tags includes query. Draws all if not given.
-   * @param {String[]?} queries Filter covers.
+   * @param {String[]} [queries] Filter covers.
    */
   async drawCovers(queries) {
     if (CoverGrid.#dirtyCache) await this.#buildCache()
@@ -91,8 +96,9 @@ export class CoverGrid {
 
     // recover last selection
     if (CoverGrid.selection) {
+      const lastSelectedPath = CoverGrid.selection.bookPath
       const lastSelected = this.#list
-        .findItemElement(item => item.path === CoverGrid.selection.bookPath)
+        .findItemElement(item => item.path === lastSelectedPath)
       
       if (lastSelected) this.selectCover(lastSelected)
     }
@@ -118,7 +124,7 @@ export class CoverGrid {
   /**
    * Select cover into focus and remember selection. 
    * @param {Cover} cover
-   * @param {false} keepOpen Keep Library open after openning book.
+   * @param {boolean} [keepOpen=false] Keep Library open after openning book.
    */
   selectCover(cover, keepOpen = false) {
     if (CoverGrid.selection !== cover ) {
@@ -178,14 +184,17 @@ export class CoverGrid {
     // if none selected, move only 1 item, else the whole column
     if (!CoverGrid.selection) element = this.#list.navItems(down)
     else for (let i = 0; i < gridColumnCount; i++) element = this.#list.navItems(down)
-    this.selectCover(element)
+    
+    if (element != null)
+      this.selectCover(element)
   }
 
   randomCover() {
     const rndIdx = Math.floor( Math.random() * this.#list.itemCount )
     const cover = this.#list.findItemElement( (item, idx) => idx === rndIdx )
 
-    this.selectCover(cover)
+    if (cover != null)
+      this.selectCover(cover)
   }
 }
 
@@ -209,7 +218,7 @@ class Cover extends HTMLElement {
      * Set behavior on 'remove' button click.
      * @type {Function?}
      */
-    this.onClickRemove
+    this.onClickRemove = null
   }
 
   connectedCallback() {
@@ -242,7 +251,7 @@ class Cover extends HTMLElement {
    * @return {Cover} 
    */
   static from(name, path, coverPath, coverURL) {
-    const cover = document.createElement(this.tagName)
+    const cover = /** @type {Cover} */ (document.createElement(this.tagName))
     
     cover.bookName = name
     cover.bookPath = path

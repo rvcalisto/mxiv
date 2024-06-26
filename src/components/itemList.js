@@ -1,6 +1,8 @@
 /**
  * Paginated item list for elements. Styling not included.
  * - Generate pages as they are requested, for perfomance.
+ * @template {any} I Item type.
+ * @template {HTMLElement} E Element type.
  */
 export class ItemList extends HTMLElement {
 
@@ -8,12 +10,12 @@ export class ItemList extends HTMLElement {
 
   /**
    * Keeps track of items yet to be rendered on demand.
-   * @type {Object<number, {unrendered:boolean, items:array}>}
+   * @type {Object<number, {unrendered:boolean, items:I[]}>}
    */
   #virtualPages = {}
 
-  /** @type {(item)=>HTMLElement} */
-  #itemGenFunc
+  /** @type {(item:I)=>E} */
+  #itemGenerator
 
   constructor() {
     super()
@@ -54,17 +56,17 @@ export class ItemList extends HTMLElement {
 
   /**
    * Populate list with paginated items.
-   * @param {Array} iterableList Items to process.
-   * @param {(item)=>HTMLElement} itemGenFunc Item Function. Receives Item as argument. Must return HTMLElement.
-   * @param {(item)=>Boolean?} filterFunc Filter function. Receives item as argument. Must return Boolean.
+   * @param {I[]} iterableList Items to process.
+   * @param {(item:I)=>E} itemGenerator Item HTML element generator.
+   * @param {(item:I)=>Boolean} [filterFunc] Item filter. Optional.
    */
-  populate(iterableList, itemGenFunc, filterFunc) {
+  populate(iterableList, itemGenerator, filterFunc) {
 
     // reset state
     this.currentPage = 0
     this.pageContainerDiv.textContent = ''
     this.#virtualPages = {}
-    this.#itemGenFunc = itemGenFunc
+    this.#itemGenerator = itemGenerator
     
     let pageCount = 0, pageItemCount = 0
 
@@ -119,7 +121,7 @@ export class ItemList extends HTMLElement {
     page.style.display = 'none'
 
     for (const item of pageData.items) {
-      page.append( this.#itemGenFunc(item) )
+      page.append( this.#itemGenerator(item) )
     }
 
     this.pageContainerDiv.append(page)
@@ -179,6 +181,7 @@ export class ItemList extends HTMLElement {
 
   /**
    * Return array of items used to populate pages.
+   * @returns {I[]}
    */
   get itemArray() {
     let items = []
@@ -193,8 +196,8 @@ export class ItemList extends HTMLElement {
 
   /**
    * Return HTMLElement of first item whose predicate returns true.
-   * @param {(item, index:number)=>boolean} predicate
-   * @returns {HTMLElement?}
+   * @param {(item:I, index:number)=>boolean} predicate
+   * @returns {E?}
    */
   findItemElement(predicate) {
     let itemIdx = 0 // relative to itemArray
@@ -221,7 +224,7 @@ export class ItemList extends HTMLElement {
   /**
    * Navigate ItemList page items. Returns selected Element.
    * @param {Boolean} forward Navigation direction.
-   * @returns {HTMLElement?}
+   * @returns {E?}
    */
   navItems(forward = true) {
     if (!this.pageContainerDiv.childElementCount) return
@@ -284,7 +287,6 @@ export class ItemList extends HTMLElement {
     itemElement.classList.add('selected')
     itemElement.scrollIntoView({ block:"center" })
   }
-
 }
 
 customElements.define(ItemList.tagName, ItemList)
