@@ -26,21 +26,22 @@ export class Tab {
   static selected
 
   /**
-   * Creates a new tab Instance.
-   * @param {'viewer'|'library'} type Frame type.
-   * @param {(instance:(GenericFrame))} func Callback, frame passed as first argument.
-   * @param {String} name Tab name.
+   * Create a new Tab instance.
+   * @param {string} [type=viewer] Frame type.
+   * @param {(instance:GenericFrame)=>void} [callback] Callback, executed before selection.
+   * @param {String} [name=tab] Tab name.
    */
-  constructor(type = 'viewer', func = null, name = 'tab') {
+  constructor(type = 'viewer', callback = null, name = 'tab') {
     this.header = new TabHeader(this, name)
     this.frame = this.#createTabFrame(type)
 
-    if (func) func(this.frame)
+    if (callback) callback(this.frame)
     this.select()
   }
 
   /** 
    * Append tab frame component to DOM.
+   * @param {string} type Frame type.
    * @returns {GenericFrame}
    */
   #createTabFrame(type) {
@@ -65,7 +66,7 @@ export class Tab {
     observer.observe(tabFrame, { attributes: true })
     document.getElementById('contents').appendChild(tabFrame)
 
-    return tabFrame
+    return /** @type {GenericFrame} */ (tabFrame)
   }
 
   /**
@@ -132,8 +133,9 @@ export class Tab {
    */
   close(closeWindowOnLast = true) {
     if ( this.frame.hasAttribute('hold') ) {
-      this.frame.animate([{ filter: 'brightness(1)' }, { filter: 'brightness(1.5)' }, 
-      { filter: 'brightness(1)' }], { duration: 200 })
+      this.frame.animate([
+        { filter: 'brightness(1)' }, { filter: 'brightness(1.5)' }, 
+        { filter: 'brightness(1)' }], { duration: 200 })
       return
     }
 
@@ -160,7 +162,9 @@ export class Tab {
     }
 
     new Tab(type, frame => {
-      if (type === 'viewer') frame.fileExplorer.togglePanel()
+      if (type === 'viewer') 
+        /** @type {import("../frames/viewer/viewer.js").Viewer} */ 
+        (frame).fileExplorer.togglePanel()
     })
   }
 

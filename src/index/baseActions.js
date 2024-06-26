@@ -73,8 +73,8 @@ ActionController.setBaseActions({
       'visibility': {
         'desc' : 'toggle or set tab header bar visibility',
         'run'  : (show) => {
-          show = show === 'on' ? true : show === 'off' ? false : undefined
-          Tab.toggleHeaderBar(show)
+          const value = show === 'on' ? true : show === 'off' ? false : undefined
+          Tab.toggleHeaderBar(value)
         },
         'options': () => [option('toggle', 'default'), 'on', 'off']
       }
@@ -163,7 +163,7 @@ ActionController.setBaseActions({
           }
           
           const coll = new Intl.Collator()
-          return options.sort( (a, b) => coll.compare(a.key, b.key) )
+          return options.sort( (a, b) => coll.compare(a.name, b.name) )
         }
       },
       'reload': {

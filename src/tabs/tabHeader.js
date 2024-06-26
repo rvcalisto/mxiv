@@ -12,9 +12,33 @@ export class TabHeader {
     'destination' : null,
   }
 
+  /** 
+   * @type {WeakMap<Element, TabHeader>} 
+   */
+  static #classMap = new WeakMap()
+
   #nameCount = 1
 
   #element
+
+  /** @type {HTMLButtonElement} */
+  #playButton
+
+  /** @type {HTMLParagraphElement} */
+  #nameLabel
+
+  /**
+   * Old bar visibility value before fullscreen.
+   */
+  static #barWasVisible = this.isBarVisible()
+  
+  // toggle tab bar visibility on fullscreen
+  static {
+    elecAPI.onFullscreen( function onFullscreenChange(e, isFullscreen) {
+      if (isFullscreen) TabHeader.#barWasVisible = TabHeader.isBarVisible()
+      TabHeader.toggleHeaderBar(isFullscreen ? false : TabHeader.#barWasVisible)
+    })
+  }
 
   /**
    * @param {Tab} tabInstance Host Tab instance.
@@ -23,45 +47,43 @@ export class TabHeader {
   constructor(tabInstance, name = 'tab') {
     this.name
     this.tabInstance = tabInstance
-    this.#element = this.#createTabBtn()
+    this.#element = this.#createHeaderElement()
     this.rename(name)
   }
 
   /** 
-   * Append current tab HTMLButtonElement to DOM.
-   * @returns {HTMLButtonElement}
+   * Append current tab HTMLElement to DOM.
+   * @returns {HTMLElement}
    */
-  #createTabBtn() {
-    const tabBtn = document.createElement('div')
-    tabBtn.className = 'tab'
-    tabBtn.classObj = this // instance reference by element
+  #createHeaderElement() {
+    const container = document.createElement('div')
+    container.className = 'tab'
+    TabHeader.#classMap.set(container, this)
     
-    const playBtn = document.createElement('button')
-    tabBtn.playBtn = playBtn
-    playBtn.setAttribute('icon', 'playing')
-    playBtn.style.display = 'none'
+    this.#nameLabel = document.createElement('p')
+
+    this.#playButton = document.createElement('button')
+    this.#playButton.setAttribute('icon', 'playing')
+    this.#playButton.style.display = 'none'
 
     // pause media via tab button
-    playBtn.onclick = (e) => {
+    this.#playButton.onclick = (e) => {
       e.stopImmediatePropagation()
       this.tabInstance.frame.mediaControl('pause')
     }
 
-    const label = document.createElement('p')
-    tabBtn.label = label
-  
-    // compose & append tabBtn, frame to document
-    tabBtn.append(playBtn, label)
-    if (Tab.selected) Tab.selected.header.#element.after(tabBtn)
-    else document.getElementById('newTab').before(tabBtn)
+    // compose & append container, frame to document
+    container.append(this.#playButton, this.#nameLabel)
+    if (Tab.selected) Tab.selected.header.#element.after(container)
+    else document.getElementById('newTab').before(container)
 
     // set tab events
-    tabBtn.onclick = () => this.tabInstance.select()
-    tabBtn.onauxclick = () => this.tabInstance.duplicate()
-    tabBtn.oncontextmenu = () => this.tabInstance.close()
-    TabHeader.#setDrag(tabBtn)
+    container.onclick = () => this.tabInstance.select()
+    container.onauxclick = () => this.tabInstance.duplicate()
+    container.oncontextmenu = () => this.tabInstance.close()
+    TabHeader.#setDrag(container)
 
-    return tabBtn
+    return container
   }
 
   /** 
@@ -122,7 +144,7 @@ export class TabHeader {
     this.#nameCount = nameIdx
     
     const textFormat = `${newName} ${nameIdx > 1 ? nameIdx : ''}`
-    this.#element.label.textContent = this.#element.title = textFormat
+    this.#nameLabel.textContent = this.#element.title = textFormat
   }
 
   /**
@@ -134,7 +156,7 @@ export class TabHeader {
 
   /**
    * Present header as selected or deselected.
-   * @param {true} select True or false.
+   * @param {boolean} [select=true] True or false.
    */
   select(select = true) {
     if (select) this.#element.classList.add('selected')
@@ -146,7 +168,7 @@ export class TabHeader {
    * @param {boolean} show
    */
   setPlayingIcon(show) {
-    this.#element.playBtn.style.display = show ? '' : 'none'
+    this.#playButton.style.display = show ? '' : 'none'
   }
 
   /**
@@ -164,7 +186,7 @@ export class TabHeader {
    * @returns {TabHeader?}
    */
   get left() {
-    return this.#element.previousElementSibling?.classObj
+    return TabHeader.#classMap.get(this.#element.previousElementSibling)
   }
 
   /**
@@ -172,7 +194,7 @@ export class TabHeader {
    * @returns {TabHeader?}
    */
   get right() {
-    return this.#element.nextElementSibling?.classObj
+    return TabHeader.#classMap.get(this.#element.nextElementSibling)
   }
 
   /**
@@ -181,13 +203,13 @@ export class TabHeader {
    */
   static get allHeaders() {
     const elements = document.getElementsByClassName('tab')
-    return [...elements].map(element => element.classObj)
+    return [...elements].map(element => TabHeader.#classMap.get(element))
   }
 
   /**
    * Get Header Bar visibility.
    */
-  static get headerBarVisible() {
+  static isBarVisible() {
     return document.getElementById('tabs').style.display === ''
   }
   
@@ -196,15 +218,7 @@ export class TabHeader {
    * @param {Boolean?} show Either to force visibility on or off.
    */
   static toggleHeaderBar(show) {
-    if (show == null) show = !this.headerBarVisible
+    if (show == null) show = !this.isBarVisible()
     document.getElementById('tabs').style.display = show ? '' : 'none'
   }
 }
-
-
-// toggle tab bar visibility on fullscreen
-let headerBarWasVisible = TabHeader.headerBarVisible
-elecAPI.onFullscreen( function onFullscreenChange(e, isFullscreen) {
-  if (isFullscreen) headerBarWasVisible = TabHeader.headerBarVisible
-  TabHeader.toggleHeaderBar(isFullscreen ? false : headerBarWasVisible)
-})
