@@ -3,9 +3,6 @@ const { webFrame } = require("electron/renderer")
 const { pathToFileURL } = require('url')
 const localTagStorage = require('./APIs/tag/renderer')
 
-// TODO: Remove later.
-require('./APIs/library/storageMigration')
-
 
 contextBridge.exposeInMainWorld('elecAPI', {
 
