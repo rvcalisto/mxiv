@@ -5,6 +5,7 @@ import { SessionProfiles } from "../tabs/profiles.js"
 import { AppCLI, option, standardFilter } from "../components/appCli/appCLI.js"
 import { UserAccelerators } from "../actions/userAccelerators.js"
 import { AppNotifier } from "../components/notifier.js"
+import { FrameRegistry } from "../frames/frameRegistry.js"
 
 
 /**
@@ -39,11 +40,16 @@ ActionController.setBaseActions({
     'methods': {
       'new': {
         'desc' : 'create new tab',
-        'run'  : (type = 'viewer') => Tab.newTab(type),
-        'options': (lastArg, allArgs) => allArgs.length < 2 ? [
-            option('viewer', 'file navigator and general viewer (default)'), 
-            option('library', 'collection of media directories and archives')
-          ] : []
+        'run'  : (type = 'viewer') => {
+          const success = Tab.newTab(type)
+          if (!success)
+            AppNotifier.notify(`tab "${type}" does not exist`, 'newTab')
+        },
+        'options': (lastArg, allArgs) => {
+          const frameDescs = FrameRegistry.getDescriptors()
+          return allArgs.length < 2 ?
+            frameDescs.map( ([frame, desc]) => option(frame, desc) ) : []
+        }
       },
       'move': {
         'desc' : 'move current tab to the right or left',

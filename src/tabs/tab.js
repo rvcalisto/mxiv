@@ -149,13 +149,19 @@ export class Tab {
    * Create new tab of given type.
    * - `viewer`: Start with FileExplorer open.
    * @param {String} [type]
+   * @returns {boolean} Success.
    */
   static newTab(type = 'viewer') {
     const framePolicy = FrameRegistry.getPolicy(type)
+    if (framePolicy == null)
+      return false
     
     if (!framePolicy.allowDuplicate) {
       const instance = this.allTabs.find(tab => tab.frame.type === type)
-      if (instance) return instance.select()
+      if (instance) {
+        instance.select()
+        return true
+      }
     }
 
     new Tab(type, frame => {
@@ -163,6 +169,8 @@ export class Tab {
         /** @type {import("../frames/viewer/viewer.js").Viewer} */ 
         (frame).fileExplorer.togglePanel()
     })
+
+    return true
   }
 
   /**

@@ -3,6 +3,13 @@ import { Library } from "./library/library.js";
 
 
 /**
+ * @typedef FrameEntry
+ * @property {String} description
+ * @property {typeof import("./genericFrame.js").GenericFrame} class
+ * @property {FramePolicy} policy
+ */
+
+/**
  * @typedef FramePolicy
  * @property {boolean} allowDuplicate
  * @property {boolean} allowProfiling
@@ -15,36 +22,36 @@ import { Library } from "./library/library.js";
 export const FrameRegistry = new class {
 
   /**
-   * @type {Object<string, typeof import("./genericFrame.js").GenericFrame>}
+   * Frame registry entries.
+   * @type {Object<string, FrameEntry>}
    */
-  #definedFrames = {};
+  #registry = {
 
-  /** 
-   * @type {Object<string, FramePolicy>} 
-   */
-  #policies = {};
+    'viewer': {
+      'description': 'file navigator and general viewer (default)',
+      'class': Viewer,
+      'policy': {
+        allowDuplicate: true,
+        allowProfiling: true
+      }
+    },
 
-  constructor() {
-    this.#defineFrame('viewer', Viewer, {
-      allowDuplicate: true,
-      allowProfiling: true
-    });
-
-    this.#defineFrame('library', Library, {
-      allowProfiling: true,
-      allowDuplicate: false
-    });
+    'library': {
+      'description': 'collection of media directories and archives',
+      'class': Library,
+      'policy': {
+        allowProfiling: true,
+        allowDuplicate: false
+      }
+    }
   }
 
-  /**
-   * @param {string} type Class name, lowercase.
-   * @param {typeof import("./genericFrame.js").GenericFrame} frameClass Frame Class.
-   * @param {FramePolicy} policy Frame policy object.
-   */
-  #defineFrame(type, frameClass, policy) {
-    customElements.define(`${type}-component`, frameClass);
-    this.#definedFrames[type] = frameClass;
-    this.#policies[type] = policy;
+  // define frame customElements
+  constructor() {
+    for (const frame in this.#registry) {
+      const frameClass = this.#registry[frame].class;
+      customElements.define(`${frame}-component`, frameClass);
+    }
   }
 
   /**
@@ -52,7 +59,7 @@ export const FrameRegistry = new class {
    * @returns {typeof import("./genericFrame.js").GenericFrame?}
    */
   getClass(frame) {
-    return this.#definedFrames[frame];
+    return this.#registry[frame]?.class;
   }
 
   /**
@@ -60,6 +67,15 @@ export const FrameRegistry = new class {
    * @returns {FramePolicy?}
    */
   getPolicy(frame) {
-    return this.#policies[frame];
+    return this.#registry[frame]?.policy;
+  }
+
+  /**
+   * Returns frame, description tuple array.
+   * @returns {String[][]}
+   */
+  getDescriptors() {
+    return Object.entries(this.#registry)
+      .map( ([frame, entry]) => [frame, entry.description] );
   }
 };
