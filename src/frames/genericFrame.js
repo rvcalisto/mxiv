@@ -5,35 +5,14 @@
  */
 export class GenericFrame extends HTMLElement {
 
-  /**
-   * Allow duplication.
-   * @type {true}
-   */
-  static allowDuplicate = true
-
-  /**
-   * Allow tab store/restore if implemented.
-   * @type {true}
-   */
-  static allowProfiling = true
-
   constructor() {
     super()
 
     /**
-     * Frame class type, class constructor in lowercase.
+     * Frame class type, class constructor name in lowercase.
      * @type {String}
      */
     this.type = this.constructor.name.toLowerCase()
-  }
-
-  /**
-   * Returns the class associated to a customElement.
-   * @param {String} type Component type.
-   * @returns {typeof GenericFrame}
-   */
-  static getClass(type) {
-    return customElements.get(`${type}-component`)
   }
 
   /**

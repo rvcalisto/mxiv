@@ -14,8 +14,6 @@ import { AppNotifier } from "../../components/notifier.js"
  */
 export class Viewer extends GenericFrame {
 
-  static tagName = 'viewer-component'
-
   /**
    * Block go-to calls, prevents unloaded page flips.
    */
@@ -398,6 +396,3 @@ export class Viewer extends GenericFrame {
     }
   }
 }
-
-// define tags for web component templates
-customElements.define(Viewer.tagName, Viewer)

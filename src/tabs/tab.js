@@ -1,10 +1,7 @@
 import { TabHeader } from "./tabHeader.js"
 import { StatusBar } from "../components/statusBar.js"
 import { GenericFrame } from "../frames/genericFrame.js"
-
-// concrete frames
-import "../frames/viewer/viewer.js"
-import "../frames/library/library.js"
+import { FrameRegistry } from "../frames/frameRegistry.js"
 
 
 /** 
@@ -31,7 +28,7 @@ export class Tab {
    * @param {(instance:GenericFrame)=>void} [callback] Callback, executed before selection.
    * @param {String} [name=tab] Tab name.
    */
-  constructor(type = 'viewer', callback = null, name = 'tab') {
+  constructor(type = 'viewer', callback, name = 'tab') {
     this.header = new TabHeader(this, name)
     this.frame = this.#createTabFrame(type)
 
@@ -90,7 +87,7 @@ export class Tab {
 
   /**
    * Move tab header to the right or to the left.
-   * @param {Boolean} right 
+   * @param {Boolean} [right=true] 
    */
   move(right = true) {
     const next = right ? this.header.right : this.header.left
@@ -111,8 +108,8 @@ export class Tab {
    */
   duplicate() {
     const type = this.frame.type
-    const frameClass = GenericFrame.getClass(type)
-    const frameState = frameClass.allowDuplicate ? this.frame.getState() : null
+    const framePolicy = FrameRegistry.getPolicy(type)
+    const frameState = framePolicy.allowDuplicate ? this.frame.getState() : null
 
     if (!frameState) {
       console.log(`${type}: duplicate disallowed or stateless.`);
@@ -151,13 +148,13 @@ export class Tab {
   /**
    * Create new tab of given type.
    * - `viewer`: Start with FileExplorer open.
-   * @param {String} type
+   * @param {String} [type]
    */
   static newTab(type = 'viewer') {
-    const frameClass = GenericFrame.getClass(type)
+    const framePolicy = FrameRegistry.getPolicy(type)
     
-    if (!frameClass.allowDuplicate) {
-      const instance = this.allTabs.find(tab => tab.frame instanceof frameClass)
+    if (!framePolicy.allowDuplicate) {
+      const instance = this.allTabs.find(tab => tab.frame.type === type)
       if (instance) return instance.select()
     }
 
@@ -170,7 +167,7 @@ export class Tab {
 
   /**
    * Cycle currently selected tab.
-   * @param {Boolean} forward 
+   * @param {Boolean} [forward=true] 
    */
   static cycleTabs(forward = true) {
     const header = Tab.selected.header
@@ -193,7 +190,7 @@ export class Tab {
 
   /**
    * Toggle tab Header Bar visibility.
-   * @param {Boolean?} show Either to force visibility on or off.
+   * @param {Boolean} [show] Either to force visibility on or off.
    */
   static toggleHeaderBar(show) {
     TabHeader.toggleHeaderBar(show)

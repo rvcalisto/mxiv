@@ -1,5 +1,5 @@
 import { AppNotifier } from "../components/notifier.js"
-import { GenericFrame } from "../frames/genericFrame.js"
+import { FrameRegistry } from "../frames/frameRegistry.js";
 import { Tab } from "./tab.js"
 
 
@@ -68,7 +68,7 @@ export const SessionProfiles = new class {
     // store tab data in order of presentation, if allowed and implemented
     for (const tab of Tab.allTabs) {
       const type = tab.frame.type;
-      const allowProfiling = GenericFrame.getClass(type).allowProfiling;
+      const allowProfiling = FrameRegistry.getPolicy(type).allowProfiling;
       
       const state = allowProfiling ? tab.frame.getState() : null;
       if (!state) continue;
@@ -86,7 +86,6 @@ export const SessionProfiles = new class {
   
     AppNotifier.notify(`stored ${name} profile`);
   }
-  
   
   /**
    * Load tab session from profile. Clears current tab session by default.
@@ -114,7 +113,6 @@ export const SessionProfiles = new class {
     }
   }
   
-  
   /**
    * Erase a tab session.
    * @param {String} name Profile name.
@@ -131,7 +129,6 @@ export const SessionProfiles = new class {
     ProfileStorage.setObject(profiles);
     AppNotifier.notify(`erased ${name} profile`);
   }
-  
   
   /**
    * Return sorted array of profile entries.

@@ -11,9 +11,6 @@ import { AppNotifier } from "../../components/notifier.js"
  */
 export class Library extends GenericFrame {
 
-  static tagName = 'library-component'
-  static allowDuplicate = false
-
   constructor() {
     super()
 
@@ -142,9 +139,6 @@ export class Library extends GenericFrame {
     setTimeout( () => this.coverGrid.reloadCovers(), 0 );
   }
 }
-
-
-customElements.define(Library.tagName, Library)
 
 
 /**

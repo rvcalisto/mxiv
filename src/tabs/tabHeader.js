@@ -42,7 +42,7 @@ export class TabHeader {
 
   /**
    * @param {Tab} tabInstance Host Tab instance.
-   * @param {String} name Tab name. 
+   * @param {String} [name] Tab name. 
    */
   constructor(tabInstance, name = 'tab') {
     this.name
@@ -215,7 +215,7 @@ export class TabHeader {
   
   /**
    * Toggle Header Bar visibility.
-   * @param {Boolean?} show Either to force visibility on or off.
+   * @param {Boolean} [show] Either to force visibility on or off.
    */
   static toggleHeaderBar(show) {
     if (show == null) show = !this.isBarVisible()
