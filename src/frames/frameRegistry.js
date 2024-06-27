@@ -21,6 +21,8 @@ import { Library } from "./library/library.js";
  */
 export const FrameRegistry = new class {
 
+  #tagSuffix = 'component';
+
   /**
    * Frame registry entries.
    * @type {Object<string, FrameEntry>}
@@ -50,7 +52,7 @@ export const FrameRegistry = new class {
   constructor() {
     for (const frame in this.#registry) {
       const frameClass = this.#registry[frame].class;
-      customElements.define(`${frame}-component`, frameClass);
+      customElements.define(`${frame}-${this.#tagSuffix}`, frameClass);
     }
   }
 
@@ -68,6 +70,14 @@ export const FrameRegistry = new class {
    */
   getPolicy(frame) {
     return this.#registry[frame]?.policy;
+  }
+  
+  /**
+   * @param {string} frame Frame type.
+   * @return {string}
+   */
+  getTagName(frame) {
+    return `${frame}-${this.#tagSuffix}`;
   }
 
   /**

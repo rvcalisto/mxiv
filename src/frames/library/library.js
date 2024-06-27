@@ -11,12 +11,32 @@ import { AppNotifier } from "../../components/notifier.js"
  */
 export class Library extends GenericFrame {
 
-  constructor() {
-    super()
+  /**
+   * Current Library frame instance, if connected.
+   * @type {Library?}
+   */
+  static #singleInstanceRef = null
 
-    this.syncProgressNotifier
-    this.watchlistPanel
-    this.coverGrid
+  /** @type {ProgressNotifier?} */
+  syncProgressNotifier
+
+  /** @type {WatchlistPanel?} */
+  watchlistPanel
+
+  /** @type {CoverGrid?} */
+  coverGrid
+
+  // setup library progress listener
+  static {
+    elecAPI.onLibraryNew(function onNewBook(e, infoObj) {
+      const library = Library.#singleInstanceRef
+    
+      if (library != null) {
+        const { current, total, newPath } = infoObj
+        library.syncProgressNotifier.updateLabel(newPath)
+        library.syncProgressNotifier.updateBar(current, total)
+      }
+    })
   }
 
   connectedCallback() {
@@ -30,6 +50,12 @@ export class Library extends GenericFrame {
 
     this.renameTab('Library')
     this.#initEvents()
+
+    Library.#singleInstanceRef = this
+  }
+
+  disconnectedCallback() {
+    Library.#singleInstanceRef = null
   }
 
   /** @override */
@@ -215,14 +241,3 @@ class ProgressNotifier {
     innerBar.style.width = `${(100*value) / total}%`
   }
 }
-
-
-// notify progress while new library entries are added
-elecAPI.onLibraryNew(function onNewBook(e, infoObj) {
-  /** @type {Library} */
-  const libraryComponent = document.getElementsByTagName(Library.tagName)[0]
-  
-  const { current, total, newPath } = infoObj
-  libraryComponent.syncProgressNotifier.updateLabel(newPath)
-  libraryComponent.syncProgressNotifier.updateBar(current, total)
-})

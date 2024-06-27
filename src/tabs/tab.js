@@ -30,7 +30,7 @@ export class Tab {
    */
   constructor(type = 'viewer', callback, name = 'tab') {
     this.header = new TabHeader(this, name)
-    this.frame = this.#createTabFrame(type)
+    this.frame = this.#createFrame(type)
 
     if (callback) callback(this.frame)
     this.select()
@@ -41,10 +41,10 @@ export class Tab {
    * @param {string} type Frame type.
    * @returns {GenericFrame}
    */
-  #createTabFrame(type) {
-    const tabFrame = document.createElement(`${type}-component`)
-    tabFrame.setAttribute('frametitle', this.header.name)
-    tabFrame.style.display = 'none' // starts hidden
+  #createFrame(type) {
+    const frame = document.createElement( FrameRegistry.getTagName(type) )
+    frame.setAttribute('frametitle', this.header.name)
+    frame.style.display = 'none' // starts hidden
 
     // observe changes in key attributes
     const observer = new MutationObserver(mutations => {
@@ -60,10 +60,10 @@ export class Tab {
       }
     })
 
-    observer.observe(tabFrame, { attributes: true })
-    document.getElementById('contents').appendChild(tabFrame)
+    observer.observe(frame, { attributes: true })
+    document.getElementById('contents').appendChild(frame)
 
-    return /** @type {GenericFrame} */ (tabFrame)
+    return /** @type {GenericFrame} */ (frame)
   }
 
   /**
