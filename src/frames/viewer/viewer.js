@@ -126,6 +126,9 @@ export class Viewer extends GenericFrame {
       return
     }
 
+    // reset filter query
+    this.#filterQuery = []
+
     // name tab path basenames, sorted for order-redundancy
     const basedirs = this.fileBook.paths.map(dir => dir.name)
     this.renameTab( String(basedirs) )
