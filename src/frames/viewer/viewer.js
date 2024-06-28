@@ -65,7 +65,7 @@ export class Viewer extends GenericFrame {
     this.fileBook = new FileBook()
     this.viewComponent = this.shadowRoot.getElementById('viewInstance')
     this.fileExplorer = this.shadowRoot.getElementById('fileExplorer')
-    this.fileExplorer.viewer = this
+    this.fileExplorer.fileBook = this.fileBook
 
     this.#initEvents()
   }
@@ -201,6 +201,7 @@ export class Viewer extends GenericFrame {
   async gotoPage(pageIdx = this.fileBook.page) {
     if (this.fileBook.files.length < 1) {
       this.viewComponent.display(null)
+      this.renameTab('tab')
       return
     }
 

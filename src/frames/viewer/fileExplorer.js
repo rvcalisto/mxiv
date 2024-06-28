@@ -39,33 +39,28 @@ export class FileExplorer extends HTMLElement {
 
   /**
    * Parent diretory path for Explorer mode.
-   * @type {String}
    */
   #upperDir = ''
 
+  /** 
+   * FileBook, set upstream.
+   * @type {import('./fileBook.js').FileBook}
+   */
+  fileBook
+
+  /**
+   * Presentation mode.
+   * @type {'explorer'|'playlist'}
+   */
+  mode = 'explorer'
+
+  /**
+   * Current directory path for Explorer mode.
+   */
+  currentDir = '~/'
+
   #collator = new Intl.Collator('en', { numeric: true })
 
-  constructor() {
-    super()
-
-    /** 
-     * FileBook host, set upstream.
-     * @type {import('./viewer.js').Viewer}
-     */
-    this.viewer
-
-    /**
-     * Presentation mode.
-     * @type {'explorer'|'playlist'}
-     */
-    this.mode = 'explorer'
-
-    /**
-     * Current directory path for Explorer mode.
-     * @type {String}
-     */
-    this.currentDir = '~/'
-  }
 
   connectedCallback() {
     // attatch shadow root, append template
@@ -136,8 +131,11 @@ export class FileExplorer extends HTMLElement {
   async listDirectory(path) {
     /** @type {import("../../APIs/file/fileSearch.js").LSObject} */
     const lsObj = await elecAPI.scanPath(path)
-    const count = lsObj.directories.length + lsObj.archives.length + lsObj.files.length
-    if (count < 1) {
+    const empty = (lsObj.directories.length + lsObj.archives.length + lsObj.files.length) < 1
+    const differentDirectory = this.currentDir !== lsObj.target.path
+
+    // allow empty re-lists on same directory only (reload)
+    if (empty && differentDirectory) {
       AppNotifier.notify(`${lsObj.target.name}: no supported files to list`, 'listDirectory')
       return
     }
@@ -172,7 +170,7 @@ export class FileExplorer extends HTMLElement {
    */
   listFiles() {
     // update header elements
-    const pathFiles = this.viewer.fileBook.paths
+    const pathFiles = this.fileBook.paths
     this.#updateHeader('playlist', 'playlist', 
       pathFiles.map(i => i.name).toString(), 
       pathFiles.map(i => i.path).toString())
@@ -180,7 +178,7 @@ export class FileExplorer extends HTMLElement {
     // draw playlist
     this.mode = 'playlist'
     this.#playlistSynced = true
-    this.#list.populate(this.viewer.fileBook.files, 
+    this.#list.populate(this.fileBook.files, 
       item => this.#fileItem(item), file => file.name[0] !== '.')
 
     // try selecting current file, else focus first item
@@ -194,7 +192,7 @@ export class FileExplorer extends HTMLElement {
    * @returns {Boolean} Success.
    */
   syncSelection(filePath) {
-    const currentFile = this.viewer.fileBook.currentFile
+    const currentFile = this.fileBook.currentFile
     filePath = filePath || currentFile?.path || ''
     
     const item = this.#list.findItemElement(item => filePath === item.path)
@@ -265,7 +263,7 @@ export class FileExplorer extends HTMLElement {
    * Filter list items based on search query.
    */
   #searchQuery() {
-    const workList = this.mode === 'playlist' ? this.viewer.fileBook.files : this.#explorerCache
+    const workList = this.mode === 'playlist' ? this.fileBook.files : this.#explorerCache
     const query = this.#search.value
     
     // filter files
@@ -284,8 +282,8 @@ export class FileExplorer extends HTMLElement {
 
   #initEvents() {
     // opacity on focus visual queue, search on input
-    this.onblur = () => this.style.opacity = .6
-    this.onfocus = () => this.style.opacity = 1
+    this.onblur = () => this.style.opacity = '.6'
+    this.onfocus = () => this.style.opacity = '1'
     this.#search.oninput = () => this.#searchQuery()
     
     // remove focus from, close search prompt
