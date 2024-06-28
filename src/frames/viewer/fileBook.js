@@ -46,7 +46,7 @@ export class FileBook {
   
 
   /** 
-   * Load files from given paths.
+   * Load files from paths and clear applied filters on success.
    * @param {String[]} paths Path to file or folder.
    * @returns {Promise<boolean>} Success.
    */
@@ -74,8 +74,7 @@ export class FileBook {
     elecAPI.clearCache();
 
     // reset related state properties
-    if (this.#filterFiles.length) 
-      this.clearFilter()
+    if ( this.isFiltered() ) this.clearFilter()
 
     // first file unless startOn defined and reachable
     let startIdx = 0
@@ -101,7 +100,7 @@ export class FileBook {
    * @returns {FileObject[]}
    */
   get files() {
-    return this.#filterFiles.length > 0 ? this.#filterFiles : this.#allFiles
+    return this.isFiltered() ? this.#filterFiles : this.#allFiles
   }
 
   /**
@@ -110,6 +109,14 @@ export class FileBook {
    */
   get currentFile() {
     return this.files[this.page]
+  }
+
+  /**
+   * Either files are currently under a filter.
+   * @returns {Boolean}
+   */
+  isFiltered() {
+    return this.#filterFiles.length > 0
   }
 
   /**
@@ -245,6 +252,7 @@ export class FileBook {
 
   /**
    * Delist file from inner listings and update page index if necessary.
+   * - Clear any active filter if target is the sole element.
    * @param {FileObject} file FileBook object.
    */
   delistFile(file) {
@@ -252,14 +260,15 @@ export class FileBook {
     if (targetIdx < 0) return;
 
     const currentFile = this.currentFile;
-    const filterActive = this.#filterFiles.length > 0;
     const targetIsCurrentFile = this.#allFiles[targetIdx] === currentFile;
     
     this.#allFiles.splice(targetIdx, 1);
     
-    if (filterActive) {
+    // delist from #filterFiles, clear filter if empty 
+    if ( this.isFiltered() ) {
       const targetFilterIdx = this.#filterFiles.indexOf(file);
       if (targetFilterIdx > -1) this.#filterFiles.splice(targetFilterIdx, 1);
+      if (this.#filterFiles.length < 1) this.clearFilter()
     }
 
     if (targetIsCurrentFile)

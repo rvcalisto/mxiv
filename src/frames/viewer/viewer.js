@@ -115,6 +115,7 @@ export class Viewer extends GenericFrame {
 
   /** 
    * Load files and directories, sync fileExplorer and display first file.
+   * - Clear filter and filter queries.
    * @param {String[]} paths Paths. Will display first path if file.
    */
   async open(...paths) {
@@ -243,6 +244,7 @@ export class Viewer extends GenericFrame {
       return
     }
 
+    const filterQuery = this.#filterQuery
     const paths = this.fileBook.paths.map(dir => dir.path)
     const tabName = this.tabName
 
@@ -252,7 +254,7 @@ export class Viewer extends GenericFrame {
 
     // restore tab name and re-apply filter
     this.renameTab(tabName)
-    if (this.#filterQuery.length) this.filter(...this.#filterQuery)
+    if (filterQuery.length > 0) this.filter(...filterQuery)
     AppNotifier.notify('files reloaded', 'fileReload')
   }
 
@@ -283,9 +285,15 @@ export class Viewer extends GenericFrame {
     if (!forReal) return
 
     // try and delete target file from filesystem
+    const filterState = this.fileBook.isFiltered()
     const success = await elecAPI.deleteFile(targetFile.path)
     if (success) {
       this.fileBook.delistFile(targetFile)
+
+      // clear #filterQuery if filter cleared on delist
+      if ( filterState !== this.fileBook.isFiltered() )
+        this.#filterQuery = []
+
       await this.gotoPage()
       await this.fileExplorer.reload()
       this.fileExplorer.syncSelection()
