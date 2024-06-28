@@ -29,33 +29,26 @@ export class FileBook {
    * @type {FileObject[]}
    */
   #filterFiles = []
-
-  /** 
-   * Currently applied filter query.
-   * @type {String[]}
+  
+  /**
+   * All loaded directory paths.
+   * @type {FileObject[]}
    */
-  #filterQuery = []
+  paths = []
+
+  /**
+   * Current page index.
+   * @type {Number}
+   */
+  page = 0
 
   #collator = new Intl.Collator('en', { numeric: true })
   
-  constructor() {
-    /**
-     * All loaded paths.
-     * @type {FileObject[]}
-     */
-    this.paths = []
-
-    /**
-     * Current page index.
-     * @type {Number}
-     */
-    this.page = 0
-  }
 
   /** 
-   * Load files from given paths. Returns first file index on success.
+   * Load files from given paths.
    * @param {String[]} paths Path to file or folder.
-   * @returns {Promise<Number>} Starting file idx. `-1` on failure.
+   * @returns {Promise<boolean>} Success.
    */
   async load(...paths) {
     console.time(`bookID#${this.#bookID} open`)
@@ -63,9 +56,9 @@ export class FileBook {
     /** @type {BookObject} */
     const book = await elecAPI.openFile(paths, this.#bookID)
 
-    if (!book.paths.length) {
+    if (book.paths.length < 1) {
       console.timeEnd(`bookID#${this.#bookID} open`)
-      return -1
+      return false
     }
 
     this.paths = book.paths
@@ -81,15 +74,19 @@ export class FileBook {
     elecAPI.clearCache();
 
     // reset related state properties
-    if (this.#filterFiles.length) this.#applyFilter()
-    this.page = 0
+    if (this.#filterFiles.length) 
+      this.clearFilter()
 
     // first file unless startOn defined and reachable
-    let startIdx = book.startOn ? this.getIdxOf(book.startOn) : 0
-    startIdx = Math.max(0, startIdx)
+    let startIdx = 0
+    if (book.startOn != null) {
+      const match = book.startOn.toLowerCase()
+      startIdx = this.getIdxOf(file => file.path.toLowerCase().includes(match) )
+    }
+    this.page = Math.max(0, startIdx)
 
     console.timeEnd(`bookID#${this.#bookID} open`)
-    return startIdx
+    return true
   }
 
   /**
@@ -104,7 +101,7 @@ export class FileBook {
    * @returns {FileObject[]}
    */
   get files() {
-    return this.#filterQuery.length ? this.#filterFiles : this.#allFiles
+    return this.#filterFiles.length > 0 ? this.#filterFiles : this.#allFiles
   }
 
   /**
@@ -116,52 +113,47 @@ export class FileBook {
   }
 
   /**
-   * Filter files and update page. Abort if no file passes, clear filter if called without args.
-   * @param {String[]} query Filter keys to display.
-   * @param {(file:FileObject)=>Boolean} [filterFunc] 
-   * Filter function, must return boolean.
-   * @returns {Number} Files in filter count. `0` on abort, `-1` on filter cleared.
+   * Filter files and update page index. Abort if no files match the filter.
+   * @param {(file:FileObject)=>Boolean} predicate Filter function.
+   * @returns {Number} New file count. `0` for no matches.
    */
-  #applyFilter(query = [], filterFunc) {
+  filter(predicate) {
     const currentFile = this.files[this.page]
 
-    if (!query.length || !filterFunc) {
-      this.#filterFiles = []
-      this.#filterQuery = []
-      this.page = this.getIdxOf(currentFile.path)
-      
-      return -1
-    }
-  
-    const filterFiles = this.#allFiles.filter( file => filterFunc(file) )
-    if (filterFiles.length) {
+    const filterFiles = this.#allFiles.filter( file => predicate(file) )
+    if (filterFiles.length > 0) {
       this.#filterFiles = filterFiles
-      this.#filterQuery = query
 
-      const newIdx = this.getIdxOf(currentFile.path)
-      this.page = newIdx < 0 ? Math.max(0, this.page) : newIdx
-
-			return filterFiles.length
+      const newIdx = this.getIdxOf(file => file.path === currentFile.path)
+      this.page = newIdx < 0 ? Math.min(this.page, this.files.length - 1) : newIdx
     }
 
-    return 0
+    return filterFiles.length
   }
 
   /**
-   * Apply filter on files paths and tags.
-   * Clear filter when called with no arguments.
-   * @param {String[]} queries
-   * @returns {number} New file count. `0` for no matches. `-1` on filter clear.
+   * Clear active filter.
    */
-  filter(...queries) {
-    queries = queries.map(query => query.toLowerCase().trim())
-      .filter(query => query) // treat queries
+  clearFilter() {
+    const currentFile = this.files[this.page]
+    this.#filterFiles = []
+    this.page = this.getIdxOf(file => file.path === currentFile.path)
+  }
+
+  /**
+   * Filter files by partial word queries and tags and update page index.
+   * @param {String[]} queries Words to look for.
+   * @returns {number} New file count. `0` for no matches.
+   */
+  filterStringAndTags(...queries) {
+    queries = queries.map( query => query.toLowerCase().trim() )
+      .filter(query => query !== '') // treat queries
 
     // if exclusive, require match for all strings
     const exclusive = queries.includes('--exclusive')
     const workingQuery = queries.filter(query => !query.includes('--exclusive'))
 
-    const filteredCount = this.#applyFilter(queries, (file) => {
+    return this.filter(file => {
       const path = file.path.toLowerCase()
       const fileTags = elecAPI.getTags(file.path)
       
@@ -175,13 +167,11 @@ export class FileBook {
 
       return match
     })
-
-    return filteredCount
   }
 
   /**
    * Add and remove tags for current file.
-   * @param {Boolean} add Add tags instead of removing them.
+   * @param {Boolean} [add=true] Add tags instead of removing them.
    * @param {String[]} tags Tags to associate to current file.
    * @returns {Promise<Boolean>} Either any tags where updated.
    */
@@ -200,9 +190,9 @@ export class FileBook {
   }
 
   /** 
-   * Set new page idx while wrapping around if out-of-bound.
-   * @param {Number} pageIdx Normalized index FileObject.
-   * @returns {FileObject?} 
+   * Set page index while wrapping around if out-of-bound.
+   * @param {Number} pageIdx New page index.
+   * @returns {FileObject?} Normalized index FileObject.
    */
   setPageIdx(pageIdx) {
     const pageLength = this.files.length
@@ -215,63 +205,66 @@ export class FileBook {
     return this.files[newPage]
   }
 
+  /**
+   * Set page to a random index.
+   */
+  setRandomPageIdx() {
+    const fileCount = this.files.length
+    const randomIdx = Math.round( Math.random() * fileCount )
+    
+    // flip if ~2 files, re-roll if randomIdx === current page
+    if (fileCount < 3) 
+      this.setPageIdx(this.page + 1)
+    else if (randomIdx === this.page) 
+      this.setRandomPageIdx()
+    else
+      this.page = randomIdx
+  }
+
   /** 
-   * Returns index of first file whose path includes query. 
+   * Returns index of first file whose predicate is true. 
    * - Searches from following page, then from the start if not found. 
-   * @param {String[]} queries Substrings to search for.
+   * @param {(file:FileObject)=>boolean} predicate Substrings to search for.
    * @returns {Number} Index position. `-1` if unmatched.
    */
-  getIdxOf(...queries) {
-    queries = queries.map(query => query.trim().toLowerCase())
-      .filter(query => query) // treat arguments
-    if (!queries.length) return -1
-
+  getIdxOf(predicate) {
     // search from next page till end of array
     for (let i = this.page + 1; i < this.files.length; i++) {
-      const filePath = this.files[i].path.toLowerCase()
-      for (const query of queries) {
-        if ( filePath.includes(query) ) return i
-      }
+      const file = this.files[i]
+      if ( predicate(file) ) return i
     }
+
     // search from beginning till current page (+filter condition check)
     for (let i = 0; i < this.page + 1 && i < this.files.length; i++) {
-      const filePath = this.files[i].path.toLowerCase()
-      for (const query of queries) {
-        if ( filePath.includes(query) ) return i
-      }
+      const file = this.files[i]
+      if ( predicate(file) ) return i
     }
 
     return -1
   }
 
   /**
-   * Delist file from inner listings.
+   * Delist file from inner listings and update page index if necessary.
    * @param {FileObject} file FileBook object.
-   * @returns {Number} Equivalent idx sugestion.`-1` if file to delist was not found.
    */
   delistFile(file) {
-    const pageIdx = this.#allFiles.indexOf(file)
-    if (pageIdx < 0) return -1
+    const targetIdx = this.#allFiles.indexOf(file);
+    if (targetIdx < 0) return;
 
-    this.#allFiles.splice(pageIdx, 1)
-
-    // check if deleted page is in filter array, if it is, 
-    // clear filter if only item, else rebuild
-    let filterIdx = this.#filterFiles.indexOf(file)
-    if (this.#filterFiles.length && filterIdx > -1) {
-      if (this.#filterFiles.length < 2) this.filter()
-      else this.filter(...this.#filterQuery)
+    const currentFile = this.currentFile;
+    const filterActive = this.#filterFiles.length > 0;
+    const targetIsCurrentFile = this.#allFiles[targetIdx] === currentFile;
+    
+    this.#allFiles.splice(targetIdx, 1);
+    
+    if (filterActive) {
+      const targetFilterIdx = this.#filterFiles.indexOf(file);
+      if (targetFilterIdx > -1) this.#filterFiles.splice(targetFilterIdx, 1);
     }
 
-    const lastPageIdx = this.files.length -1
-    return pageIdx >= lastPageIdx ? lastPageIdx : pageIdx
-  }
-
-  /**
-   * Currently applied filter query. 
-   * @returns {String[]}
-   */
-  get filterQuery() {
-    return this.#filterQuery
+    if (targetIsCurrentFile)
+      this.setPageIdx( Math.min(this.page, this.files.length - 1) );
+    else if (currentFile != null)
+      this.page = this.files.indexOf(currentFile);
   }
 }

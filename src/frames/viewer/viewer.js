@@ -24,33 +24,36 @@ export class Viewer extends GenericFrame {
    */
   #lastFlipRight = true
   
-  constructor() {
-    super()
-
-    /**
-     * Currently loaded paths for state replication.
-     * @type {String[]}
-     */
-    this.openArgs = []
+  /**
+   * Currently loaded paths for state replication.
+   * @type {String[]}
+   */
+  #openArgs = []
     
-    /**
-     * File paginator and controller.
-     * @type {FileBook}
-     */
-    this.fileBook
+  /**
+   * File paginator and controller.
+   * @type {FileBook}
+   */
+  fileBook
 
-    /**
-     * Multimedia viewer.
-     * @type {View}
-     */
-    this.viewComponent
+  /**
+   * Multimedia viewer.
+   * @type {View}
+   */
+  viewComponent
 
-    /**
-     * File explorer and playlist visualizer.
-     * @type {FileExplorer}
-     */
-    this.fileExplorer
-  }
+  /**
+   * File explorer and playlist visualizer.
+   * @type {FileExplorer}
+   */
+  fileExplorer
+
+  /**
+   * Filter words.
+   * @type {string[]}
+   */
+  #filterQuery = []
+
 
   connectedCallback() {
     // clone template content into shadow root
@@ -76,9 +79,9 @@ export class Viewer extends GenericFrame {
     return {
       tabName: this.tabName,
 
-      paths: this.openArgs,
+      paths: this.#openArgs,
 
-      filterQuery: this.fileBook.filterQuery,
+      filterQuery: this.#filterQuery,
       mediaState: this.viewComponent.state(),
 
       fileExplorer: {
@@ -116,9 +119,9 @@ export class Viewer extends GenericFrame {
    */
   async open(...paths) {
     // Prevents state replication failure when duplicating while loading
-    this.openArgs = paths
-    const startIdx = await this.fileBook.load(...paths)
-    if (startIdx < 0) {
+    this.#openArgs = paths
+
+    if ( !await this.fileBook.load(...paths) ) {
       AppNotifier.notify('no files to open', 'viewer:open')
       return
     }
@@ -127,7 +130,7 @@ export class Viewer extends GenericFrame {
     const basedirs = this.fileBook.paths.map(dir => dir.name)
     this.renameTab( String(basedirs) )
 
-    this.gotoPage(startIdx)
+    this.gotoPage()
     this.fileExplorer.reload()
   }
 
@@ -136,33 +139,51 @@ export class Viewer extends GenericFrame {
    * @param {String[]} queries File name or substring to find.
    */
   find(...queries) {
-    const idx = this.fileBook.getIdxOf(...queries)
-    if (idx > -1) this.gotoPage(idx)
-    else AppNotifier.notify('no matches')
+    queries = queries.map( query => query.toLowerCase().trim() )
+      .filter(query => query !== '')
+
+    const idx = this.fileBook.getIdxOf(file => {
+      const pathLowerCase = file.path.toLowerCase()
+      return queries.every( query => pathLowerCase.includes(query) )
+    })
+
+    idx < 0 ? AppNotifier.notify('no matches') : this.gotoPage(idx)
   }
 
   /**
-   * Filter files by partial words and tags.
-   * @param  {String[]} queries Tags and substrings to filter for.
+   * Filter files by partial words and tags. Clear if none provided.
+   * @param {String[]} [queries] Tags and substrings to filter for.
    */
   filter(...queries) {
-    const currentFilePath = this.fileBook.currentFile?.path
+    queries = queries.map( query => query.toLowerCase().trim() )
+      .filter(query => query !== '')
 
-    const matches = this.fileBook.filter(...queries)
-    if (matches === 0) return AppNotifier.notify('no matches')
+    if (queries.length < 1) {
+      this.fileBook.clearFilter()
+      this.#filterQuery = []
+      AppNotifier.notify('clear filter')
+    } else {
+      const currentFilePath = this.fileBook.currentFile?.path
+  
+      const matches = this.fileBook.filterStringAndTags(...queries)
+      if (matches === 0) return AppNotifier.notify('no matches')
+      else this.#filterQuery = queries
+  
+      // new filter exclude currentFile, refresh
+      if (currentFilePath !== this.fileBook.currentFile?.path) 
+        this.gotoPage();
 
-    // new filter exclude currentFile, refresh
-    if (this.fileBook.getIdxOf(currentFilePath) < 0) this.gotoPage(this.fileBook.page)
+      AppNotifier.notify(`${matches} files matched`)
+    }
 
     // update status bar and reload fileExplorer
     this.refreshStatus()
     this.fileExplorer.reload()
-    AppNotifier.notify(matches > 0 ? `${matches} files matched` : 'clear filter')
   }
 
   /**
    * Present next page.
-   * @param {Boolean} forward Flip to the right.
+   * @param {Boolean} [forward=true] Flip to the right.
    */
   flipPage(forward = true) {
     this.#lastFlipRight = forward
@@ -170,11 +191,11 @@ export class Viewer extends GenericFrame {
   }
 
   /**
-   * Set page index in fileBook and display file.
-   * @param {Number} pageIdx
+   * Display media at current or specific index if given. 
+   * @param {Number} [pageIdx]
    */
-  async gotoPage(pageIdx) {
-    if (!this.fileBook.files.length) {
+  async gotoPage(pageIdx = this.fileBook.page) {
+    if (this.fileBook.files.length < 1) {
       this.viewComponent.display(null)
       return
     }
@@ -186,7 +207,7 @@ export class Viewer extends GenericFrame {
     // get right file, set openArgs
     const file = this.fileBook.setPageIdx(pageIdx)
     const paths = this.fileBook.paths.map(dir => dir.path)
-    this.openArgs = [file.path, ...paths] 
+    this.#openArgs = [file.path, ...paths] 
 
     // wait for display (loaded) and resolve block
     const fileURL = elecAPI.getFileURL(file.path)
@@ -195,8 +216,8 @@ export class Viewer extends GenericFrame {
     
     if (!success) {
       console.log('Failed to load resource. Delist file and skip.')
-      const equivalentIdx = this.fileBook.delistFile(file)
-      this.gotoPage(equivalentIdx)
+      this.fileBook.delistFile(file)
+      this.gotoPage()
     }
   }
 
@@ -204,14 +225,8 @@ export class Viewer extends GenericFrame {
    * Display random file in fileBook.
    */
   gotoRandom() {
-    const fileCount = this.fileBook.files.length
-    let randomIdx = Math.floor( Math.random() * fileCount )
-    
-    // flip if ~2 files, re-roll if randomIdx === current page
-    if (fileCount < 3) return this.gotoPage(this.fileBook.page + 1)
-    if (randomIdx === this.fileBook.page) return this.gotoRandom()
-
-    this.gotoPage(randomIdx)
+    this.fileBook.setRandomPageIdx()
+    this.gotoPage()
   }
 
   /**
@@ -225,7 +240,6 @@ export class Viewer extends GenericFrame {
       return
     }
 
-    const previousFilters = this.fileBook.filterQuery
     const paths = this.fileBook.paths.map(dir => dir.path)
     const tabName = this.tabName
 
@@ -235,14 +249,13 @@ export class Viewer extends GenericFrame {
 
     // restore tab name and re-apply filter
     this.renameTab(tabName)
-    if (previousFilters.length) this.filter(...previousFilters)
+    if (this.#filterQuery.length) this.filter(...this.#filterQuery)
     AppNotifier.notify('files reloaded', 'fileReload')
   }
 
   /**
    * Run user defined script on current file.
    * @param {String} userScript User script.
-   * @param {String} optMsg Message to display on execution.
    * @returns {Promise<boolean>} Either command was run or not.
    */
   async runOnPage(userScript) {
@@ -268,17 +281,16 @@ export class Viewer extends GenericFrame {
 
     // try and delete target file from filesystem
     const success = await elecAPI.deleteFile(targetFile.path)
-
-    // delist target file, display suggested page and update explorer
     if (success) {
-      const equivalentIdx = this.fileBook.delistFile(targetFile)
-      await this.gotoPage(equivalentIdx)
+      this.fileBook.delistFile(targetFile)
+      await this.gotoPage()
       await this.fileExplorer.reload()
       this.fileExplorer.syncSelection()
     }
 
-    console.log(`${success ? 'deleted' : 'failed to delete'} ${targetFile.path}`)
-    AppNotifier.notify(`${success ? 'deleted' : 'failed to delete'} ${targetFile.path}`)
+    const message = `${success ? 'deleted' : 'failed to delete'} ${targetFile.path}`
+    console.log(message)
+    AppNotifier.notify(message)
   }
 
   /**
@@ -324,9 +336,10 @@ export class Viewer extends GenericFrame {
 
     // fileBook events
     this.addEventListener('fileExplorer:open', (e) => {
-      const filepath = e.detail, fileIdx = this.fileBook.getIdxOf(filepath)
-      if (fileIdx > -1) this.gotoPage(fileIdx)
-      else this.open(filepath)
+      const filepath = e.detail
+      const fileIdx = this.fileBook.getIdxOf(file => file.path === filepath)
+
+      fileIdx > -1 ? this.gotoPage(fileIdx) : this.open(filepath)
     })
 
     // view events
@@ -357,9 +370,9 @@ export class Viewer extends GenericFrame {
       infoLeftFunc: null
     }
     
-    const { files, page, currentFile, filterQuery } = this.fileBook
+    const { files, page, currentFile } = this.fileBook
     if (files.length) {
-      const filterInfo = filterQuery.length ? `filter:${filterQuery}` : ''
+      const filterInfo = this.#filterQuery.length ? `filter:${this.#filterQuery}` : ''
       const pager = `[${page + 1}/${files.length}]`
       const { mode, zoom } = this.viewComponent
 
