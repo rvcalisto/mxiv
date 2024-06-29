@@ -3,7 +3,17 @@ import { ViewScreen } from "./screen.js"
 import { TrackBar } from "./trackBar.js"
 import { ViewMedia } from "./media.js"
 import { Slideshow } from "./slideshow.js"
-import { AppNotifier } from "../notifier.js"
+import { ObservableEvents } from "../observableEvents.js"
+
+
+/**
+ * @typedef {'view:loaded'|'view:skip'|'view:playing'|'view:notify'|
+ * 'view:mode'|'view:zoom'|'view:fullscreen'} ViewEvents
+ */
+
+/**
+ * @typedef {'image'|'audio'|'video'|'other'} MediaTypes
+ */
 
 
 /**
@@ -13,27 +23,34 @@ export class View extends HTMLElement {
 
   static tagName = 'view-component'
 
-  constructor() {
-    super()
+  /** 
+   * @type {ObservableEvents<ViewEvents>} 
+   */
+  events = new ObservableEvents()
 
-    /**
-     * Currently loaded file type.
-     * @type {'image'|'audio'|'video'}
-     */
-    this.fileType = 'image'
+  /**
+   * Currently loaded file type.
+   * @type {MediaTypes}
+   */
+  fileType = 'image'
 
-    // image
-    this.zoom = 100
-    this.mode = 'scale'
+  // image
+  zoom = 100
 
-    // audio / video
-    this.volume = 1
-    this.mute = true
-    this.onEnd = 'loop'
-    this.autoplay = true
-    this.aLoop = Infinity
-    this.bLoop = Infinity
-  }
+  /** @type {import('./screen.js').DisplayModes} */
+  mode = 'scale'
+
+  // audio / video
+  volume = 1
+  mute = true
+
+  /** @type {import('./media.js').OnTrackEndModes} */
+  onEnd = 'loop'
+
+  autoplay = true
+  aLoop = Infinity
+  bLoop = Infinity
+
 
   connectedCallback() {
     // clone template content into shadow root
@@ -58,20 +75,19 @@ export class View extends HTMLElement {
   /**
    * Display multimedia file. Show logo if `filePath` is `null`.
    * @param {String} filePath Media resource path.
-   * @param {'image'|'audio'|'video'} type Media type.
+   * @param {MediaTypes} type Media type.
    * @returns {Promise<Boolean>} Either display content has changed. 
    */
   async display(filePath, type) {
     if (filePath == null) {
       this.screen.displayEmpty()
 
-      this.signalEvent('view:playing', false)
-      this.signalEvent('view:loaded')
+      this.events.fire('view:playing', false)
+      this.events.fire('view:loaded')
       return true
     }
     
-    // assign file type, infer if null, fail if unsupported
-    if (!type) type = View.inferType(filePath)
+    // assign file type, fail if unsupported
     if (type === 'other' ) return false
     this.fileType = type
 
@@ -87,21 +103,11 @@ export class View extends HTMLElement {
       this.slideshow.tick()
 
       const playing = type === 'image' ? this.slideshow.active : !this.media.vid.paused
-      this.signalEvent('view:playing', playing)
-      this.signalEvent('view:loaded')
+      this.events.fire('view:playing', playing)
+      this.events.fire('view:loaded')
     }
     
     return success
-  }
-
-  /**
-   * Display message on screen.
-   * @param {String} msg Message to display.
-   * @param {String?} typeId Identifier avoid duplicates.
-   */
-  osdMsg(msg, typeId) {
-    // TODO: transform all call to this into custom events?
-    return AppNotifier.notify(msg, typeId)
   }
 
   /**
@@ -114,7 +120,7 @@ export class View extends HTMLElement {
 
   /**
    * Toggle smooth scroll animation when setting scroll position.
-   * @param {Boolean} value 
+   * @param {Boolean} [value] 
    */
   toggleAutoScrollAnimation(value) {
     if (value == null) value = !this.scrollBox.smooth
@@ -129,7 +135,7 @@ export class View extends HTMLElement {
    * - `deltaPxls` is zero: Clear slide interval, skip audio/video by `deltaSecs`.
    * @param {'x'|'y'} axis Either to navigate horizontally or vertically
    * @param {Number} deltaPxls Pixels to move, either positive or negative.
-   * @param {Number} deltaSecs Seconds to skip, either positive or negative.
+   * @param {Number} [deltaSecs] Seconds to skip, either positive or negative.
    */
   navigate(axis, deltaPxls, deltaSecs = 0) {
 
@@ -145,7 +151,7 @@ export class View extends HTMLElement {
       if (canScrollX)
         return this.scrollBox.slide('x', deltaPxls)
       else if (this.fileType === 'image')
-        return this.signalEvent(`view:${xAdds ? 'next' : 'previous'}`) // flip page
+        return this.events.fire('view:skip', xAdds) // flip page
     }
 
     // vertical (canScrollY modified to let deltaPxls(Y) > 0 = UP)
@@ -161,11 +167,10 @@ export class View extends HTMLElement {
       this.media.skipBy(deltaSecs)
   }
 
-
   /**
    * Returns state object. Loads state object if given as parameter.
-   * @param {*?} stateObject Component properties object.
-   * @returns {*}
+   * @param {*} [stateObject] Component properties object.
+   * @returns {*?}
    */
   state(stateObject) {
 
@@ -194,40 +199,6 @@ export class View extends HTMLElement {
     this.autoplay = stateObject.autoplay
     this.aLoop = stateObject.aLoop
     this.bLoop = stateObject.bLoop
-  }
-
-  /**
-   * Infer file type based on extention. Unused, but just in case.
-   * @param {String} path 
-   */
-  static inferType(path) {
-
-    // regex: /\.\w+$/i | however, avoiding it because slow? 
-    let ext = '', arr = path.split('.')
-    if (arr.length > 1) ext = `.${arr[arr.length -1]}`
-    else return 'other'
-
-    switch (ext) {
-      case '.jpg': case '.jpeg': case '.png':
-      case '.gif': case '.apng': case '.webp': case '.svg':
-        return 'image';
-      case '.mp4': case '.webm':
-      case '.mp3': case '.ogg': // lump together for now
-        return 'video';
-    }
-    return 'other';
-  }
-
-  /**
-   * Dispatch view event.
-   * @param {'view:loaded'|'view:next'|'view:previous'|
-   * 'view:playing'|'view:mode'|'view:zoom'|'view:fullscreen'} event
-   * @param {*?} detailValue
-   */
-  signalEvent(event, detailValue) {
-    this.dispatchEvent( new CustomEvent(event, {
-      composed: true, bubbles: true, detail: detailValue
-    }) )
   }
 }
 

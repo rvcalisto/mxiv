@@ -174,12 +174,12 @@ export class TrackBar {
 
     // ⮞
     const skipRBtn = this.#view.shadowRoot.getElementById('trackSkipR')
-    skipRBtn.onclick = () => this.#view.signalEvent('view:next')
+    skipRBtn.onclick = () => this.#view.events.fire('view:skip', true)
     skipRBtn.setAttribute('icon', 'skip-right')
 
     // ⮜
     const skipLBtn = this.#view.shadowRoot.getElementById('trackSkipL')
-    skipLBtn.onclick = () => this.#view.signalEvent('view:previous')
+    skipLBtn.onclick = () => this.#view.events.fire('view:skip', false)
     skipLBtn.setAttribute('icon', 'skip-left')
 
     // loop [⟳], skip [🠖], stop [⇥] at the end of vid

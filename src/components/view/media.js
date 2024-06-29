@@ -1,3 +1,8 @@
+/**
+ * @typedef {'cycle'|'loop'|'skip'|'random'} OnTrackEndModes
+ */
+
+
 /** 
  * View audio/video track methods (audio/video). 
  */
@@ -29,7 +34,7 @@ export class ViewMedia {
   
   /**
    * Toggle play state.
-   * @param {Boolean?} force Force play on `true`, pause on `false`.
+   * @param {Boolean} [force] Force play on `true`, pause on `false`.
    */
   playToggle(force) {
     const vid = this.vid
@@ -44,12 +49,12 @@ export class ViewMedia {
       this.#abLoopInterval(!vid.paused)
     }
 
-    this.#view.signalEvent('view:playing', !vid.paused)
+    this.#view.events.fire('view:playing', !vid.paused)
   }
   
   /**
    * Toggle media mute.
-   * @param {Boolean?} force Either to force mute on or off.
+   * @param {Boolean} [force] Either to force mute on or off.
    */
   muteToggle(force) {
     const vid = this.vid
@@ -87,18 +92,18 @@ export class ViewMedia {
   
   /**
    * Set flow behavior on end of track. Cycle through modes by default.
-   * @param {'cycle'|'loop'|'next'|'random'} behavior What to do on end of track.
+   * @param {OnTrackEndModes} [behavior] What to do on end of track.
    */
   onEndRepeat(behavior = 'cycle') {
     const vid = this.vid
     if (!vid) return
 
     // no arg given or invalid, cycle and notify 
-    const modes = ['loop', 'next', 'random']
+    const modes = ['loop', 'skip', 'random']
     const invalid = modes.indexOf(behavior) < 0
     if (behavior == null || invalid) {
       behavior = modes[ (modes.indexOf(this.#view.onEnd) + 1) % 3 ]
-      this.#view.osdMsg(`on track end: ${behavior}`, 'loopFile')
+      this.#view.events.fire('view:notify', `on track end: ${behavior}`, 'loopFile')
     }
 
     vid.loop = behavior === 'loop'
@@ -142,12 +147,12 @@ export class ViewMedia {
     vid.playbackRate = Math.min( Math.max(value, .25), 16 )
 
     const fixedRate = vid.playbackRate.toFixed(2)
-    this.#view.osdMsg(`playback rate set to ${fixedRate}`, 'playbackRate')
+    this.#view.events.fire('view:notify', `playback rate set to ${fixedRate}`, 'playbackRate')
   }
 
   /**
    * Set audio pitch-correction behavior at modified playback rates.
-   * @param {Boolean?} preserve Toggle behavior by default.
+   * @param {Boolean} [preserve] Toggle behavior by default.
    */
   preservePitch(preserve) {
     const vid = this.vid
@@ -156,7 +161,7 @@ export class ViewMedia {
     if ( preserve == null ) vid.preservesPitch = !vid.preservesPitch
     else vid.preservesPitch = preserve
 
-    this.#view.osdMsg(`preservePitch: ${vid.preservesPitch}`, 'prePitch')
+    this.#view.events.fire('view:notify', `preservePitch: ${vid.preservesPitch}`, 'prePitch')
   }
   
   /**
@@ -180,7 +185,7 @@ export class ViewMedia {
 
   /**
    * Set A loop, B loop on current time. Clear loop if A and B already set or null is passed.
-   * @param {Number|undefined|null} customTime Custom video time in secs.
+   * @param {Number|undefined|null} [customTime] Custom video time in secs.
    */
   abLoop(customTime) {
     // reset exactly on null
@@ -198,7 +203,7 @@ export class ViewMedia {
     // set A
     if (this.#view.aLoop == Infinity) {
       this.#view.aLoop = tgtTime
-      this.#view.osdMsg(`A loop on ${this.secToHMS(tgtTime)}`)
+      this.#view.events.fire('view:notify', `A loop on ${this.secToHMS(tgtTime)}`)
       return
     }
 
@@ -207,24 +212,24 @@ export class ViewMedia {
       // invalid, clear loop
       if (tgtTime <= this.#view.aLoop) {
         this.abLoop(null)
-        this.#view.osdMsg(`B loop before A, clear`)
+        this.#view.events.fire('view:notify', `B loop before A, clear`)
         return
       }
 
       this.#view.bLoop = tgtTime
-      this.#view.osdMsg(`B loop on ${this.secToHMS(tgtTime)}`)
+      this.#view.events.fire('view:notify', `B loop on ${this.secToHMS(tgtTime)}`)
       if (!vid.paused) this.#abLoopInterval()
       return
     }
 
     // clear loop
     this.abLoop(null)
-    this.#view.osdMsg('AB loop clear')
+    this.#view.events.fire('view:notify', 'AB loop clear')
   }
 
   /**
    * Start or clear A-B loop interval.
-   * @param {true} start Either to start interval. Clear if false.
+   * @param {boolean} [start=true] Either to start interval. Clear if false.
    */
   #abLoopInterval(start = true) {
     if (!start) return clearInterval(this.abLoopInterval)

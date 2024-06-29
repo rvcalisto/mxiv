@@ -50,7 +50,7 @@ export class ScrollBox {
 
   setAutoScrollAnimation(active) {
     this.smooth = active;
-    this.#view.osdMsg(`auto-scroll animation ${this.smooth ? 'on' : 'off'}`);
+    this.#view.events.fire('view:notify', `auto-scroll animation ${this.smooth ? 'on' : 'off'}`);
   }
 
   /**
@@ -194,8 +194,8 @@ export class ScrollBox {
       if (this.#view.fileType != 'image') {
         this.#view.media.skipBy(`${Math.sign(e.deltaY) * -2}%`) // relative
       } else {
-        if (e.deltaY > 0) this.#view.signalEvent('view:next')
-        else this.#view.signalEvent('view:previous')
+        if (e.deltaY > 0) this.#view.events.fire('view:skip', true)
+        else this.#view.events.fire('view:skip', false)
       }
     }, { passive: false })
   }

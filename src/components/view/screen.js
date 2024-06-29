@@ -1,4 +1,9 @@
 /**
+ * @typedef {'none'|'stretch'|'scale'|'width'|'height'} DisplayModes
+ */
+
+
+/**
  * View image/video presentation methods.
  */
 export class ViewScreen {
@@ -66,7 +71,7 @@ export class ViewScreen {
     // replace previous element with new image
     this.#view.shadowRoot.getElementById('view').replaceWith(img)
 
-    img.ondblclick = () => this.#view.signalEvent('view:fullscreen')
+    img.ondblclick = () => this.#view.events.fire('view:fullscreen')
     
     return success
   }
@@ -108,12 +113,12 @@ export class ViewScreen {
     vid.onmousemove = () => this.#view.trackBar.peek()
     vid.oncontextmenu = () => this.#view.media.playToggle()
     vid.ontimeupdate = () => this.#view.trackBar.updateTrack() // not 1:1, lazy but ok
-    vid.ondblclick = () => this.#view.signalEvent('view:fullscreen')
+    vid.ondblclick = () => this.#view.events.fire('view:fullscreen')
   
     // enforce AB loop or signal end-of-track behavior
     vid.onended = () => {
       if (this.#view.aLoop < Infinity) vid.currentTime = this.#view.aLoop
-      else this.#view.signalEvent(`view:${this.#view.onEnd}`)
+      else this.#view.events.fire(`view:${this.#view.onEnd}`)
     }
 
     return success
@@ -121,7 +126,7 @@ export class ViewScreen {
 
   /**
    * Apply mode style property values to img element.
-   * @param {'none'|'stretch'|'scale'|'width'|'height'} mode View mode. 
+   * @param {DisplayModes} mode View mode. 
    */
   #applyMode(mode) {
     const img = this.img, zoom = this.#view.zoom
@@ -174,7 +179,7 @@ export class ViewScreen {
     this.#view.zoom = Math.max(0, newValue);
     
     this.postPass();
-    this.#view.signalEvent('view:zoom')
+    this.#view.events.fire('view:zoom')
   }
 
   /**
@@ -193,20 +198,20 @@ export class ViewScreen {
 
   /**
    * Reset zoom, apply mode and update state. Emits a message on screen. 
-   * @param {'none'|'stretch'|'scale'|'width'|'height'} mode View mode.
+   * @param {DisplayModes} mode View mode.
    */
   setViewMode(mode) {
     this.#view.zoom = 100;
     this.#applyMode(mode);
     this.#view.mode = mode;
 
-    this.#view.osdMsg(`fit-${mode}`, 'fitMode')
-    this.#view.signalEvent('view:mode', mode)
+    this.#view.events.fire('view:notify', `fit-${mode}`, 'fitMode')
+    this.#view.events.fire('view:mode', mode)
   }
 
   /**
    * Cycle between view modes.
-   * @param {Boolean} forward Direction.
+   * @param {Boolean} [forward=true] Direction.
    */
   cycleViewMode(forward = true) {
     const modes = ['none', 'stretch', 'scale', 'width', 'height']

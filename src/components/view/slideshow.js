@@ -45,7 +45,7 @@ export class Slideshow {
    */
   set delay(value) {
     this.#delay = Math.max(0, value)
-    this.#view.osdMsg(`slide delay to ${this.#delay}s`, 'slideshow')
+    this.#view.events.fire('view:notify', `slide delay to ${this.#delay}s`, 'slideshow')
   }
 
   /**
@@ -56,7 +56,7 @@ export class Slideshow {
     clearTimeout(this.#timer)
 
     this.#timer = setTimeout(() => {
-      this.#view.signalEvent('view:next')
+      this.#view.events.fire('view:skip', true)
     }, this.#delay * 1000)
   }
 
@@ -71,10 +71,10 @@ export class Slideshow {
     // set and signal play state
     this.active = active
     if (active) this.tick()
-    this.#view.signalEvent('view:playing', active)
+    this.#view.events.fire('view:playing', active)
 
     if (notify) {
-      this.#view.osdMsg(`slideshow ${active ? 
+      this.#view.events.fire('view:notify', `slideshow ${active ? 
       `on [${this.#delay}s]` : 'off'}`, 'slideshow')
     }
   }

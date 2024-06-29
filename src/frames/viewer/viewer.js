@@ -326,23 +326,26 @@ export class Viewer extends GenericFrame {
    * Setup event listeners.
    */
   #initEvents() {
+    const viewComponent = this.viewComponent
+
     // drag'n'drop
-    this.viewComponent.ondrop = (e) => {
+    viewComponent.ondrop = (e) => {
       e.preventDefault();
       e.stopPropagation();
       const files = e.dataTransfer.files
       this.open(...Object.keys(files).map((key) => files[key].path))
     }
+
     // needed for drop event
-    this.viewComponent.ondragover = (e) => {
+    viewComponent.ondragover = (e) => {
       e.preventDefault();
       e.stopPropagation();
     }
 
     // flip image depending on the click position
-    this.viewComponent.oncontextmenu = (e) => {
-      if (this.viewComponent.fileType != 'image') return
-      const forward = e.offsetX >= this.viewComponent.clientWidth / 2
+    viewComponent.oncontextmenu = (e) => {
+      if (viewComponent.fileType !== 'image') return
+      const forward = e.offsetX >= viewComponent.clientWidth / 2
       this.flipPage(forward)
     }
 
@@ -355,17 +358,16 @@ export class Viewer extends GenericFrame {
     })
 
     // view events
-    this.addEventListener('view:playing', (e) => this.setFrameIsPlaying(e.detail))
-    this.addEventListener('view:next', () => this.flipPage())
-    this.addEventListener('view:random', () => this.gotoRandom())
-    this.addEventListener('view:previous', () => this.flipPage(false))
-    this.addEventListener('view:mode', () => this.refreshStatus())
-    this.addEventListener('view:zoom', () => this.refreshStatus())
-    this.addEventListener('view:fullscreen', () => this.toggleFullscreen())
-    this.addEventListener('view:loaded', () => {
-      // refresh status, auto-scroll to start/end of page based on direction
+    viewComponent.events.observe('view:notify', (msg, type) => AppNotifier.notify(msg, type))
+    viewComponent.events.observe('view:playing', (playing) => this.setFrameIsPlaying(playing))
+    viewComponent.events.observe('view:skip', (forward) => this.flipPage(forward))
+    viewComponent.events.observe('view:random', () => this.gotoRandom())
+    viewComponent.events.observe('view:mode', () => this.refreshStatus())
+    viewComponent.events.observe('view:zoom', () => this.refreshStatus())
+    viewComponent.events.observe('view:fullscreen', () => this.toggleFullscreen())
+    viewComponent.events.observe('view:loaded', () => {
       this.refreshStatus()
-      this.viewComponent.scrollToEnd(!this.#lastFlipRight)
+      viewComponent.scrollToEnd(!this.#lastFlipRight) // auto scroll on page display
 
       // sync selection to viewer if in playlist modde
       const fileExplorer = this.fileExplorer
