@@ -14,7 +14,6 @@ export class FileBook {
   
   /** 
    * FileBook UUID
-   * @type {String}
    */
   #bookID = crypto.randomUUID()
 
@@ -38,7 +37,6 @@ export class FileBook {
 
   /**
    * Current page index.
-   * @type {Number}
    */
   page = 0
 
@@ -183,8 +181,8 @@ export class FileBook {
    * @returns {Promise<Boolean>} Either any tags where updated.
    */
   async tag(add = true, ...tags) {
-    tags = tags.map(tag => tag.toLocaleLowerCase().trim())
-      .filter(tag => tag) // filter invalid tags
+    tags = tags.map( tag => tag.toLowerCase().trim() )
+      .filter(tag => tag !== '') // filter invalid tags
 
     const currentFile = this.files[this.page]
     if (!currentFile || !tags.length) return false
@@ -202,14 +200,11 @@ export class FileBook {
    * @returns {FileObject?} Normalized index FileObject.
    */
   setPageIdx(pageIdx) {
-    const pageLength = this.files.length
-    if (!pageLength) return null
+    const fileCount = this.files.length
+    if (fileCount < 1) return null
 
-    let newPage = (pageIdx >= pageLength) ? 0 : pageIdx
-    if (pageIdx < 0) newPage = pageLength -1
-
-    this.page = newPage
-    return this.files[newPage]
+    this.page = pageIdx >= 0 ? pageIdx % fileCount : fileCount - 1 
+    return this.files[this.page]
   }
 
   /**
