@@ -1,14 +1,16 @@
 import { ItemList } from "../itemList.js";
+import { InputPrompt } from "./inputPrompt.js";
+import { PriorityStack } from "./priorityStack.js";
+import { option, OptionElement } from "./optionElement.js";
 import { ActionController } from "../../actions/actionController.js";
+import { AcceleratorController } from "../../actions/acceleratorController.js";
 import { AppNotifier } from "../notifier.js";
-import { CmdPrompt, CmdHistory } from "./appCLIPrompt.js";
-import { option, optionElement } from "./option.js";
 export { option };
 
 
 /**
  * Descriptive option object for display in AppCmdLine.
- * @typedef {import("./option.js").CmdOption} CmdOption
+ * @typedef {import("./optionElement.js").OptionObject} OptionObject
  */
 
 
@@ -17,256 +19,285 @@ export { option };
  */
 class AppCmdLine extends HTMLElement {
 
-  static tagName = 'app-cli'
+  static tagName = 'app-cli';
 
   /**
    * Hint element list.
-   * @type {ItemList}
+   * @type {ItemList<?, OptionElement>}
    */
-  #list
+  #list;
 
   /**
    * Prompt element.
-   * @type {CmdPrompt}
+   * @type {InputPrompt}
    */
-  #prompt
+  #prompt;
 
-  constructor() {
-    super()
-    this.active = false
-  }
+  /**
+   * Prompt history.
+   */
+  #promptHistory = new PriorityStack('cmdHist');
+
+  /**
+   * Background overlay.
+   * @type {HTMLDivElement}
+   */
+  #background;
+
+  /**
+   * Visibility state.
+   */
+  active = false;
 
   connectedCallback() {
-    const fragment = document.getElementById('appCliTemplate').content
-    this.attachShadow({ mode: 'open' })
+    const fragment = document.getElementById('appCliTemplate').content;
+    this.attachShadow({ mode: 'open' });
     this.shadowRoot.append( fragment.cloneNode(true) );
 
-    this.#list = this.shadowRoot.getElementById('itemList')
-    this.#prompt = new CmdPrompt(this.shadowRoot)
+    this.#list = this.shadowRoot.getElementById('itemList');
+    this.#prompt = new InputPrompt( this.shadowRoot.getElementById('cmdInput') );
+    this.#background = this.shadowRoot.getElementById('cmdOverlay');
 
-    CmdHistory.sync()
-    this.#initEvents()
+    this.#initEvents();
   }
 
   /**
    * Toggle visibility. Focus prompt if opening while already open.
    * @param {Boolean} open Open or close CLI.
-   * @param {String} optionalStr Open on custom string.
+   * @param {String} [optionalStr] Open on custom string.
    */
   toggle(open, optionalStr = '') {
     // make elements visible and focusable
-    const cmdOverlay = this.shadowRoot.getElementById('cmdOverlay')
-    cmdOverlay.style.display = ''
+    this.#background.style.display = '';
 
     // focus prompt, set optionalStr & list hints.
     if (open) {
-      this.#prompt.focus()
-      if (this.active) return
+      this.#prompt.focus();
+      if (this.active) return;
 
-      this.#prompt.setText(optionalStr)
-      CmdHistory.sync()
-      this.#displayHints()
+      this.#prompt.setText(optionalStr);
+      this.#promptHistory.reload();
+      this.#displayHints();
     } 
 
     // set state and play fade-in/out animation
-    this.active = open
-    cmdOverlay.animate([
+    this.active = open;
+    this.#background.animate([
       { opacity : open ? 0 : 1 },
       { opacity : open ? 1 : 0 }
-    ], {
-      duration: 150
-    }).onfinish = () => {
-      if (open) return
-      this.#list.populate([]) // clean pages
-      cmdOverlay.style.display = 'none'
-    }
+      ], { duration: 150})
+      .onfinish = () => {
+        // clean pages
+        if (!open) {
+          this.#list.populate([], this.#createElement);
+          this.#background.style.display = 'none';
+        } 
+      };
   }
 
   /**
    * Run current CLI command.
-   * @param {String?} inputStr Custom CLI command.
+   * @param {String} [command] Custom CLI command.
    */
-  #runCmd(inputStr) {
-    inputStr = inputStr || this.#prompt.getText()
+  #runCmd(command) {
+    command = command || this.#prompt.getText();
+    const action = InputPrompt.unescapeIntoArray(command);
 
-    const action = CmdPrompt.unescapeIntoArray(inputStr)
-    const success = ActionController.currentFrameActions.run(action)
-    if (success) return CmdHistory.store(inputStr)
+    const success = ActionController.currentFrameActions.run(action);
+    if (success) {
+      const textItem = command ? command.trim() : '';
+      if (textItem !== '' && textItem !== 'cli repeatLast')
+        return this.#promptHistory.insert(command);
+    }
     
-    AppNotifier.notify(`"${action[0]}" is not an action in current context`, 'appCLI')
+    AppNotifier.notify(`"${action[0]}" is not an action in current context`, 'appCLI');
   }
 
   /**
    * Erase past commands from history.
-   * @param {String} [specificEntry] If given, remove only this string from history.
+   * @param {String} [historyItem] If given, remove only this item from history.
    */
-  clearCmdHistory(specificEntry) {
-    CmdHistory.remove(specificEntry)
-    
-    const msg = specificEntry ? 'history item removed' : 'history cleared'
-    AppNotifier.notify(msg, specificEntry ? 'appCLI:forget' : 'appCLI:clear')
+  clearCmdHistory(historyItem) {
+    if (historyItem == null) {
+      this.#promptHistory.clearAll();
+      AppNotifier.notify('history cleared', 'appCLI:clear');
+    } else {
+      this.#promptHistory.remove(historyItem);
+      AppNotifier.notify('history item removed', 'appCLI:forget');
+      this.toggle(true); // recapture focus from 'forget' button click
+    }
   }
 
   /**
    * Repeat last command.
    */
   redoCmd() {
-    const historyArray = CmdHistory.items
-    if (historyArray.length) this.#runCmd(historyArray[0])
+    if (this.#promptHistory.items.length > 0)
+      this.#runCmd(this.#promptHistory.items[0]);
+  }
+
+  /**
+   * Returns a HTMLElement for this option.
+   * @param {OptionObject|String} item Option string or object.
+   * @returns {OptionElement}
+   */
+  #createElement(item) {
+    const itemOption = (typeof item === 'string') ? option(item) : item;
+    const element = OptionElement.createElement(itemOption);
+    
+    switch (itemOption.type) {
+
+      case 'action':
+        const currentAccelerators = AcceleratorController.currentFrameAccelerators;
+        const actionAccelerators = currentAccelerators.byAction([itemOption.name]);
+        if (actionAccelerators.length > 0) element.tags = actionAccelerators;
+        break;
+
+      case 'history':
+        element.onForget = () => this.clearCmdHistory(itemOption.name);
+        break;
+    } 
+
+    element.onclick = () => {
+      this.#list.selectIntoFocus(element);
+      this.#prompt.focus();
+    };
+
+    element.onAccess = () => {
+      this.#prompt.setText(itemOption.name, itemOption.replace);
+    };
+
+    element.ondblclick = () => {
+      element.onAccess();
+      this.toggle(false);
+      this.#runCmd();
+    };
+
+    return element;
+  }
+
+  /**
+   * Return currently selected OptionElement, if any.
+   * @returns {OptionElement?}
+   */
+  #getSelectedElement() {
+    return /** @type {OptionElement} */ (this.#list.pageContainerDiv?.querySelector('.selected'));
   }
 
   /**
    * Genereate hint list based on current this.#prompt text.
    */
   async #displayHints() {
-    const currentActions = ActionController.currentFrameActions.asObject()
-    let [cmd, ...args] = this.#prompt.getText(true)
-    let command = currentActions[cmd]
+    const currentActions = ActionController.currentFrameActions.asObject();
+    let [cmd, ...args] = this.#prompt.getTextArray();
+    let command = currentActions[cmd];
 
     // hint action methods / options
     if (command != null && args.length > 0) {
-      let options = [], lastArg = args.at(-1)
+      let options = [], lastArg = /** @type {String} */ (args.at(-1));
       
       if (command.methods != null) {
         // hint methods
         if (args.length === 1) 
           options = Object.keys(command.methods)
-            .map( key => option(key, command.methods[key].desc) )
+            .map( key => option(key, command.methods[key].desc) );
         // evaluate method instead of root command
         else if (command.methods[args[0]] != null) {
-          command = command.methods[args[0]]
-          args = args.slice(1)
+          command = command.methods[args[0]];
+          args = args.slice(1);
         }
       }
       // set options if any and not already populated (by methods)
       if (options.length < 1 && command.options != null)
-        options = await command.options(lastArg, args)
+        options = await command.options(lastArg, args);
 
-      return this.#list.populate(options, item => this.#renderElement(item), 
-        command.customFilter ? command.customFilter(lastArg) : standardFilter(lastArg) )
+      return this.#list.populate(options, item => this.#createElement(item), 
+        command.customFilter ? command.customFilter(lastArg) : standardFilter(lastArg) );
     }
 
     // hint history + root actions
     const cmdList = Object.keys(currentActions)
-      .map( cmd => option(cmd, currentActions[cmd].desc, 'action', true) )
-    const histList = CmdHistory.items
-      .map( cmd => option(cmd, '', 'history', true) )
+      .map( cmd => option(cmd, currentActions[cmd].desc, 'action', true) );
+    const histList = this.#promptHistory.items
+      .map( cmd => option(cmd, '', 'history', true) );
 
     this.#list.populate( histList.concat(cmdList), 
-      item => this.#renderElement(item), standardFilter(cmd || '') )
-  }
-
-  /**
-   * Returns a HTMLElement for this option.
-   * @param {CmdOption|String} item Option string or object.
-   * @returns {HTMLElement}
-   */
-  #renderElement(item) {
-    if ( typeof(item) !== 'object' ) item = option(item)
-
-    const optionElm = optionElement(item)
-
-    optionElm.onclick = () => {
-      this.#prompt.focus()
-      const selection = this.#list.pageContainerDiv.getElementsByClassName('selected')[0]
-      if (selection) selection.classList.remove('selected')
-      optionElm.classList.add('selected')
-    };
-
-    optionElm.ondblclick = () => {
-      this.#completeSelection()
-      this.toggle(false)
-      this.#runCmd()
-    };
-
-    return optionElm;
-  }
-
-  /**
-   * Auto complete input value based on selected hint.
-   */
-  #completeSelection() {
-    const selection = this.#list.pageContainerDiv.getElementsByClassName('selected')[0]
-    if (!selection) return
-
-    const replace = selection.hint.replace
-    this.#prompt.setText(selection.hint.name, replace)
+      item => this.#createElement(item), standardFilter(cmd || '') );
   }
 
   #initEvents() {
     // close CLI if clicking out of focus
-    const overlay = this.shadowRoot.getElementById('cmdOverlay')
-    overlay.onclick = (e) => {
-      if (e.target === overlay) this.toggle(false)
-    }
+    this.#background.onclick = (e) => this.toggle(e.target !== this.#background);
 
     // display hints on value input
-    this.#prompt.oninput = () => this.#displayHints()
+    this.#prompt.oninput = () => this.#displayHints();
 
     // control inputs
     this.#prompt.onkeydown = (e) => {
 
       // navigate hints
       if (e.key === 'Tab' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
-        e.preventDefault()
-        const next = e.key === 'ArrowDown' || e.key === 'Tab' && !e.shiftKey
-        const element = this.#list.navItems(next)
-        if (element) element.scrollIntoView(false)
+        e.preventDefault();
+        const next = e.key === 'ArrowDown' || e.key === 'Tab' && !e.shiftKey;
+        const element = this.#list.navItems(next);
+        if (element) element.scrollIntoView(false);
       }
 
       // close when prompt is fully erased
       else if (e.key === 'Backspace' && this.#prompt.getText().length < 1) {
-        e.stopImmediatePropagation()
-        this.toggle(false)
+        e.stopImmediatePropagation();
+        this.toggle(false);
       }
 
       // delete history-type hint
       else if (e.key === 'Delete') {
-        const selection = this.#list.pageContainerDiv.getElementsByClassName('selected')[0]
-        if (selection && selection.hint.type === 'history') {
-          e.preventDefault()
-          const element = this.#list.navItems()
-          if (element) element.scrollIntoView(false)
+        const selection = this.#getSelectedElement();
+        if (selection && selection.onForget != null) {
+          e.preventDefault();
 
-          this.clearCmdHistory(selection.hint.name)
-          selection.remove()
+          const element = this.#list.navItems();
+          if (element) element.scrollIntoView(false);
+
+          selection.onForget();
+          selection.remove();
         }
       }
 
       // complete, confirm
       else if (e.key === 'Enter' || e.key === ' ' && e.shiftKey) {
-        e.preventDefault()
-        e.stopImmediatePropagation()
+        e.preventDefault();
+        e.stopImmediatePropagation();
         
-        const selection = this.#list.pageContainerDiv.getElementsByClassName('selected')[0]
+        const selection = this.#getSelectedElement();
         if (selection) {
-          this.#completeSelection()
-          this.#displayHints()
+          selection.onAccess();
+          this.#displayHints();
         } else {
-          this.toggle(false)
-          this.#runCmd()
+          this.toggle(false);
+          this.#runCmd();
         }
       }
     }
   }
 }
 
+
 /**
  * Returns an ItemList filter function for standart options context.
- * @param {String|CmdOption} query ItemList filter query.
- * @returns {(item:String|CmdOption)=>boolean} Filter function.
+ * @param {String} query ItemList filter query.
+ * @returns {(item:String|OptionObject)=>boolean} Filter function.
  */
 export function standardFilter(query) {
   return (item) => {
-    if ( typeof(item) === 'object' ) item = item.name
-    const itemIsDot = item[0] === '.', queryIsDot = query[0] === '.'
+    if ( typeof(item) === 'object' ) item = item.name;
+    const itemIsDot = item[0] === '.', queryIsDot = query[0] === '.';
 
     // empty query, show all non-dot-files
-    if ( !query.trim() ) return !itemIsDot
+    if ( !query.trim() ) return !itemIsDot;
 
     // only show matches if for same item-query category
-    const match = item.toLowerCase().includes( query.toLowerCase() )
-    return itemIsDot ? match && queryIsDot : match
+    const match = item.toLowerCase().includes( query.toLowerCase() );
+    return itemIsDot ? match && queryIsDot : match;
   }
 }
 
@@ -275,6 +306,6 @@ export function standardFilter(query) {
  * Command line interface for application instance.
  * @type {AppCmdLine}
  */
-export const AppCLI = document.getElementsByTagName(AppCmdLine.tagName)[0]
+export const AppCLI = /** @type {AppCmdLine} */ (document.querySelector(AppCmdLine.tagName));
 
-customElements.define(AppCmdLine.tagName, AppCmdLine)
+customElements.define(AppCmdLine.tagName, AppCmdLine);

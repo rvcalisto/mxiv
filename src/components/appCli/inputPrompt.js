@@ -1,81 +1,28 @@
-/** 
- * AppCLI action history.
- */
-export const CmdHistory = new class {
-
-  /** @type {String[]} */
-  #history = []
-  #historySize = 10
-  #historyStorage = 'cmdHist'
-
-  constructor() {
-    this.sync()
-  }
-
-  /** In order of last stored. Read-only. */
-  get items() {
-    return this.#history
-  }
-
-  /**
-   * Sync history with localStorage. Keeps different windows in sync.
-   */
-  sync() {
-    const lclStr = JSON.parse( localStorage.getItem(this.#historyStorage) )
-    this.#history = lclStr || []
-  }
-
-  /**
-   * Store action & args string item.
-   * @param {String} cmdStr Command string to store.
-   */
-  store(cmdStr) {
-    cmdStr = cmdStr.trim()
-    if (!cmdStr || cmdStr === 'cli repeatLast') return
-
-    // move to top if already in history, else add to top and trim array
-    if ( this.#history.includes(cmdStr) ) {
-      const idx = this.#history.indexOf(cmdStr)
-      this.#history.splice(idx, 1)
-      this.#history.unshift(cmdStr)
-    } else {
-      const newLength = this.#history.unshift(cmdStr)
-      if (newLength > this.#historySize) this.#history.length = this.#historySize
-    }
-
-    // write changes to localStorage
-    localStorage.setItem( this.#historyStorage, JSON.stringify(this.#history) )
-  }
-
-  /**
-   * Erase exact item from history. Erase all items if undefined.
-   * @param {String} [specificEntry] If given, remove only this string from history.
-   */
-  remove(specificEntry) {
-    this.#history = specificEntry ? this.#history.filter(entry => entry !== specificEntry) : []
-    localStorage.setItem( this.#historyStorage, JSON.stringify(this.#history) )
-  }
-}
-
-
 /**
- * AppCLI prompt component.
+ * AppCLI input prompt component.
  */
-export class CmdPrompt {
+export class InputPrompt {
 
-  /** @type {HTMLInputElement} */
+  /** 
+   * @type {HTMLInputElement}
+   */
   #input;
 
-  /** @param {HTMLElement} host */
-  constructor(host) {
+  /**
+   * @type {(ev: Event) => any}
+   */
+  oninput = () => null;
 
-    /** @type {(ev: Event) => any} */
-    this.oninput = () => null;
+  /**
+   * @type {(ev: KeyboardEvent) => any}
+   */
+  onkeydown = () => null;
 
-    /** @type {(ev: KeyboardEvent) => any} */
-    this.onkeydown = () => null;
-
-    this.#input = host.getElementById('cmdInput');
+  /**
+   * @param {HTMLInputElement} inputElement
+   */
+  constructor(inputElement) {
+    this.#input = inputElement;
     this.#input.oninput = (e) => this.oninput(e);
     this.#input.onkeydown = (e) => this.onkeydown(e);
   }
@@ -157,19 +104,19 @@ export class CmdPrompt {
   /**
    * Set prompt text. Either replace whole string or only last argument.
    * @param {String} text Content to insert.
-   * @param {true} replaceWhole Either to replace whole string or only last argument.
+   * @param {Boolean} [replaceWhole=true] Either to replace whole string or only last argument.
    */
   setText(text, replaceWhole = true) {
     let newText = text;
 
     // correct last string into given text
     if (!replaceWhole && text) {
-      const [cmd, ...args] = this.getText(true);
+      const [cmd, ...args] = this.getTextArray();
       args.pop();
 
       newText = `${cmd}`;
       for (const arg of [...args, text]) {
-        newText += ` ${CmdPrompt.escapeDoubleQuotes(arg)}`;
+        newText += ` ${InputPrompt.escapeDoubleQuotes(arg)}`;
       }
     }
 
@@ -178,14 +125,18 @@ export class CmdPrompt {
   }
 
   /**
-   * Returns prompt content. Raw string by default. 
-   * @param {false} asUnescapedArray Return unescaped action array if true. 
-   * @returns {String|String[]}
+   * Returns raw input string.
+   * @returns {String}
    */
-  getText(asUnescapedArray = false) {
-    if (asUnescapedArray)
-      return CmdPrompt.unescapeIntoArray(this.#input.value);
-
+  getText() {
     return this.#input.value;
+  }
+
+  /**
+   * Returns unescaped input string array.
+   * @returns {String[]}
+   */
+  getTextArray() {
+    return InputPrompt.unescapeIntoArray(this.#input.value);
   }
 }
