@@ -3,7 +3,7 @@
  * @property {String} title Title to display on application window.
  * @property {String} infoLeft Information to display on the left.
  * @property {String} infoRight Information to display on the right.
- * @property {()=>void} infoLeftFunc Function to run on right-click on the left.
+ * @property {(()=>void)?} infoLeftFunc Function to run on right-click on the left.
  */
 
 
