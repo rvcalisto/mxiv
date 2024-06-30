@@ -160,6 +160,7 @@ class AppCmdLine extends HTMLElement {
 
     element.onclick = () => {
       this.#list.selectIntoFocus(element);
+      element.scrollIntoView(false); // align to bottom
       this.#prompt.focus();
     };
 
