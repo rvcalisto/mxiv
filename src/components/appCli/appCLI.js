@@ -1,16 +1,19 @@
 import { ItemList } from "../itemList.js";
 import { InputPrompt } from "./inputPrompt.js";
 import { PriorityStack } from "./priorityStack.js";
-import { option, OptionElement } from "./optionElement.js";
+import { OptionElement } from "./optionElement.js";
 import { ActionController } from "../../actions/actionController.js";
 import { AcceleratorController } from "../../actions/acceleratorController.js";
 import { AppNotifier } from "../notifier.js";
-export { option };
 
 
 /**
  * Descriptive option object for display in AppCmdLine.
- * @typedef {import("./optionElement.js").OptionObject} OptionObject
+ * @typedef OptionObject
+ * @property {String} name Option name.
+ * @property {String} desc Option description.
+ * @property {'action'|'history'|'generic'} type Option type.
+ * @property {boolean} replace Either if to completely replace prompt or complement.
  */
 
 
@@ -35,6 +38,7 @@ class AppCmdLine extends HTMLElement {
 
   /**
    * Prompt history.
+   * @type {PriorityStack<string>}
    */
   #promptHistory = new PriorityStack('cmdHist');
 
@@ -284,13 +288,30 @@ class AppCmdLine extends HTMLElement {
 
 
 /**
+ * Returns rich option object to be displayed by AppCmdLine.
+ * @param {String} name Option name.
+ * @param {String} [desc] Option description.
+ * @param {'action'|'history'|'generic'} [type='generic'] Option type.
+ * @param {Boolean} [replace=false] Either if to completely replace prompt or complement.
+ * @returns {OptionObject}
+ */
+export function option(name, desc = '', type = 'generic', replace = false) {
+  return {
+    name: name,
+    desc: desc,
+    type: type,
+    replace: replace
+  };
+}
+
+/**
  * Returns an ItemList filter function for standart options context.
  * @param {String} query ItemList filter query.
  * @returns {(item:String|OptionObject)=>boolean} Filter function.
  */
 export function standardFilter(query) {
   return (item) => {
-    if ( typeof(item) === 'object' ) item = item.name;
+    if (typeof item !== 'string') item = item.name;
     const itemIsDot = item[0] === '.', queryIsDot = query[0] === '.';
 
     // empty query, show all non-dot-files

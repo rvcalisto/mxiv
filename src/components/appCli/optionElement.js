@@ -1,29 +1,6 @@
 /**
- * Descriptive option object for display in AppCmdLine.
- * @typedef OptionObject
- * @property {String} name Option name.
- * @property {String} desc Option description.
- * @property {'action'|'history'|'generic'} type Option type.
- * @property {boolean} replace Either if to completely replace prompt or complement.
+ * @typedef {import('./appCLI').OptionObject} OptionObject
  */
-
-
-/**
- * Returns rich option object to be displayed by AppCmdLine.
- * @param {String} name Option name.
- * @param {String} [desc] Option description.
- * @param {'action'|'history'|'generic'} [type='generic'] Option type.
- * @param {Boolean} [replace=false] Either if to completely replace prompt or complement.
- * @returns {OptionObject}
- */
-export function option(name, desc = '', type = 'generic', replace = false) {
-  return {
-    name: name,
-    desc: desc,
-    type: type,
-    replace: replace
-  };
-}
 
 
 /**
