@@ -143,24 +143,21 @@ class AppCmdLine extends HTMLElement {
   /**
    * Returns a HTMLElement for this option.
    * @param {OptionObject|String} item Option string or object.
+   * @param {string[]} [leadingAction] Action being evaluated.
    * @returns {OptionElement}
    */
-  #createElement(item) {
+  #createElement(item, leadingAction = []) {
     const itemOption = (typeof item === 'string') ? option(item) : item;
     const element = OptionElement.createElement(itemOption);
+
+    // tag accelerators keys, if any
+    const frameAccelerators = AcceleratorController.currentFrameAccelerators;
+    const keys = frameAccelerators.byAction([...leadingAction, itemOption.name]);
+    if (keys.length > 0) element.tags = keys;
     
-    switch (itemOption.type) {
-
-      case 'action':
-        const currentAccelerators = AcceleratorController.currentFrameAccelerators;
-        const actionAccelerators = currentAccelerators.byAction([itemOption.name]);
-        if (actionAccelerators.length > 0) element.tags = actionAccelerators;
-        break;
-
-      case 'history':
-        element.onForget = () => this.clearCmdHistory(itemOption.name);
-        break;
-    } 
+    if (itemOption.type === 'history') {
+      element.onForget = () => this.clearCmdHistory(itemOption.name);
+    }
 
     element.onclick = () => {
       this.#list.selectIntoFocus(element, false);
@@ -185,40 +182,55 @@ class AppCmdLine extends HTMLElement {
    */
   async #displayHints() {
     const currentActions = ActionController.currentFrameActions.asObject();
-    let [cmd, ...args] = this.#prompt.getTextArray();
-    let command = currentActions[cmd];
-
-    // hint action methods / options
-    if (command != null && args.length > 0) {
-      let options = [], lastArg = /** @type {String} */ (args.at(-1));
-      
-      if (command.methods != null) {
-        // hint methods
-        if (args.length === 1) 
-          options = Object.keys(command.methods)
-            .map( key => option(key, command.methods[key].desc) );
-        // evaluate method instead of root command
-        else if (command.methods[args[0]] != null) {
-          command = command.methods[args[0]];
-          args = args.slice(1);
-        }
-      }
-      // set options if any and not already populated (by methods)
-      if (options.length < 1 && command.options != null)
-        options = await command.options(lastArg, args);
-
-      return this.#list.populate(options, item => this.#createElement(item), 
-        command.customFilter ? command.customFilter(lastArg) : standardFilter(lastArg) );
-    }
+    const inputTextArray = this.#prompt.getTextArray();
+    let [cmd, ...args] = inputTextArray;
+    let action = currentActions[cmd];
 
     // hint history + root actions
-    const cmdList = Object.keys(currentActions)
-      .map( cmd => option(cmd, currentActions[cmd].desc, 'action', true) );
+    if (action == null || args.length < 1) {
+      this.#defaultHints(currentActions, cmd);
+      return;
+    }
+
+    // hint action methods / options
+    let options = [], lastArg = /** @type {String} */ (args.at(-1));
+    const leadingAction = inputTextArray.slice(0, -1);
+    const actionMethods = action.methods;
+    
+    if (actionMethods != null) {
+      // hint methods
+      if (args.length === 1) {
+        options = Object.keys(actionMethods)
+          .map( key => option(key, actionMethods[key].desc, 'action') );
+      }
+      // evaluate method as action
+      else if (actionMethods[args[0]] != null) {
+        const methodName = /** @type {string} */ (args.shift());
+        action = actionMethods[methodName];
+      }
+    }
+
+    // set options if any and not already populated (by methods)
+    if (options.length < 1 && action.options != null)
+      options = await action.options(lastArg, args);
+
+    return this.#list.populate(options, item => this.#createElement(item, leadingAction), 
+      action.customFilter ? action.customFilter(lastArg) : standardFilter(lastArg) );
+  }
+
+  /**
+   * Hint history plus root actions.
+   * @param {import('../../actions/componentActions.js').ActionSet} actions 
+   * @param {String} inputQuery 
+   */
+  #defaultHints(actions, inputQuery) {
+    const cmdList = Object.keys(actions)
+      .map( key => option(key, actions[key].desc, 'action', true) );
     const histList = this.#promptHistory.items
-      .map( cmd => option(cmd, '', 'history', true) );
+      .map( key => option(key, '', 'history', true) );
 
     this.#list.populate( histList.concat(cmdList), 
-      item => this.#createElement(item), standardFilter(cmd || '') );
+      item => this.#createElement(item), standardFilter(inputQuery || '') );
   }
 
   #initEvents() {
