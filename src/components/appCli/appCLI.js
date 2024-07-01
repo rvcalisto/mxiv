@@ -163,8 +163,7 @@ class AppCmdLine extends HTMLElement {
     } 
 
     element.onclick = () => {
-      this.#list.selectIntoFocus(element);
-      element.scrollIntoView(false); // align to bottom
+      this.#list.selectIntoFocus(element, false);
       this.#prompt.focus();
     };
 
@@ -179,14 +178,6 @@ class AppCmdLine extends HTMLElement {
     };
 
     return element;
-  }
-
-  /**
-   * Return currently selected OptionElement, if any.
-   * @returns {OptionElement?}
-   */
-  #getSelectedElement() {
-    return /** @type {OptionElement} */ (this.#list.pageContainerDiv?.querySelector('.selected'));
   }
 
   /**
@@ -256,7 +247,7 @@ class AppCmdLine extends HTMLElement {
 
       // delete history-type hint
       else if (e.key === 'Delete') {
-        const selection = this.#getSelectedElement();
+        const selection = this.#list.getSelectedElement();
         if (selection && selection.onForget != null) {
           e.preventDefault();
 
@@ -273,7 +264,7 @@ class AppCmdLine extends HTMLElement {
         e.preventDefault();
         e.stopImmediatePropagation();
         
-        const selection = this.#getSelectedElement();
+        const selection = this.#list.getSelectedElement();
         if (selection) {
           selection.onAccess();
           this.#displayHints();

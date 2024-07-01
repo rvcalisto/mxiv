@@ -214,7 +214,7 @@ export class FileExplorer extends HTMLElement {
    * View selected media file or open selected folder.
    */
   select() {
-    const selected = this.#list.pageContainerDiv.getElementsByClassName('selected')[0]
+    const selected = this.#list.getSelectedElement()
     if (selected) selected.click()
   }
   
@@ -234,10 +234,9 @@ export class FileExplorer extends HTMLElement {
    */
   async reload() {
     // avoid unecessary reload for uninitialized FileExplorer
-    const pageContainer = this.#list.pageContainerDiv
-    if (!this.isVisible && !pageContainer.childElementCount) return
+    if (!this.isVisible && this.#list.itemCount < 1) return
 
-    const path = pageContainer.getElementsByClassName('selected')[0]?.filePath
+    const path = this.#list.getSelectedElement()?.filePath
     
     if (this.mode === 'playlist') this.listFiles()
     else await this.listDirectory(this.currentDir)

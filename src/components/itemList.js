@@ -1,7 +1,7 @@
 /**
  * Paginated item list for elements. Styling not included.
  * - Generate pages as they are requested, for perfomance.
- * @template {any} I Item type.
+ * @template I Item type.
  * @template {HTMLElement} E Element type.
  */
 export class ItemList extends HTMLElement {
@@ -229,7 +229,7 @@ export class ItemList extends HTMLElement {
   navItems(forward = true) {
     if (!this.pageContainerDiv.childElementCount) return
     
-    const lastSelected = this.pageContainerDiv.getElementsByClassName('selected')[0]
+    const lastSelected = this.pageContainerDiv.querySelector('.selected')
     let toFocus = lastSelected
 
     // no selection, focus first-item:first-page or last-item:last-page 
@@ -242,7 +242,7 @@ export class ItemList extends HTMLElement {
       return toFocus
     }
 
-    const toFocusInCurrentPage = this.currentPageDiv.getElementsByClassName('selected')[0]
+    const toFocusInCurrentPage = this.currentPageDiv.querySelector('.selected')
     toFocus.classList.remove('selected')
 
     toFocus = forward ? toFocus.nextElementSibling : toFocus.previousElementSibling
@@ -276,16 +276,25 @@ export class ItemList extends HTMLElement {
   /**
    * Go to respective page and scroll ItemList item element into view. 
    * @param {HTMLElement} itemElement 
+   * @param {(boolean|ScrollIntoViewOptions)} [viewOptions] ScrollIntoView options.
    */
-  selectIntoFocus(itemElement) {
-    const onFocus = this.pageContainerDiv.getElementsByClassName('selected')[0]
+  selectIntoFocus(itemElement, viewOptions = { block: "center" }) {
+    const onFocus = this.pageContainerDiv?.querySelector('.selected')
     if (onFocus) onFocus.classList.remove('selected')
 
     const page = Number( itemElement.parentElement.getAttribute('page') )
 
     this.goToPage(page)
     itemElement.classList.add('selected')
-    itemElement.scrollIntoView({ block:"center" })
+    itemElement.scrollIntoView(viewOptions)
+  }
+
+  /**
+   * Return currently selected element, if any.
+   * @returns {E?}
+   */
+  getSelectedElement() {
+    return /** @type {E?} */ (this.pageContainerDiv?.querySelector('.selected'));
   }
 }
 
