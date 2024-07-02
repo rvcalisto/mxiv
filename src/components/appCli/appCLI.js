@@ -13,7 +13,6 @@ import { AppNotifier } from "../notifier.js";
  * @property {String} name Option name.
  * @property {String} desc Option description.
  * @property {'action'|'history'|'generic'} type Option type.
- * @property {boolean} replace Either if to completely replace prompt or complement.
  */
 
 
@@ -144,9 +143,10 @@ class AppCmdLine extends HTMLElement {
    * Returns a HTMLElement for this option.
    * @param {OptionObject|String} item Option string or object.
    * @param {string[]} [leadingAction] Action being evaluated.
+   * @param {boolean} [replace=false] Either option replaces input prompt.
    * @returns {OptionElement}
    */
-  #createElement(item, leadingAction = []) {
+  #createElement(item, leadingAction = [], replace = false) {
     const itemOption = (typeof item === 'string') ? option(item) : item;
     const element = OptionElement.createElement(itemOption);
 
@@ -165,7 +165,7 @@ class AppCmdLine extends HTMLElement {
     };
 
     element.onAccess = () => {
-      this.#prompt.setText(itemOption.name, itemOption.replace);
+      this.#prompt.setText(itemOption.name, replace);
     };
 
     element.ondblclick = () => {
@@ -225,12 +225,12 @@ class AppCmdLine extends HTMLElement {
    */
   #defaultHints(actions, inputQuery) {
     const cmdList = Object.keys(actions)
-      .map( key => option(key, actions[key].desc, 'action', true) );
+      .map( key => option(key, actions[key].desc, 'action') );
     const histList = this.#promptHistory.items
-      .map( key => option(key, '', 'history', true) );
+      .map( key => option(key, '', 'history') );
 
     this.#list.populate( histList.concat(cmdList), 
-      item => this.#createElement(item), standardFilter(inputQuery || '') );
+      item => this.#createElement(item, [], true), standardFilter(inputQuery || '') );
   }
 
   #initEvents() {
@@ -295,15 +295,13 @@ class AppCmdLine extends HTMLElement {
  * @param {String} name Option name.
  * @param {String} [desc] Option description.
  * @param {'action'|'history'|'generic'} [type='generic'] Option type.
- * @param {Boolean} [replace=false] Either if to completely replace prompt or complement.
  * @returns {OptionObject}
  */
-export function option(name, desc = '', type = 'generic', replace = false) {
+export function option(name, desc = '', type = 'generic') {
   return {
     name: name,
     desc: desc,
-    type: type,
-    replace: replace
+    type: type
   };
 }
 

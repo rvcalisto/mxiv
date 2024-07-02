@@ -2,9 +2,13 @@
  * @typedef Action
  * @property {String} desc Action description.
  * @property {(...args:string[])=>void} run Main procedure.
- * @property {(lastArg:string, allArgs:string[])=>(string[]|*[])} [options] Optional hints.
+ * @property {(lastArg:string, allArgs:string[])=>(string|DetailedHint)[]} [options] Optional hints.
  * @property {(query:string)=>(lastArg:string)=>boolean} [customFilter] Optional custom hint filter.
  * @property {Object<string, Action>} [methods] Optional methods for action.
+ */
+
+/**
+ * @typedef {{name:string, desc:string}} DetailedHint
  */
 
 /**
