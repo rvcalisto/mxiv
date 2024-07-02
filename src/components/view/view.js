@@ -7,8 +7,8 @@ import { ObservableEvents } from "../observableEvents.js"
 
 
 /**
- * @typedef {'view:loaded'|'view:skip'|'view:playing'|'view:notify'|
- * 'view:mode'|'view:zoom'|'view:fullscreen'} ViewEvents
+ * @typedef {'view:loaded'|'view:skip'|'view:random'|'view:playing'|
+ * 'view:notify'|'view:mode'|'view:zoom'|'view:fullscreen'} ViewEvents
  */
 
 /**
@@ -74,7 +74,7 @@ export class View extends HTMLElement {
 
   /**
    * Display multimedia file. Show logo if `filePath` is `null`.
-   * @param {String} filePath Media resource path.
+   * @param {String?} filePath Media resource path.
    * @param {MediaTypes} type Media type.
    * @returns {Promise<Boolean>} Either display content has changed. 
    */

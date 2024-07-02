@@ -200,7 +200,7 @@ export class Viewer extends GenericFrame {
    */
   async gotoPage(pageIdx = this.fileBook.page) {
     if (this.fileBook.files.length < 1) {
-      this.viewComponent.display(null)
+      this.viewComponent.display(null, 'image')
       this.tabName = 'tab'
       return
     }
