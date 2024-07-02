@@ -98,7 +98,7 @@ export class Tab {
    * @param {String} newName 
    */
   rename(newName) {
-    this.frame.renameTab(newName);
+    this.frame.tabName = newName;
   }
 
   /**

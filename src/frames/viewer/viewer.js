@@ -96,7 +96,7 @@ export class Viewer extends GenericFrame {
   async restoreState(stateObj) {
     // open path on file
     if (stateObj.paths.length) await this.open(...stateObj.paths)
-    if (stateObj.tabName) this.renameTab(stateObj.tabName)
+    if (stateObj.tabName) this.tabName = stateObj.tabName
     
     // load media state
     this.viewComponent.state(stateObj.mediaState)
@@ -132,7 +132,7 @@ export class Viewer extends GenericFrame {
 
     // name tab path basenames, sorted for order-redundancy
     const basedirs = this.fileBook.paths.map(dir => dir.name)
-    this.renameTab( String(basedirs) )
+    this.tabName = String(basedirs)
 
     this.gotoPage()
     this.fileExplorer.reload()
@@ -201,7 +201,7 @@ export class Viewer extends GenericFrame {
   async gotoPage(pageIdx = this.fileBook.page) {
     if (this.fileBook.files.length < 1) {
       this.viewComponent.display(null)
-      this.renameTab('tab')
+      this.tabName = 'tab'
       return
     }
 
@@ -254,7 +254,7 @@ export class Viewer extends GenericFrame {
     await this.open(currentFile.path, ...paths)
 
     // restore tab name and re-apply filter
-    this.renameTab(tabName)
+    this.tabName = tabName
     if (filterQuery.length > 0) this.filter(...filterQuery)
     AppNotifier.notify('files reloaded', 'fileReload')
   }

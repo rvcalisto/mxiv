@@ -27,14 +27,22 @@ export class GenericFrame extends HTMLElement {
   /**
    * Current tab header name.
    */
-  tabName = '';
+  #tabName = '';
 
   /**
-   * Rename tab header.
+   * Current tab header name.
+   * @returns {string}
+   */
+  get tabName() {
+    return this.#tabName
+  }
+
+  /**
+   * Rename tab header name.
    * @param {String} newName 
    */
-  renameTab(newName) {
-    this.tabName = newName;
+  set tabName(newName) {
+    this.#tabName = newName;
     this.events.fire('frame:rename', newName);
   }
 

@@ -48,7 +48,7 @@ export class Library extends GenericFrame {
     this.watchlistPanel = new WatchlistPanel(this)
     this.coverGrid = new CoverGrid(this)
 
-    this.renameTab('Library')
+    this.tabName = 'Library'
     this.#initEvents()
 
     Library.#singleInstanceRef = this
