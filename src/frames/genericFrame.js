@@ -1,3 +1,11 @@
+import { ObservableEvents } from "../components/observableEvents.js";
+
+
+/**
+ * @typedef {'frame:rename'|'frame:statusChange'|'frame:isPlaying'} GenericFrameEvents
+ */
+
+
 /**
  * Generic `HTMLElement` to extend tab frames from.
  * - Use `connectedCallback()` to populate the element, attach shadowRoot, clone templates.
@@ -5,30 +13,29 @@
  */
 export class GenericFrame extends HTMLElement {
 
-  constructor() {
-    super()
-
-    /**
-     * Frame class type, class constructor name in lowercase.
-     * @type {String}
-     */
-    this.type = this.constructor.name.toLowerCase()
-  }
+  /**
+   * Frame class type, class constructor name in lowercase.
+   * @type {String}
+   */
+  type = this.constructor.name.toLowerCase();
+  
+  /**
+   * @type {ObservableEvents<GenericFrameEvents>}
+   */
+  events = new ObservableEvents();
 
   /**
-   * Return current tab header name.
-   * @returns {String}
+   * Current tab header name.
    */
-  get tabName() {
-    return this.getAttribute("frametitle")
-  }
+  tabName = '';
 
   /**
    * Rename tab header.
    * @param {String} newName 
    */
   renameTab(newName) {
-    this.setAttribute("frametitle", newName)
+    this.tabName = newName;
+    this.events.fire('frame:rename', newName);
   }
 
   /**
@@ -36,7 +43,7 @@ export class GenericFrame extends HTMLElement {
    * @param {Boolean} playing Either tab is playing.
    */
   setFrameIsPlaying(playing) {
-    this.toggleAttribute("playing", playing)
+    this.events.fire('frame:isPlaying', playing);
   }
 
   /**
@@ -49,14 +56,14 @@ export class GenericFrame extends HTMLElement {
       infoLeft: this.constructor.name,
       infoRight: '',
       infoLeftFunc: null
-    }
+    };
   }
 
   /**
    * Request a StatusBar status refresh.
    */
   refreshStatus() {
-    this.setAttribute("updatestatus", true)
+    this.events.fire('frame:statusChange');
   }
 
   /**
@@ -64,7 +71,7 @@ export class GenericFrame extends HTMLElement {
    * @param {Boolean} value Either to hold frame open.
    */
   hold(value) {
-    this.toggleAttribute('hold', value)
+    this.toggleAttribute('hold', value);
   }
 
   /**

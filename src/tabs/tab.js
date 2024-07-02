@@ -1,14 +1,14 @@
-import { TabHeader } from "./tabHeader.js"
-import { StatusBar } from "../components/statusBar.js"
-import { GenericFrame } from "../frames/genericFrame.js"
-import { FrameRegistry } from "../frames/frameRegistry.js"
+import { TabHeader } from "./tabHeader.js";
+import { StatusBar } from "../components/statusBar.js";
+import { GenericFrame } from "../frames/genericFrame.js";
+import { FrameRegistry } from "../frames/frameRegistry.js";
 
 
-/** 
+/**
  * Returns reference to currently active frame component.
  * @type {GenericFrame?}
  */
-export var FRAME 
+export let FRAME;
 
 
 /**
@@ -20,7 +20,7 @@ export class Tab {
    * Currently selected tab reference.
    * @type {Tab?}
    */
-  static selected
+  static selected;
 
   /**
    * Create a new Tab instance.
@@ -29,11 +29,11 @@ export class Tab {
    * @param {String} [name=tab] Tab name.
    */
   constructor(type = 'viewer', callback, name = 'tab') {
-    this.header = new TabHeader(this, name)
-    this.frame = this.#createFrame(type)
+    this.header = new TabHeader(this, name);
+    this.frame = this.#createFrame(type);
 
-    if (callback) callback(this.frame)
-    this.select()
+    if (callback) callback(this.frame);
+    this.select();
   }
 
   /** 
@@ -42,28 +42,26 @@ export class Tab {
    * @returns {GenericFrame}
    */
   #createFrame(type) {
-    const frame = document.createElement( FrameRegistry.getTagName(type) )
-    frame.setAttribute('frametitle', this.header.name)
-    frame.style.display = 'none' // starts hidden
+    const tagName = FrameRegistry.getTagName(type);
+    const frame = /** @type {GenericFrame} */ (document.createElement(tagName));
+    frame.tabName = this.header.name;
+    frame.style.display = 'none'; // starts hidden
 
-    // observe changes in key attributes
-    const observer = new MutationObserver(mutations => {
-      for (const mutation of mutations) {
-        const attribute = mutation.attributeName
-
-        if (attribute === 'frametitle')
-          this.header.rename( this.frame.getAttribute('frametitle') )
-        if (attribute === 'playing')
-          this.header.setPlayingIcon( this.frame.hasAttribute('playing') )
-        if (attribute === 'updatestatus' && FRAME === this.frame)
-          StatusBar.updateStatus( this.frame.status() )
-      }
+    frame.events.observe('frame:rename', (newName) => {
+      this.header.rename(newName);
     })
 
-    observer.observe(frame, { attributes: true })
-    document.getElementById('contents').appendChild(frame)
+    frame.events.observe('frame:isPlaying', (isPlaying) => {
+      this.header.setPlayingIcon(isPlaying);
+    })
 
-    return /** @type {GenericFrame} */ (frame)
+    frame.events.observe('frame:statusChange', () => {
+      if (frame === FRAME) StatusBar.updateStatus( frame.status() );
+    })
+
+    document.getElementById('contents').appendChild(frame);
+
+    return frame;
   }
 
   /**
@@ -71,18 +69,18 @@ export class Tab {
    */
   select() {
     if (Tab.selected) {
-      Tab.selected.frame.style.display = 'none'
-      Tab.selected.header.select(false)
+      Tab.selected.frame.style.display = 'none';
+      Tab.selected.header.select(false);
     }
 
-    this.frame.style.display = ''
-    this.header.select()
+    this.frame.style.display = '';
+    this.header.select();
 
-    Tab.selected = this
-    FRAME = this.frame
-    this.frame.focus()
+    Tab.selected = this;
+    FRAME = this.frame;
+    this.frame.focus();
 
-    StatusBar.updateStatus( this.frame.status() )
+    StatusBar.updateStatus( this.frame.status() );
   }
 
   /**
@@ -90,9 +88,9 @@ export class Tab {
    * @param {Boolean} [right=true] 
    */
   move(right = true) {
-    const next = right ? this.header.right : this.header.left
+    const next = right ? this.header.right : this.header.left;
     if (next != null)
-      next.insert(this.header, right)
+      next.insert(this.header, right);
   }
 
   /**
@@ -100,28 +98,28 @@ export class Tab {
    * @param {String} newName 
    */
   rename(newName) {
-    this.frame.renameTab(newName)
+    this.frame.renameTab(newName);
   }
 
   /**
    * Duplicate tab and state.
    */
   duplicate() {
-    const type = this.frame.type
-    const framePolicy = FrameRegistry.getPolicy(type)
-    const frameState = framePolicy.allowDuplicate ? this.frame.getState() : null
+    const type = this.frame.type;
+    const framePolicy = FrameRegistry.getPolicy(type);
+    const frameState = framePolicy.allowDuplicate ? this.frame.getState() : null;
 
     if (!frameState) {
       console.log(`${type}: duplicate disallowed or stateless.`);
-      return
+      return;
     }
     
     const newTab = new Tab(type, async (frame) => {
-      frame.restoreState(frameState)
-    }, this.frame.tabName)
+      frame.restoreState(frameState);
+    }, this.frame.tabName);
 
     // move duplicate behind currentTab
-    this.header.insert(newTab.header, true)
+    this.header.insert(newTab.header, true);
   }
 
   /**
@@ -132,17 +130,17 @@ export class Tab {
     if ( this.frame.hasAttribute('hold') ) {
       this.frame.animate([
         { filter: 'brightness(1)' }, { filter: 'brightness(1.5)' }, 
-        { filter: 'brightness(1)' }], { duration: 200 })
-      return
+        { filter: 'brightness(1)' }], { duration: 200 });
+      return;
     }
 
-    const nextHeader = this.header.left || this.header.right
-    this.frame.remove()
-    this.header.remove()
+    const nextHeader = this.header.left || this.header.right;
+    this.frame.remove();
+    this.header.remove();
 
-    if (nextHeader != null && Tab.selected === this) nextHeader.tabInstance.select()
-    else if (nextHeader == null && closeWindowOnLast) window.close()
-    else if (Tab.selected === this) Tab.selected = FRAME = null
+    if (nextHeader != null && Tab.selected === this) nextHeader.tabInstance.select();
+    else if (nextHeader == null && closeWindowOnLast) window.close();
+    else if (Tab.selected === this) Tab.selected = FRAME = null;
   }
 
   /**
@@ -152,25 +150,24 @@ export class Tab {
    * @returns {boolean} Success.
    */
   static newTab(type = 'viewer') {
-    const framePolicy = FrameRegistry.getPolicy(type)
-    if (framePolicy == null)
-      return false
+    const framePolicy = FrameRegistry.getPolicy(type);
+    if (framePolicy == null) return false;
     
     if (!framePolicy.allowDuplicate) {
-      const instance = this.allTabs.find(tab => tab.frame.type === type)
+      const instance = this.allTabs.find(tab => tab.frame.type === type);
       if (instance) {
-        instance.select()
-        return true
+        instance.select();
+        return true;
       }
     }
 
     new Tab(type, frame => {
       if (type === 'viewer') 
         /** @type {import("../frames/viewer/viewer.js").Viewer} */ 
-        (frame).fileExplorer.togglePanel()
-    })
+        (frame).fileExplorer.togglePanel();
+    });
 
-    return true
+    return true;
   }
 
   /**
@@ -178,13 +175,13 @@ export class Tab {
    * @param {Boolean} [forward=true] 
    */
   static cycleTabs(forward = true) {
-    const header = Tab.selected.header
-    const nextHeader = forward ? header.right : header.left
+    const header = Tab.selected.header;
+    const nextHeader = forward ? header.right : header.left;
 
     if (nextHeader == null)
-      Tab.allTabs.at(forward ? 0 : -1).select()
+      Tab.allTabs.at(forward ? 0 : -1).select();
     else
-      nextHeader.tabInstance.select()
+      nextHeader.tabInstance.select();
   }
 
   /**
@@ -192,8 +189,8 @@ export class Tab {
    * @returns {Tab[]}
    */
   static get allTabs() {
-    const tabs = TabHeader.allHeaders
-    return tabs.map(header => header.tabInstance)
+    const tabs = TabHeader.allHeaders;
+    return tabs.map(header => header.tabInstance);
   }
 
   /**
@@ -201,12 +198,12 @@ export class Tab {
    * @param {Boolean} [show] Either to force visibility on or off.
    */
   static toggleHeaderBar(show) {
-    TabHeader.toggleHeaderBar(show)
+    TabHeader.toggleHeaderBar(show);
   }
 }
 
 
 // add newTab event listener (side effect)
 document.getElementById('newTab').onclick = function newTabListener() {
-  Tab.newTab()
+  Tab.newTab();
 }
