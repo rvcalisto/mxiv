@@ -1,10 +1,15 @@
 import { ItemList } from "../../components/itemList.js"
+import { Cover } from "./coverElement.js";
 import { Tab } from "../../tabs/tab.js";
-import { Library } from "./library.js";
+import { ObservableEvents } from "../../components/observableEvents.js";
 
 
 /**
  * @typedef {import('../../APIs/library/libraryStorage.js').LibraryEntry} LibraryEntry
+ */
+
+/**
+ * @typedef {'grid:coverUpdate'} CoverGridEvents
  */
 
 
@@ -36,14 +41,16 @@ export class CoverGrid {
    */
   #list
 
-  #library
+  /**
+   * @type {ObservableEvents<CoverGridEvents>}
+   */
+  events = new ObservableEvents()
   
   /**
-   * @param {Library} library Host component.
+   * @param {ItemList} hostList Host component.
    */
-  constructor(library) {
-    this.#list = library.shadowRoot.getElementById('library')
-    this.#library = library
+  constructor(hostList) {
+    this.#list = hostList
   }
 
   /**
@@ -56,14 +63,12 @@ export class CoverGrid {
   }
 
   /**
-   * Draw covers whose path or tags includes query. Draws all if not given.
-   * @param {String[]} [queries] Filter covers.
+   * Returns library entry filter based on path and tags.
+   * @param {string[]} queries 
+   * @returns {(entry:LibraryEntry)=>boolean}
    */
-  async drawCovers(queries) {
-    if (CoverGrid.#dirtyCache) await this.#buildCache()
-
-    // all queries must match either path or a tag. Exclusive.
-    const filterFunc = !queries ? undefined : (entry) => {
+  #libraryFilter(queries) {
+    return (entry) => {
       const bookTags = elecAPI.getTags(entry.path)
       const bookPath = entry.path.toLowerCase()
 
@@ -80,11 +85,21 @@ export class CoverGrid {
 
       return true
     }
+  }
+
+  /**
+   * Draw covers whose path or tags includes query. Draws all if not given.
+   * @param {String[]} [queries] Filter covers.
+   */
+  async drawCovers(queries) {
+    if (CoverGrid.#dirtyCache) await this.#buildCache()
+
+    // all queries must match either path or a tag. Exclusive.
+    const filterFunc = !queries ? undefined : this.#libraryFilter(queries)
 
     // console.time('populate library')
     this.#list.populate(CoverGrid.#libraryCache, (entry) => {
-      const { name, path, coverPath, coverURL } = entry
-      const cover = Cover.from(name, path, coverPath, coverURL)
+      const cover = Cover.from(entry)
       
       cover.onclick = () => this.selectCover(cover)
       cover.onauxclick = () => this.selectCover(cover, true)
@@ -103,13 +118,14 @@ export class CoverGrid {
       if (lastSelected) this.selectCover(lastSelected)
     }
 
-    this.#library.refreshStatus()
+    this.events.fire('grid:coverUpdate')
   }
 
   /**
    * Number of covers listed.
+   * @returns {number}
    */
-  get listedItemCount() {
+  getCoverCount() {
     return this.#list.itemCount
   } 
 
@@ -133,8 +149,11 @@ export class CoverGrid {
       return
     }
 
-    if (!keepOpen) Tab.selected.close()
-    new Tab('viewer', (v) => v.open(cover.bookPath) )
+    if (!keepOpen) Tab.selected?.close()
+    new Tab('viewer', viewer => {
+      /** @type {import('../viewer/viewer.js').Viewer} */ 
+      (viewer).open(cover.bookPath)
+    })
   }
 
   /**
@@ -151,7 +170,7 @@ export class CoverGrid {
       cover.remove()
   
       CoverGrid.#dirtyCache = true
-      this.#library.refreshStatus()
+      this.events.fire('grid:coverUpdate')
     }
   
     await elecAPI.releaseLibraryLock()
@@ -160,25 +179,33 @@ export class CoverGrid {
 
   /**
    * Open book in Viewer tab.
-   * @param {false} keepOpen Either to keep Library open.
+   * @param {boolean} [keepOpen=false] Either to keep Library open.
    */
   openCoverBook(keepOpen = false) {
     const selectedBook = CoverGrid.selection
     if (selectedBook) this.selectCover(selectedBook, keepOpen)
   }
 
+  /**
+   * Select next rightward or leftward cover.
+   * @param {boolean} [right=true] 
+   */
   nextCoverHorizontal(right = true) {
     const element = this.#list.navItems(right)
     if (element) this.selectCover(element)
   }
 
+  /**
+   * Select next downward or upward cover.
+   * @param {boolean} [down=true] 
+   */
   nextCoverVertical(down = true) {
     const grid = this.#list.currentPageDiv
     if (!grid) return // empty #list
 
     // big brain stackOverflow jutsu
-    const gridColumnCount = getComputedStyle(grid).
-    getPropertyValue("grid-template-columns").split(" ").length
+    const gridColumnCount = getComputedStyle(grid)
+      .getPropertyValue("grid-template-columns").split(" ").length
 
     let element
     // if none selected, move only 1 item, else the whole column
@@ -189,6 +216,9 @@ export class CoverGrid {
       this.selectCover(element)
   }
 
+  /**
+   * Select a random cover.
+   */
   randomCover() {
     const rndIdx = Math.floor( Math.random() * this.#list.itemCount )
     const cover = this.#list.findItemElement( (item, idx) => idx === rndIdx )
@@ -197,69 +227,3 @@ export class CoverGrid {
       this.selectCover(cover)
   }
 }
-
-
-/**
- * Library cover object.
- */
-class Cover extends HTMLElement {
-
-  static tagName = 'cover-element'
-
-  constructor() {
-    super()
-
-    this.bookName = ''
-    this.bookPath = ''
-    this.coverPath = ''
-    this.coverURL = ''
-
-    /**
-     * Set behavior on 'remove' button click.
-     * @type {Function?}
-     */
-    this.onClickRemove = null
-  }
-
-  connectedCallback() {
-    const title = document.createElement('p')
-    title.className = 'coverTitle'
-    title.textContent = this.bookName
-
-    const removeBtn = document.createElement('button')
-    removeBtn.className = 'coverRemoveButton'
-    removeBtn.setAttribute('icon', 'close')
-    removeBtn.title = 'delist book'
-    removeBtn.tabIndex = -1
-
-    this.style.backgroundImage = `url(${this.coverURL})`
-    
-    removeBtn.onclick = (e) => {
-      e.stopImmediatePropagation()
-      if (this.onClickRemove) this.onClickRemove()
-    }
-    
-    this.append(title, removeBtn)
-  }
-
-  /**
-   * Create and return a new cover element with defined properties.
-   * @param {String} name Book Title.
-   * @param {String} path Path to folder/archive.
-   * @param {String} coverPath Path to cover image in filesystem.
-   * @param {String} coverURL Encoded path to cover image for HTML display.
-   * @return {Cover} 
-   */
-  static from(name, path, coverPath, coverURL) {
-    const cover = /** @type {Cover} */ (document.createElement(this.tagName))
-    
-    cover.bookName = name
-    cover.bookPath = path
-    cover.coverPath = coverPath
-    cover.coverURL = coverURL
-
-    return cover
-  }
-}
-
-customElements.define(Cover.tagName, Cover)
