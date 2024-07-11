@@ -139,7 +139,7 @@ export class Viewer extends GenericFrame {
   }
 
   /**
-   * Find and present file with matching filepath substrings. 
+   * Find and present file with matching name substrings. 
    * @param {String[]} queries File name or substring to find.
    */
   find(...queries) {
@@ -147,8 +147,8 @@ export class Viewer extends GenericFrame {
       .filter(query => query !== '')
 
     const idx = this.fileBook.getIdxOf(file => {
-      const pathLowerCase = file.path.toLowerCase()
-      return queries.every( query => pathLowerCase.includes(query) )
+      const name = file.name.toLowerCase()
+      return queries.every( query => name.includes(query) )
     })
 
     idx < 0 ? AppNotifier.notify('no matches') : this.gotoPage(idx)

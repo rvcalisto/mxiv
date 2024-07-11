@@ -240,11 +240,11 @@ ActionController.setComponentActions('viewer', {
   },
 
   'filter': {
-    'desc' : 'filter files by name or tag, pass --exclusive to require a match for every string',
+    'desc' : 'filter files by name or tags, pass --inclusive to match on either string',
     'run'  : (...queries) => FRAME.filter(...queries),
     'options': (query) => {
       if (query.slice(0, 4) == 'tag:') return elecAPI.uniqueTags()
-      else if (query.slice(0, 2) == '--') return [option('--exclusive', 'files must match every tag')]
+      else if (query.slice(0, 2) == '--') return [option('--inclusive', 'match on either string')]
       else return FRAME.fileBook.files.map(i => i.name)
     },
     'customFilter': (query) => {
