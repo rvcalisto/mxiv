@@ -63,14 +63,14 @@ export class CoverGrid {
   }
 
   /**
-   * Returns library entry filter based on path and tags.
+   * Returns library entry filter based on name and tags.
    * @param {string[]} queries 
    * @returns {(entry:LibraryEntry)=>boolean}
    */
   #libraryFilter(queries) {
     return (entry) => {
       const bookTags = elecAPI.getTags(entry.path)
-      const bookPath = entry.path.toLowerCase()
+      const bookName = entry.name.toLowerCase()
 
       for (let query of queries) {
         if (query[0] === '-') {
@@ -78,7 +78,7 @@ export class CoverGrid {
           const match = bookTags.includes( query.slice(1) )
           if (match) return false
         } else {
-          const match = bookPath.includes(query) || bookTags.includes(query)
+          const match = bookName.includes(query) || bookTags.includes(query)
           if (!match) return false
         }
       }
