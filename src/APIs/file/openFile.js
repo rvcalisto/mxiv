@@ -1,12 +1,8 @@
 const fs = require('fs');
-const os = require('os');
 const p = require('path');
-const { expandPath, fileType } = require('./fileTools')
 const { listFiles, fileObj } = require('./fileSearch')
-const archiveTool = require('../tool/archive')
-
-const TMPDIR = os.tmpdir()  // OS directory where to temporarily extract archives
-const TMPPREFIX = 'mxiv-'   // prefix for temporarily extracted archive folders
+const { expandPath, fileType } = require('./fileTools')
+const { TemporaryFolders } = require('./temporaryFolders')
 
 
 /**
@@ -17,13 +13,14 @@ const TMPPREFIX = 'mxiv-'   // prefix for temporarily extracted archive folders
  * @property {import('./fileSearch').FileObject[]} files All viewable files for given directories.
  */
 
+
 /**
- * Treat and wrap folders, archives and files in a common object for unpriviledged usage.
- * @param {String[]} paths Array of files/folders paths to open.
- * @param {Number} ownerID Keeps track of temporary folder (archives) ownership.
- * @returns {Promise<BookObject>} New book object data.
+ * Open and wrap folders, archives & files in a common object for unprivileged contexts.
+ * @param {String[]} paths Paths from files and folders to open.
+ * @param {String} ownerID Keeps track of temporary folder (archives) ownership.
+ * @returns {Promise<BookObject>}
  */
-async function open(paths, ownerID = 0) {
+async function open(paths, ownerID) {
 
   /** Archives openned in current call. */
   const workingArchives = []
@@ -37,8 +34,8 @@ async function open(paths, ownerID = 0) {
 
   // knowing current files are unshifted to the openArg array, shift & startOn basename of the first 
   // tmp file (if any) to allow archive page preservation when loading profiles or duplicating tabs.
-  if (paths.length > 1 && tmpFolders.isPathFromTmp(paths[0]) ) {
-    bookObj.startOn = p.basename( paths.shift() )
+  if (paths.length > 1 && TemporaryFolders.isPathFromTmp(paths[0]) ) {
+    bookObj.startOn = p.basename( /** @type {string} */ (paths.shift()) )
   }
 
   // append valid data to bookObj
@@ -85,7 +82,7 @@ async function open(paths, ownerID = 0) {
 
     // Archive, extract (and prevent trying to extract directories with archive extentions)
     else if ( type === 'archive' && !stats.isDirectory() ) {
-      const tmpDir = await tmpFolders.leaseArchive(path, ownerID)
+      const tmpDir = await TemporaryFolders.leaseArchive(path, ownerID)
       if (tmpDir) {
         workingArchives.push(path) // prevent surrendering working archive leases later
         const lsObj = await listFiles(tmpDir)
@@ -97,125 +94,18 @@ async function open(paths, ownerID = 0) {
   }
 
   // clear orphan tmp folders on success, if any
-  const success = bookObj.paths.length
-  if (success) tmpFolders.surrenderLeases(ownerID, workingArchives)
+  const success = bookObj.paths.length > 0
+  if (success) TemporaryFolders.surrenderLeases(ownerID, workingArchives)
 
   return bookObj
 }
 
-
-/**
- * Manage temporary folders created to view archives.
- */
-const tmpFolders = new class TemporaryFolders {
-
-  /**
-   * Track archives temporarily extracted and their consumers.
-   * @type {Object<string, {path:String, owners:Set<Number>}>}
-   */
-  #openArchives = {}
-
-  /**
-   * Return either path is from a temporary folder file.
-   * @param {String} path Path to file to verify.
-   * @returns {Boolean}
-   */
-  isPathFromTmp(path) {
-    const pathIsTmp = path.includes( p.join(TMPDIR, TMPPREFIX) )
-    const type = fileType(path)
-
-    return pathIsTmp && type !== 'other' && type !== 'archive'
-  }
-
-  /**
-   * Revoke access to a leased archive. Delete orphaned lease paths.
-   * @param {String} archivePath Archive to revoke access to.
-   * @param {Number} ownerID Consumer UUID.
-   */
-  #revokeAccess(archivePath, ownerID = 0) {
-    this.#openArchives[archivePath].owners.delete(ownerID)
-
-    if (!this.#openArchives[archivePath].owners.size) {
-      this.#deleteTmpFolder(this.#openArchives[archivePath].path)
-      delete this.#openArchives[archivePath]
-    }
-  }
-
-  /**
-   * Lease temporary folder for archive files. Returns folder path or empty if invalid.
-   * @param {String} archivePath Absolute path to archive.
-   * @param {Number} ownerID Owner ID to register folder.
-   * @returns {Promise<String>} Path to temporary folder. Empty on failure.
-   */
-  async leaseArchive(archivePath, ownerID = 0) {
-
-    const registry = this.#openArchives[archivePath]
-    if (registry) {
-      registry.owners.add(ownerID)
-      return registry.path
-    }
-
-    // filter out archives without viewable files
-    const archivedFiles = await archiveTool.fileList(archivePath)
-    const hasViewableFiles = archivedFiles.some(filePath => {
-      const type = fileType(filePath)
-      return type === 'image' || type === 'video'
-    })
-    if (!hasViewableFiles) return ''
-
-    // new unique temp folder (ex: /tmp/prefix-dpC7Id)
-    const tmpDir = fs.mkdtempSync( p.join(TMPDIR, TMPPREFIX) )
-    await archiveTool.extract(archivePath, tmpDir)
-    console.log(`MXIV: Created tmp folder at ${tmpDir}`)
-
-    this.#openArchives[archivePath] = {
-      path: tmpDir,
-      owners: new Set([ownerID])
-    }
-
-    return tmpDir
-  }
-
-  /**
-   * Revoke all archive accesses associated with ownerID. Spare archives if given.
-   * Called after successfuly generating a new book for viewing or when closing the app.
-   * @param {Number} ownerID Tab instance to be cleaned.
-   * @param {String[]} spareArchives Archive paths to spare.
-   */
-  surrenderLeases(ownerID = 0, spareArchives = []) {
-    for (const archive in this.#openArchives) {
-      const spare = spareArchives.includes(archive)
-      if (!spare) this.#revokeAccess(archive, ownerID)
-    }
-  }
-
-  /**
-   * Delete temporary folder and its contents.
-   * @param {String} folder Temporary folder path to remove.
-   */
-  #deleteTmpFolder(folder) {
-    // folder resides on TMPDIR, right? RIGHT?
-    if ( p.dirname(folder) !== TMPDIR ) {
-      return console.error('MXIV::FORBIDDEN: Tried to delete non-temporary folder!\n', 
-        `targeted path: ${folder}`)
-    }
-
-    // delete folder recursively
-    try {
-      fs.rmSync(folder, { recursive: true })
-      console.log(`MXIV: Deleted tmp folder at ${folder}`)
-    } catch (err) {
-      console.error(`MXIV: Failed to clear tmp folder at ${folder}\n`, err)
-    }
-  }
-}
-
 /**
  * Remove all temporary folders associated with ownerID. For unpriviledged contexts.
- * @param {Number} ownerID Tab instance to be cleaned.
+ * @param {String} ownerID Tab instance to be cleaned.
  */
 function clearTmp(ownerID) {
-  tmpFolders.surrenderLeases(ownerID)
+  TemporaryFolders.surrenderLeases(ownerID)
 }
 
 
