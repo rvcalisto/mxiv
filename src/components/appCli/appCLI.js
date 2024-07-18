@@ -5,6 +5,7 @@ import { OptionElement } from "./optionElement.js";
 import { ActionController } from "../../actions/actionController.js";
 import { AcceleratorController } from "../../actions/acceleratorController.js";
 import { AppNotifier } from "../notifier.js";
+import { GenericStorage } from "../genericStorage.js";
 
 
 /**
@@ -36,10 +37,16 @@ class AppCmdLine extends HTMLElement {
   #prompt;
 
   /**
-   * Prompt history.
+   * Prompt action history stack.
    * @type {PriorityStack<string>}
    */
-  #promptHistory = new PriorityStack('cmdHist');
+  #actionStack = new PriorityStack();
+
+  /**
+   * Prompt action history storage.
+   * @type {GenericStorage<string[]>}
+   */
+  #store = new GenericStorage('actionHistory');
 
   /**
    * Background overlay.
@@ -73,28 +80,29 @@ class AppCmdLine extends HTMLElement {
     // make elements visible and focusable
     this.#background.style.display = '';
 
-    // focus prompt, set optionalStr & list hints.
+    // focus prompt, sync action history between windows, set text & list hints.
     if (open) {
       this.#prompt.focus();
       if (this.active) return;
 
-      this.#prompt.setText(optionalStr);
-      this.#promptHistory.reload();
+      const historyStack = this.#store.get('stack');
+      if (historyStack) this.#actionStack.items = historyStack;
+      
       this.#displayHints();
+      this.#prompt.setText(optionalStr);
     } 
 
-    // set state and play fade-in/out animation
+    // set state, play fade-in/out animation and clear list on close
     this.active = open;
     this.#background.animate([
       { opacity : open ? 0 : 1 },
       { opacity : open ? 1 : 0 }
       ], { duration: 150})
       .onfinish = () => {
-        // clean pages
-        if (!open) {
-          this.#list.populate([], this.#createElement);
-          this.#background.style.display = 'none';
-        } 
+        if (open) return;
+
+        this.#list.populate([], this.#createElement);
+        this.#background.style.display = 'none';
       };
   }
 
@@ -110,7 +118,7 @@ class AppCmdLine extends HTMLElement {
     if (success) {
       const textItem = command ? command.trim() : '';
       if (textItem !== '' && textItem !== 'cli repeatLast')
-        return this.#promptHistory.insert(command);
+        return this.#actionStack.insert(command);
     }
     
     AppNotifier.notify(`"${action[0]}" is not an action in current context`, 'appCLI');
@@ -122,10 +130,10 @@ class AppCmdLine extends HTMLElement {
    */
   clearCmdHistory(historyItem) {
     if (historyItem == null) {
-      this.#promptHistory.clearAll();
+      this.#actionStack.clearAll();
       AppNotifier.notify('history cleared', 'appCLI:clear');
     } else {
-      this.#promptHistory.remove(historyItem);
+      this.#actionStack.remove(historyItem);
       AppNotifier.notify('history item removed', 'appCLI:forget');
       this.toggle(true); // recapture focus from 'forget' button click
     }
@@ -135,8 +143,8 @@ class AppCmdLine extends HTMLElement {
    * Repeat last command.
    */
   redoCmd() {
-    if (this.#promptHistory.items.length > 0)
-      this.#runCmd(this.#promptHistory.items[0]);
+    if (this.#actionStack.items.length > 0)
+      this.#runCmd(this.#actionStack.items[0]);
   }
 
   /**
@@ -226,7 +234,7 @@ class AppCmdLine extends HTMLElement {
   #defaultHints(actions, inputQuery) {
     const cmdList = Object.keys(actions)
       .map( key => option(key, actions[key].desc, 'action') );
-    const histList = this.#promptHistory.items
+    const histList = this.#actionStack.items
       .map( key => option(key, '', 'history') );
 
     this.#list.populate( histList.concat(cmdList), 
@@ -234,6 +242,11 @@ class AppCmdLine extends HTMLElement {
   }
 
   #initEvents() {
+    // store action history on stack changes
+    this.#actionStack.events.observe('stackChange', () => {
+      this.#store.set('stack', this.#actionStack.items);
+    });
+
     // close CLI if clicking out of focus
     this.#background.onclick = (e) => this.toggle(e.target !== this.#background);
 
@@ -285,7 +298,7 @@ class AppCmdLine extends HTMLElement {
           this.#runCmd();
         }
       }
-    }
+    };
   }
 }
 

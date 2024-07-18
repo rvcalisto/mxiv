@@ -1,3 +1,11 @@
+import { ObservableEvents } from "../observableEvents.js";
+
+
+/**
+ * @typedef {'stackChange'} StackEvents
+ */
+
+
 /**
  * Generic priority stack.
  * @template T
@@ -5,9 +13,10 @@
 export class PriorityStack {
 
   /**
+   * Stack items.
    * @type {T[]}
    */
-  #itemArray = [];
+  items;
 
   /**
    * Max stack size.
@@ -15,41 +24,18 @@ export class PriorityStack {
   #stackLimit = 10;
 
   /**
-   * LocalStorage key.
+   * Stack events.
+   * @type {ObservableEvents<StackEvents>}
    */
-  #storage = '';
+  events = new ObservableEvents();
 
   /**
-   * @param {String} storageName
-   * @param {number} [stackLimit=10]
+   * @param {T[]} [stackItems=[]] Initialize stack from array.
+   * @param {number} [stackLimit=10] Stack limit, 10 by default.
    */
-  constructor(storageName, stackLimit = 10) {
-    this.#storage = storageName;
+  constructor(stackItems = [], stackLimit = 10) {
+    this.items = stackItems;
     this.#stackLimit = stackLimit;
-    this.reload();
-  }
-
-  /** 
-   * In order of last inserted.
-   * @readonly
-   */
-  get items() {
-    return this.#itemArray;
-  }
-
-  /**
-   * Load up-to-date items from localStorage.
-   */
-  reload() {
-    const json = localStorage.getItem(this.#storage);
-    this.#itemArray = json ? JSON.parse(json) : [];
-  }
-
-  /**
-   * Write current items to localStorage
-   */
-  #writeItems() {
-    localStorage.setItem( this.#storage, JSON.stringify(this.#itemArray) );
   }
 
   /**
@@ -58,18 +44,18 @@ export class PriorityStack {
    */
   insert(stackItem) {
     // item already in array, switch to top
-    if ( this.#itemArray.includes(stackItem) ) {
-      const idx = this.#itemArray.indexOf(stackItem);
-      this.#itemArray.splice(idx, 1);
-      this.#itemArray.unshift(stackItem);
+    if ( this.items.includes(stackItem) ) {
+      const idx = this.items.indexOf(stackItem);
+      this.items.splice(idx, 1);
+      this.items.unshift(stackItem);
     }
     // add to top, trim array if above limit
     else {
-      const newLength = this.#itemArray.unshift(stackItem);
-      if (newLength > this.#stackLimit) this.#itemArray.length = this.#stackLimit;
+      const newLength = this.items.unshift(stackItem);
+      if (newLength > this.#stackLimit) this.items.length = this.#stackLimit;
     }
 
-    this.#writeItems();
+    this.events.fire('stackChange');
   }
 
   /**
@@ -77,9 +63,9 @@ export class PriorityStack {
    * @returns {T?}
    */
   pop() {
-    const stackItem = this.#itemArray.shift() || null;
+    const stackItem = this.items.shift() || null;
     if (stackItem != null)
-      this.#writeItems();
+      this.events.fire('stackChange');
 
     return stackItem;
   }
@@ -90,12 +76,12 @@ export class PriorityStack {
    * @return {Boolean} Success
    */
   remove(stackItem) {
-    const itemIdx = this.#itemArray.indexOf(stackItem);
+    const itemIdx = this.items.indexOf(stackItem);
     if (itemIdx < 0)
       return false;
 
-    this.#itemArray.splice(itemIdx, 1);
-    this.#writeItems();
+    this.items.splice(itemIdx, 1);
+    this.events.fire('stackChange');
     return true;
   }
 
@@ -103,7 +89,7 @@ export class PriorityStack {
    * Clear all items from stack.
    */
   clearAll() {
-    this.#itemArray = [];
-    this.#writeItems();
+    this.items = [];
+    this.events.fire('stackChange');
   }
 };
