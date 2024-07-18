@@ -71,7 +71,7 @@ ActionController.setComponentActions('library', {
           const validPath = path && path.trim()
           if (!validPath) return
 
-          Library.watchlistPanel.addPath(path)
+          Library.watchlistPanel.addItem(path)
           AppNotifier.notify(`added ${path} to Watchlist`)
         },
         'options': async (query) => await elecAPI.queryPath(query)
@@ -82,10 +82,10 @@ ActionController.setComponentActions('library', {
           const validPath = path && path.trim()
           if (!validPath) return
 
-          Library.watchlistPanel.removePath(path)
+          Library.watchlistPanel.removeItem(path)
           AppNotifier.notify(`removed ${path} from Watchlist`)
         },
-        'options': () => Object.keys( Library.watchlistPanel.getWatchObject() )
+        'options': () => Library.watchlistPanel.getItems().map(i => i.path)
       },
       'sync': {
         'desc': 'synchronize books with Watchlist entries',

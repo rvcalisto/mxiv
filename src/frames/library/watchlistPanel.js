@@ -1,4 +1,10 @@
+import { GenericStorage } from "../../components/genericStorage.js";
 import { AppNotifier } from "../../components/notifier.js";
+
+
+/**
+ * @typedef {{path:string, recursive:boolean}} WatchlistItem
+ */
 
 
 /**
@@ -6,7 +12,10 @@ import { AppNotifier } from "../../components/notifier.js";
  */
 export class WatchlistPanel {
 
-  #watchlistStorage = 'libraryWatch';
+  /**
+   * @type {GenericStorage<WatchlistItem>}
+   */
+  #storage = new GenericStorage('libraryWatch');
 
   /**
    * Background overlay element.
@@ -24,8 +33,8 @@ export class WatchlistPanel {
    * @param {import("./library.js").Library} library Host component.
    */
   constructor(library) {
-    this.#componentRoot = library.shadowRoot;
-    this.#overlay = library.shadowRoot.getElementById('wrapper').getElementsByClassName('overlay')[0];
+    this.#componentRoot = /** @type {ShadowRoot} */ (library.shadowRoot);
+    this.#overlay = library.shadowRoot.getElementById('wrapper')?.querySelector('.overlay');
     this.#initEvents();
   }
 
@@ -38,66 +47,52 @@ export class WatchlistPanel {
   }
 
   /**
-   * @typedef {{path:string, recursive:boolean}} WatchlistItem
+   * Get all items from Watchlist.
+   * @returns {WatchlistItem[]}
    */
-
-  /**
-   * Get all paths in watchlist.
-   * @returns {Object<string, WatchlistItem>}
-   */
-  getWatchObject() {
-    const watchObj = JSON.parse( localStorage.getItem(this.#watchlistStorage) );
-    return watchObj ? watchObj : {};
+  getItems() {
+    return this.#storage.values();
   }
 
   /**
-   * Store watchlist items object.
-   * @param {Object<string, WatchlistItem>} watchObject Watchlist object.
+   * Add a new watchlist item.
+   * @param {String} path Watchlist item path.
+   * @param {boolean} [recursive=true] Also sync child directories.
    */
-  #storeWatchObject(watchObject) {
-    localStorage.setItem( this.#watchlistStorage, JSON.stringify(watchObject) );
-  }
-
-  /**
-   * Add folder path from watchlist.
-   * @param {String} folder Path to folder.
-   */
-  addPath(folder) {
-    let watchObj = this.getWatchObject();
-
-    watchObj[folder] = {
-      'path': folder,
-      'recursive': true
-    };
-
-    this.#storeWatchObject(watchObj);
-    console.log(`added ${folder} to watchlist`);
+  addItem(path, recursive = true) {
+    this.#storage.set(path, {
+      'path': path,
+      'recursive': recursive
+    });
+    
+    console.log(`added ${path} to watchlist`);
   }
 
   /**
    * Update recursion option for watchlist item.
-   * @param {String} pathKey WatchlistItem path.
+   * @param {String} path Watchlist item path.
    * @param {Boolean} recursive New recursive value.
    */
-  setRecursion(pathKey, recursive) {
-    let watchObj = this.getWatchObject();
+  setRecursion(path, recursive) {
+    const watchItem = this.#storage.get(path);
 
-    watchObj[pathKey].recursive = recursive;
-    this.#storeWatchObject(watchObj);
+    if (watchItem) {
+      watchItem.recursive = recursive;
+      this.#storage.set(path, watchItem);
+    }
   }
 
   /**
    * Remove watchlist item from watchlist.
-   * @param {String} itemPath Path to item.
+   * @param {String} path Watchlist item path.
    */
-  removePath(itemPath) {
-    const watchObj = this.getWatchObject();
-    if (!watchObj || !watchObj[itemPath])
-      return AppNotifier.notify(`no ${itemPath} in watchlist to remove`);
+  removeItem(path) {
+    const watchItem = this.#storage.get(path);
+    if (!watchItem)
+      return AppNotifier.notify(`no ${path} in watchlist to remove`);
 
-    delete watchObj[itemPath];
-    this.#storeWatchObject(watchObj);
-    console.log(`removed ${itemPath} from watchlist`);
+    this.#storage.delete(path);
+    console.log(`removed ${path} from watchlist`);
   }
 
   /**
@@ -108,7 +103,7 @@ export class WatchlistPanel {
     folderList.textContent = ''; // clean list
 
     // populate list
-    for (const item of Object.values(this.getWatchObject())) {
+    for ( const item of this.#storage.values() ) {
       const div = document.createElement('div');
       div.className = 'folderItem'
       div.innerHTML = `
@@ -128,7 +123,7 @@ export class WatchlistPanel {
 
       // remove path from list
       removeFolderBtn.onclick = () => {
-        this.removePath(item.path);
+        this.removeItem(item.path);
         this.#drawList();
       };
     }
@@ -149,7 +144,7 @@ export class WatchlistPanel {
     ], {
       duration: duration
     }).onfinish = () => {
-      this.#overlay.style.opacity = show ? 1 : 0;
+      this.#overlay.style.opacity = show ? '1' : '0';
       this.#overlay.style.display = show ? '' : 'none';
     };
   }
@@ -164,15 +159,17 @@ export class WatchlistPanel {
     // add new folder to watchlist, open dialog
     const addtoBtn = this.#componentRoot.getElementById('addToWatch');
     addtoBtn.onclick = async () => {
+      /** @type {string[]|undefined} */
       const files = await elecAPI.dialog({
         title: "Add Folders to Watchlist",
         properties: ['openDirectory'],
         buttonLabel: "Add Selected"
       });
 
-      if (!files) return;
-      files.forEach(file => this.addPath(file));
-      this.#drawList();
+      if (files != null && files.length > 0) {
+        files.forEach(file => this.addItem(file));
+        this.#drawList();
+      }
     };
   }
 }

@@ -82,8 +82,8 @@ export class Library extends GenericFrame {
    * Sync library to watchlist, update covers.
    */
   async syncToWatchlist() {
-    const watchFolders = Object.values( this.watchlistPanel.getWatchObject() )
-    if (watchFolders.length < 1) return
+    const watchItems = this.watchlistPanel.getItems()
+    if (watchItems.length < 1) return
 
     if ( !await elecAPI.requestLibraryLock() ) return
     
@@ -94,7 +94,7 @@ export class Library extends GenericFrame {
     console.time(`syncToWatchlist`)
     
     let addedPaths = 0
-    for (const item of watchFolders) {
+    for (const item of watchItems) {
       console.log('sync ' + item.path)
       addedPaths += await elecAPI.addToLibrary(item.path, item.recursive)
     }
