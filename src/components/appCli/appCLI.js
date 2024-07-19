@@ -88,8 +88,8 @@ class AppCmdLine extends HTMLElement {
       const historyStack = this.#store.get('stack');
       if (historyStack) this.#actionStack.items = historyStack;
       
-      this.#displayHints();
       this.#prompt.setText(optionalStr);
+      this.#displayHints();
     } 
 
     // set state, play fade-in/out animation and clear list on close
