@@ -85,7 +85,7 @@ export class Library extends GenericFrame {
     const watchItems = this.watchlistPanel.getItems()
     if (watchItems.length < 1) return
 
-    if ( !await elecAPI.requestLibraryLock() ) return
+    if ( !await elecAPI.requestLock('library') ) return
     
     // prevent closing window while async population happens
     this.hold(true)
@@ -107,7 +107,7 @@ export class Library extends GenericFrame {
     this.coverGrid.reloadCovers()
     this.hold(false)
 
-    await elecAPI.releaseLibraryLock()
+    await elecAPI.releaseLock('library')
   }
 
   /**
@@ -116,7 +116,7 @@ export class Library extends GenericFrame {
    * @param {String[]} [files] Filepaths to add to library
    */
   async addToLibrary(...files) {
-    if ( !await elecAPI.requestLibraryLock() ) return
+    if ( !await elecAPI.requestLock('library') ) return
 
     if (files.length < 1) {
       files = await elecAPI.dialog({
@@ -143,7 +143,7 @@ export class Library extends GenericFrame {
       this.hold(false)
     }
 
-    await elecAPI.releaseLibraryLock()
+    await elecAPI.releaseLock('library')
   }
 
   #initEvents() {

@@ -4,40 +4,6 @@ const { createThumbnailMultiThreaded } = require('./thumbnailWorker');
 
 
 /**
- * Library mutual exclusivity lock object.
- */
-const mutexLock = {
-  locked: false,
-  owner: null
-}
-
-/**
- * Request library mutex.
- * @param {Number} senderID Sender number ID.
- * @returns {Boolean}
- */
-function requestLock(senderID) {
-  if (mutexLock.locked) return false
-  mutexLock.locked = true
-  mutexLock.owner = senderID
-  return true
-}
-
-/**
- * Release library mutex.
- * @param {Number} senderID Sender number ID.
- * @returns {Boolean}
- */
-function releaseLock(senderID) {
-  if (mutexLock.locked && mutexLock.owner === senderID) {
-    mutexLock.locked = false
-    mutexLock.owner = null
-    return true
-  }
-  return false
-}
-
-/**
  * Store archive or folder recursively.
  * @param {Electron.WebContents} senderWin Electron sender window.
  * @param {String} folderPath Folder/archive path to add.
@@ -129,4 +95,4 @@ async function clearLibrary() {
 // TODO: procedure to clean orphaned entries on sync (end of addToLibrary)
 
 
-module.exports = { getLibraryEntries, addToLibrary, removeFromLibrary, clearLibrary, requestLock, releaseLock }
+module.exports = { getLibraryEntries, addToLibrary, removeFromLibrary, clearLibrary }

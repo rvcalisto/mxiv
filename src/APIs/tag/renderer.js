@@ -43,9 +43,11 @@ async function listOrphans() {
  * Listen for main process tag controller sync requests.
  * Sync tag storage state to persistent JSON file.
  */
-ipcRenderer.on('tags:sync', async () => {
-  await tagStorage.getPersistence()
-  console.log('MXIV::Tag Controller: synced')
+ipcRenderer.on('coord:onbroadcast', async (e, message) => {
+  if (message === 'tags:sync') {
+    await tagStorage.getPersistence()
+    console.log('MXIV::broadcast: tags:sync')
+  }
 })
 
 

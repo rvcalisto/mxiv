@@ -6,9 +6,13 @@ const localTagStorage = require('./APIs/tag/renderer')
 
 contextBridge.exposeInMainWorld('elecAPI', {
 
+  // coordination
+  requestLock: async () => ipcRenderer.invoke('coord:lock'),
+  releaseLock: async () => ipcRenderer.invoke('coord:unlock'),
+  broadcast: async (message, ...args) => ipcRenderer.invoke('coord:broadcast', message, ...args),
+  onBroadcast: (...args) => ipcRenderer.on('coord:onbroadcast', ...args),
+
   // library
-  requestLibraryLock: async () => ipcRenderer.invoke('library:lock'),
-  releaseLibraryLock: async () => ipcRenderer.invoke('library:unlock'),
   addToLibrary: async (path, recursively) => ipcRenderer.invoke('library:add', path, recursively),
   getLibraryEntries: () => ipcRenderer.invoke('library:get'),
   removeFromLibrary: async (path) => ipcRenderer.invoke('library:remove', path),

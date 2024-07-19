@@ -1,8 +1,7 @@
 const path = require('path');
 const { mkdir } = require('fs');
 const { TagStorage } = require('./tagStorage');
-const { BrowserWindow } = require('electron');
-
+const { broadcast } = require('../tool/coordinationUtils');
 
 /**
  * Tag Storage to atomically transact with in main process.
@@ -111,12 +110,9 @@ async function initialize() {
 
   tagStorage.monitorPersistenceFile(() => {
     tagStorage.getPersistence()
-
-    // console.log('MXIV::Main process broadcast: tag sync')
-    BrowserWindow.getAllWindows().forEach(win => {
-      win.webContents.send('tags:sync')
-    })
+    broadcast('tags:sync')
   })
+  
   console.log('MXIV: Monitoring tag persistence file.')
 }
 

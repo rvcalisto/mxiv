@@ -51,6 +51,7 @@ function ipcHandlers() {
   require('./APIs/library/ipcHandlers')
   require('./APIs/file/ipcHandlers')
   require('./APIs/tag/ipcHandlers')
+  require('./APIs/tool/coordinationUtils')
 
   // window handlers
   ipcMain.handle('window:new', (e) => {

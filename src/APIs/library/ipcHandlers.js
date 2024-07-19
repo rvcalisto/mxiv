@@ -2,14 +2,6 @@ const { ipcMain } = require("electron");
 const libraryMain = require("./main");
 
 
-ipcMain.handle('library:lock', (e) => {
-  return libraryMain.requestLock(e.sender.id)
-})
-
-ipcMain.handle('library:unlock', (e) => {
-  return libraryMain.releaseLock(e.sender.id)
-})
-
 ipcMain.handle('library:add', async (e, path, recursively) => {
   return await libraryMain.addToLibrary(e.sender, path, recursively)
 })

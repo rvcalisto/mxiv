@@ -162,7 +162,7 @@ export class CoverGrid {
    * @returns {Promise<Boolean>} Success.
    */
   async removeCover(cover) {
-    if ( !await elecAPI.requestLibraryLock() ) return false
+    if ( !await elecAPI.requestLock('library') ) return false
 
     const success = await elecAPI.removeFromLibrary(cover.bookPath)
     if (success) {
@@ -173,7 +173,7 @@ export class CoverGrid {
       this.events.fire('grid:coverUpdate')
     }
   
-    await elecAPI.releaseLibraryLock()
+    await elecAPI.releaseLock('library')
     return success
   }
 
