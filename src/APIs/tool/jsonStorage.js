@@ -1,3 +1,4 @@
+// @ts-check
 const fs = require('fs');
 
 
@@ -19,22 +20,16 @@ class JsonStorage {
   #watchCount = 0
 
   /**
-   * Prevents overwrites between accesses.
-   * @type {Number} Storage file modified info.
+   * Last storage file read modified time. Null if unsupported.
+   * @type {Number?}
    */
-  #lastModifiedMS
+  #lastModifiedTime
 
   /**
    * Storage object to persist from and to file.
    * @type {Object<string, T>}
    */
   #storageObject = {}
-
-  /**
-   * Either already failed a sync check.
-   * @type {Boolean}
-   */
-  #knownDirty = true
 
   /**
    * Initialize storage instance.
@@ -45,25 +40,13 @@ class JsonStorage {
   }
 
   /**
-   * Returns last time when persistence file was modified. Null on failure.
+   * Returns persistence file modified time. Null if disabled.
    * @returns {Promise<Number?>}
    */
-  async #readLastModified() {
+  async #readModifiedTime() {
     return await new Promise(resolve => {
       fs.stat( this.#storageFile, (err, stats) => resolve(stats?.mtimeMs) )
     })
-  }
-
-  /**
-   * Check persistence file lastModifiedTime against last sync time.
-   * @returns {Promise<Boolean>}
-   */
-  async #isInSync() {
-    if (this.#knownDirty) return false
-
-    const currentMs = await this.#readLastModified()
-    this.#knownDirty = this.#lastModifiedMS !== currentMs
-    return !this.#knownDirty
   }
 
   /**
@@ -72,16 +55,17 @@ class JsonStorage {
    * @returns {Promise<void>}
    */
   async getPersistence() {
-    if ( await this.#isInSync() ) return
+    // skip only if modified times match
+    const modifiedTime = await this.#readModifiedTime()
+    if (modifiedTime != null && modifiedTime === this.#lastModifiedTime) return
 
     return await new Promise( (resolve, reject) => {
       fs.readFile(this.#storageFile, 'utf8', async (err, data) => {
         if (err) {
           reject(err)
         } else {
-          this.#lastModifiedMS = await this.#readLastModified() || 0
+          this.#lastModifiedTime = modifiedTime
           this.#storageObject = JSON.parse(data)
-          this.#knownDirty = false
           resolve()
         }
       })
@@ -101,8 +85,7 @@ class JsonStorage {
         if (err) {
           reject(err)
         } else {
-          this.#lastModifiedMS = await this.#readLastModified() || 0
-          this.#knownDirty = false
+          this.#lastModifiedTime = await this.#readModifiedTime()
           resolve()
         }
       })
