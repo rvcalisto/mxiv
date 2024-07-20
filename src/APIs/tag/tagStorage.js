@@ -9,21 +9,20 @@ const fs = require('fs');
  * @type {String}
  */
 const defaultStorageFile = process.platform === 'win32' ?
-  path.join(process.env.LOCALAPPDATA, 'mxiv', 'tagDB.json') :
+  path.join(/** @type {string} */ (process.env.LOCALAPPDATA), 'mxiv', 'tagDB.json') :
   path.join(homedir(), '.cache', 'mxiv', 'tagDB.json')
 
 
 /**
  * Persistent tag storage.
+ * @extends {JsonStorage<string[]>}
  */
 class TagStorage extends JsonStorage {
 
   /**
-   * Initialized persistent JSON filepath. Read-only.
-   * @readonly
-   * @type {String}
+   * Initialized persistent JSON filepath.
    */
-  storageFile
+  #storageFile = ''
 
   /** 
    * Store computed unique tags for consecutive calls.
@@ -47,35 +46,36 @@ class TagStorage extends JsonStorage {
     this.getPersistence()
       .catch( err => console.log('MXIV: TagStorage not found or initialized.') )
 
-    this.storageFile = storageFile
+    this.#storageFile = storageFile
   }
 
   /**
-   * Set tag array for file. Delete entry if tags are empty.
+   * Insert or update tags. Delete entry if tags are empty. Changes must be persisted.
    * @param {String} filePath Absolute path to file.
    * @param {String[]} tags File tags.
    */
-  setTags(filePath, tags) {
-    if (tags.length < 1) delete this.storageObject[filePath]
-    else this.storageObject[filePath] = tags
+  set(filePath, tags) {
+    if (tags.length > 0) super.set(filePath, tags)
+    else super.delete(filePath)
   }
 
   /**
-   * Return file tags. Empty if entry not found.
+   * Return tags for entry. Empty if not found.
    * @param {String} filePath Absolute path to file.
    * @returns {String[]}
    */
-  getTags(filePath) {
-    return this.storageObject[filePath] || []
+  get(filePath) {
+    return super.get(filePath) || []
   }
 
   /**
    * Return unique tags.
+   * @returns {string[]}
    */
   uniqueTags() {
     if (this.#uniqueTagsDirty) {
       console.time('computeUniqueTags')
-      this.#uniqueTagsCache = [ ...new Set( Object.values(this.storageObject).flat() ) ]
+      this.#uniqueTagsCache = [ ...new Set( this.values().flat() ) ]
       this.#uniqueTagsDirty = false
       console.timeEnd('computeUniqueTags')
     }
@@ -84,7 +84,7 @@ class TagStorage extends JsonStorage {
   }
 
   /**
-   * @override
+   * @inheritdoc
    */
   async getPersistence() {
     return await super.getPersistence()
@@ -92,7 +92,7 @@ class TagStorage extends JsonStorage {
   }
   
   /**
-   * @override
+   * @inheritdoc
    */
   async persist() {
     return await super.persist()
@@ -104,41 +104,43 @@ class TagStorage extends JsonStorage {
    */
   info() {
     return {
-      storageFile: this.storageFile,
-      entryCount: Object.keys(this.storageObject).length,
+      storageFile: this.#storageFile,
+      entryCount: this.keys().length,
       tagCount: this.uniqueTags().length
     }
   }
 
   /**
-   * List database entries whose files are no longer accessible.
+   * List database entries whose files are no longer accessible. Optionally clear orphans.
+   * * Changes are persisted.
    * @param {boolean} [deleteOrphans=false] Either to delete orphaned entries if found.
    */
   async listOrphans(deleteOrphans = false) {
-    const taskPromises = [], orphans = []
+    const taskPromises = [], /** @type {string[]} */ orphans = []
 
-    for (const keyPath in this.storageObject) {
-      const task = new Promise(resolve => {
-        fs.access(keyPath, (err) => {
+    for ( const keyPath of this.keys() ) {
+      taskPromises.push( new Promise(resolve => {
+        fs.access(keyPath, err => {
           if (err) orphans.push(keyPath)
-          resolve()
+          resolve(true)
         })
-      })
-      taskPromises.push(task)
+      }))
     }
 
     await Promise.all(taskPromises)
     
-    if (!orphans.length) console.log('\nNo orphan entries to clean.') 
-    else console.log(`${orphans.length} orphan entries found:`, orphans)
+    if (orphans.length < 1) {
+      console.log('\nNo orphan entries to clean.') 
+    } else {
+      console.log(`${orphans.length} orphan entries found:`, orphans)
+      if (!deleteOrphans) return
 
-    if (deleteOrphans && orphans.length) {
-      for (const entry of orphans) delete this.storageObject[entry]
+      for (const key of orphans) this.delete(key)
+      await this.persist()
       console.log('Cleaned', orphans.length, 'orphan entries.')
-      this.persist()
     }
   }
 }
 
 
-module.exports = { TagStorage }
+module.exports = { TagStorage, defaultStorageFile }

@@ -8,7 +8,7 @@ const { JsonStorage } = require('../tool/jsonStorage');
  * Library persistent storage file.
  */
 const libraryStorageFile = process.platform === 'win32' ?
-  p.join(process.env.LOCALAPPDATA, 'mxiv', 'library.json') :
+  p.join(/** @type {string} */ (process.env.LOCALAPPDATA), 'mxiv', 'library.json') :
   p.join(homedir(), '.cache', 'mxiv', 'library.json');
 
 
@@ -20,10 +20,11 @@ const libraryStorageFile = process.platform === 'win32' ?
  * @property {String} coverURL Encoded cover path for html display.
  */
 
+
 /**
- * Persistent Library JSON storage controller.
+ * @extends {JsonStorage<LibraryEntry>}
  */
-const libraryStorage = new class extends JsonStorage {
+class LibraryStorage extends JsonStorage {
 
   #collator = new Intl.Collator('en', { numeric: true })
 
@@ -34,31 +35,34 @@ const libraryStorage = new class extends JsonStorage {
   }
 
   /**
-   * Return Library entry object for folder/archive.
+   * Insert or update LibraryEntry object from cover. Changes must be persisted.
    * @param {String} path Folder/archive path.
    * @param {String} cover Cover thumbnail path.
    */
-  addEntry(path, cover) {
-    this.storageObject[path] = {
+  setFromCover(path, cover) {
+    this.set(path, {
       'name': p.basename(path),
       'path': path,
       'coverPath': cover,
       'coverURL': pathToFileURL(cover).href,
-    }
+    });
   }
 
   /**
-   * Return sorted entry array.
-   * @returns {Promise<LibraryEntry[]>}
+   * Return sorted library items.
+   * @returns {LibraryEntry[]}
    */
-  async getEntries() {
-    await this.getPersistence()
-      .catch( err => console.log('MXIV: LibraryStorage not found or initialized.') )
-
-    return Object.values(this.storageObject)
-      .sort( (a, b) => this.#collator.compare(a.path, b.path) )
+  values() {
+    return super.values()
+      .sort( (a, b) => this.#collator.compare(a.path, b.path) );
   }
 }
+
+/**
+ * Persistent library storage.
+ * @type {LibraryStorage}
+ */
+const libraryStorage = new LibraryStorage();
 
 
 module.exports = { libraryStorage }

@@ -4,6 +4,14 @@ const { createThumbnailMultiThreaded } = require('./thumbnailWorker');
 
 
 /**
+ * @typedef LibraryProgressNotification
+ * @property {number} total Items to process.
+ * @property {number} current Current item count.
+ * @property {string} newPath Latest path added.
+ */
+
+
+/**
  * Store archive or folder recursively.
  * @param {Electron.WebContents} senderWin Electron sender window.
  * @param {String} folderPath Folder/archive path to add.
@@ -19,25 +27,28 @@ async function addToLibrary(senderWin, folderPath, recursively = true) {
   }
 
   // sync storage, ignore if uninitialized
-  await libraryStorage.getPersistence().catch( () => {} ) 
+  await libraryStorage.getPersistence()
+    .catch( () => console.log('MXIV: LibraryStorage not found or initialized.') )
   
   // map folder and filter-out ineligible paths
-  const collection = libraryStorage.storageObject
   const candidates = await utils.getCandidates(folderPath, 
     recursively ? Infinity : 1)
 
   // filter out already cataloged paths
-  const newCandidates = candidates.filter(path => collection[path] == null )
+  const newCandidates = candidates.filter(path => libraryStorage.get(path) == null )
   let entriesAddded = 0
   
   await createThumbnailMultiThreaded(newCandidates, (value) => {
-    libraryStorage.addEntry(value.path, value.thumbnail)
+    libraryStorage.setFromCover(value.path, value.thumbnail)
   
-    senderWin.send('library:new', {
+    /** @type {LibraryProgressNotification} */
+    const notification = {
       total: newCandidates.length,
       current: ++entriesAddded,
       newPath: value.path
-    })
+    }
+
+    senderWin.send('library:new', notification)
   }, 2)
 
   // store new library object
@@ -50,7 +61,10 @@ async function addToLibrary(senderWin, folderPath, recursively = true) {
  * @returns {Promise<import("./libraryStorage").LibraryEntry[]>}
  */
 async function getLibraryEntries() {
-  return await libraryStorage.getEntries()
+  await libraryStorage.getPersistence()
+    .catch( () => console.log('MXIV: LibraryStorage not found or initialized.') )
+
+  return libraryStorage.values()
 }
 
 /**
@@ -59,8 +73,7 @@ async function getLibraryEntries() {
  * @returns {Promise<Boolean>} Success.
  */
 async function removeFromLibrary(path) {
-  const collection = libraryStorage.storageObject
-  const entry = collection[path]
+  const entry = libraryStorage.get(path)
 
   if (!entry) {
     console.warn(`MXIV::WARN: Can't delete entry. "${path}" is not in library.`)
@@ -71,7 +84,7 @@ async function removeFromLibrary(path) {
   if (!success)
     console.warn(`MXIV::WARN: Failed to delete thumbnail at "${entry.coverPath}". Orphaning.`)
 
-  delete collection[path]
+  libraryStorage.delete(path)
   await libraryStorage.persist()
 
   return true
@@ -84,7 +97,7 @@ async function removeFromLibrary(path) {
 async function clearLibrary() {
   const success = await utils.deleteThumbnailDirectory()
   if (success) {
-    libraryStorage.storageObject = {}
+    libraryStorage.clear()
     await libraryStorage.persist()
   }
 

@@ -66,6 +66,13 @@ export class GenericStorage {
   }
 
   /**
+   * Delete all entries from storage.
+   */
+  clear() {
+    this.#setStorage({});
+  }
+
+  /**
    * Return storage keys.
    * @returns {string[]}
    */
@@ -74,7 +81,7 @@ export class GenericStorage {
   }
 
   /**
-   * Return storage keys.
+   * Return storage values.
    * @returns {T[]}
    */
   values() {

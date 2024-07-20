@@ -1,6 +1,6 @@
 const path = require('path');
 const { mkdir } = require('fs');
-const { TagStorage } = require('./tagStorage');
+const { TagStorage, defaultStorageFile } = require('./tagStorage');
 const { broadcast } = require('../tool/coordinationUtils');
 
 /**
@@ -20,7 +20,7 @@ async function tagFile(filePath, ...tags) {
   await tagStorage.getPersistence()
 
   let tagsAdded = 0
-  const newTags = tagStorage.getTags(filePath)
+  const newTags = tagStorage.get(filePath)
   
   // don't add duplicates
   for (const tag of tags) {
@@ -31,7 +31,7 @@ async function tagFile(filePath, ...tags) {
 
   // save to storage
   if (tagsAdded > 0) {
-    tagStorage.setTags(filePath, newTags)
+    tagStorage.set(filePath, newTags)
     await tagStorage.persist()
   }
 
@@ -49,7 +49,7 @@ async function untagFile(filePath, ...tags) {
   await tagStorage.getPersistence()
 
   let tagsRemoved = 0
-  const newTags = tagStorage.getTags(filePath)
+  const newTags = tagStorage.get(filePath)
   if (newTags.length === 0) return false
   
   for (const tag of tags) {
@@ -62,7 +62,7 @@ async function untagFile(filePath, ...tags) {
 
   // save to storage
   if (tagsRemoved > 0) {
-    tagStorage.setTags(filePath, newTags)
+    tagStorage.set(filePath, newTags)
     await tagStorage.persist()
   }
 
@@ -82,7 +82,7 @@ async function listOrphans(deleteOrphans = false) {
  * @returns {Promise<boolean>} Success.
  */
 async function createTagStorageFile() {
-  const storageDirectory = path.dirname(tagStorage.storageFile)
+  const storageDirectory = path.dirname(defaultStorageFile)
 
   return await new Promise(resolve => {
     mkdir( storageDirectory, { recursive: true }, async (err) => {
@@ -90,7 +90,7 @@ async function createTagStorageFile() {
         console.log('MXIV: Failed to create storage directory.\n', err)
       } else {
         await tagStorage.persist()
-        console.log('MXIV: Created tag JSON storage at:', tagStorage.storageFile) 
+        console.log('MXIV: Created tag JSON storage at:', defaultStorageFile) 
       }
       resolve(!err)
     })

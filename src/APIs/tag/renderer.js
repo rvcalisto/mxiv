@@ -14,7 +14,7 @@ const tagStorage = new TagStorage()
  * @returns {String[]}
  */
 function getTags(filePath) {
-  return tagStorage.getTags(filePath)
+  return tagStorage.get(filePath)
 }
 
 /**
