@@ -18,6 +18,15 @@ export const UserAccelerators = new class {
    */
   #storage = new GenericStorage('userHotkeys');
 
+  static {
+    elecAPI.onBroadcast( (e, message, ...args) => {
+      if (message === 'accel:sync') {
+        console.log('MXIV::broadcast: accel:sync');
+        UserAccelerators.reload();
+      }
+    });
+  }
+
   /**
    * Get user-defined accelerator set for component.
    * @returns {AcceleratorSet} 
@@ -55,7 +64,10 @@ export const UserAccelerators = new class {
     else
       AcceleratorController.setComponentCustoms(component, accelerators);
 
-    if (store) this.#storage.set(component, accelerators);
+    if (store) {
+      this.#storage.set(component, accelerators);
+      elecAPI.broadcast('accel:sync');
+    }
     
     this.#updateCLIaccelCSSvar();
   }

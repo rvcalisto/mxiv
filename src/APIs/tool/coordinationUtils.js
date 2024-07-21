@@ -52,7 +52,10 @@ ipcMain.handle('coord:unlock', (e, name) => {
 });
 
 ipcMain.handle('coord:broadcast', (e, message, ...args) => {
-  broadcast(message, ...args);
+  BrowserWindow.getAllWindows().forEach(win => {
+    if (win.webContents.id !== e.sender.id) // skip sender
+      win.webContents.send('coord:onbroadcast', message, ...args);
+  });
 });
 
 
