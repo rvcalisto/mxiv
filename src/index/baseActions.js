@@ -154,8 +154,8 @@ ActionController.setBaseActions({
           // hint available components
           if (allArgs.length < 2) return [
             option('base', 'on all components, but overruled on concurrency'),
-            option('viewer', 'set/overwrite viewer accelerators'),
-            option('library', 'set/overwrite library accelerators')
+            ...FrameRegistry.getDescriptors()
+              .map(([name, desc]) => option(name, `set/overwrite ${name} accelerators`)),
           ]
 
           // hint stored user accelerators for component
@@ -170,13 +170,6 @@ ActionController.setBaseActions({
           
           const coll = new Intl.Collator()
           return options.sort( (a, b) => coll.compare(a.name, b.name) )
-        }
-      },
-      'reload': {
-        'desc' : 'reload accelerators',
-        'run'  : () => {
-          UserAccelerators.reload()
-          AppNotifier.notify('reloaded user keys')
         }
       },
     }
