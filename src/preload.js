@@ -1,5 +1,4 @@
-const { contextBridge, ipcRenderer } = require("electron")
-const { webFrame } = require("electron/renderer")
+const { contextBridge, ipcRenderer, webFrame } = require("electron")
 const { pathToFileURL } = require('url')
 const localTagStorage = require('./APIs/tag/renderer')
 
@@ -10,7 +9,7 @@ contextBridge.exposeInMainWorld('elecAPI', {
   requestLock: async () => ipcRenderer.invoke('coord:lock'),
   releaseLock: async () => ipcRenderer.invoke('coord:unlock'),
   broadcast: async (message, ...args) => ipcRenderer.invoke('coord:broadcast', message, ...args),
-  onBroadcast: (...args) => ipcRenderer.on('coord:onbroadcast', ...args),
+  onBroadcast: (message, ...args) => ipcRenderer.on('coord:onbroadcast', message, ...args),
 
   // library
   addToLibrary: async (path, recursively) => ipcRenderer.invoke('library:add', path, recursively),
