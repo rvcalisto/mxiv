@@ -53,22 +53,28 @@ function deleteFile(filePath) {
 }
 
 /**
- * Run user script on default shell. Interpret `%F`, `%N` as filepath and basename.
- * Aborts if these symbols are used without passing a `FileObject`.
- * - Example: `runOnFile("dolphin --select %F &", <FileObject>)`
- * - Note: `%F` & `%N` are double-quoted, so favor using them as arguments to a script
- * file for complex commands. Ex: `runOnFile("~/myScript.sh %F", <FileObject>)`
- * @param {String} script Command script to run.
- * @param {import("./fileSearch").FileObject} file File to run script on.
+ * Run user script on default shell. 
+ * - Interpret `%F`, `%N`, `%T` symbols as filepath, basename & filetype, respectively.
+ * - Aborts if symbols are used without passing a filepath.
+ * @example
+ * runOnFile("dolphin --select %F &", "path/to/file.png")
+ * 
+ * // %F & %N symbols become double-quoted, so favor their use
+ * // as arguments instead of escaping quotes for complex scripts.
+ * runOnFile("~/myScript.sh %F", "path/to/file.png")
+ * 
+ * @param {String} script User script.
+ * @param {string} [filepath] Absolute path to file to run script on.
  * @returns {Boolean} Success.
  */
-function runOnFile(script, file = null) {
-  const needFile = script.includes('%F') || script.includes('%N')
-  if (needFile && !file) return false
+function runOnFile(script, filepath) {
+  const needFile = script.includes('%F') || script.includes('%N') || script.includes('%T')
+  if (needFile && !filepath) return false
 
-  if (file) {
-    script = script.replaceAll('%F', `"${file.path}"`)
-    script = script.replaceAll('%N', `"${file.name}"`)
+  if (filepath) {
+    script = script.replaceAll('%F', `"${filepath}"`)
+    script = script.replaceAll('%N', `"${p.basename(filepath)}"`)
+    script = script.replaceAll('%T', fileType(filepath) )
   }
 
   // console.log(`MXIV: Ran user script:\n${script}`)

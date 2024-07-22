@@ -259,16 +259,26 @@ ActionController.setComponentActions('viewer', {
   },
 
   'runScript': {
-    'desc' : 'run user script where %F, %N represent current filepath & \
-    filename respectively : <script> <displayMsg?>',
-    'run'  : async (usrCmd, optMsg) => {
-      const msgId = 'runScript'
-      if (!usrCmd) return AppNotifier.notify('invalid arguments', msgId)
-      
-      const wasRan = await FRAME.runOnPage(usrCmd, optMsg, msgId)
+    'desc' : 'run user script where %F, %N, %T represent the selected file path, \
+      name & type, respectively : <script> <displayMsg?>',
+    'run'  : async (userScript, optMsg) => {
+      if (userScript == null)
+        return AppNotifier.notify('invalid arguments', 'runScript')
 
-      if (wasRan && optMsg) AppNotifier.notify(optMsg, msgId)
-      else if (!wasRan) AppNotifier.notify(`this command needs a file to run`, msgId)
+      const currentFile = FRAME.fileBook.currentFile?.path
+      const success = await elecAPI.runOnFile(userScript, currentFile)
+
+      if (!success) {
+        AppNotifier.notify(`this command needs a file to run`, 'runScript')
+      } else {
+        console.log(`Ran user script:`, {
+          script: userScript,
+          file: currentFile
+        })
+
+        if (optMsg != null)
+          AppNotifier.notify(optMsg, 'runScript')
+      }
     }
   },
 

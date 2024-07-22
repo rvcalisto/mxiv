@@ -185,6 +185,30 @@ ActionController.setComponentActions('library', {
     }
   },
 
+  'runScript': {
+    'desc' : 'run user script where %F, %N, %T represent the selected file path, \
+      name & type, respectively : <script> <displayMsg?>',
+    'run'  : async (userScript, optMsg) => {
+      if (userScript == null)
+        return AppNotifier.notify('invalid arguments', 'runScript')
+
+      const currentFile = CoverGrid.selection?.bookPath
+      const success = await elecAPI.runOnFile(userScript, currentFile)
+
+      if (!success) {
+        AppNotifier.notify(`this command needs a file to run`, 'runScript')
+      } else {
+        console.log(`Ran user script:`, {
+          script: userScript,
+          file: currentFile
+        })
+
+        if (optMsg != null)
+          AppNotifier.notify(optMsg, 'runScript')
+      }
+    }
+  },
+
 })
 
 

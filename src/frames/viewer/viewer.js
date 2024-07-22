@@ -258,22 +258,6 @@ export class Viewer extends GenericFrame {
     if (filterQuery.length > 0) this.filter(...filterQuery)
     AppNotifier.notify('files reloaded', 'fileReload')
   }
-
-  /**
-   * Run user defined script on current file.
-   * @param {String} userScript User script.
-   * @returns {Promise<boolean>} Either command was run or not.
-   */
-  async runOnPage(userScript) {
-    const currentFile = this.fileBook.currentFile
-    const success = await elecAPI.runOnFile(userScript, currentFile)
-    if (success) console.log(`Ran user script:`, {
-      script: userScript,
-      file: currentFile
-    })
-    
-    return success
-  }
   
   /**
    * Delete current file from filesystem.
