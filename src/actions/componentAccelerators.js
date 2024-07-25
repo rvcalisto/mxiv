@@ -111,32 +111,17 @@ export class ComponentAccelerators {
   }
 
   /**
-   * Return either keycombo matches keyboard event.
-   * @param {String} keycombo Sorted, ordered, lower-case key combo string.
-   * @param {KeyboardEvent} keyEvent Raw `KeyboardEvent` to match against.
-   * @returns {Boolean}
-   */
-  static #matchEvent(keycombo, keyEvent) {
-    // fail if modifier keys mismatch
-    if (keyEvent.shiftKey !== keycombo.includes('shift')) return false;
-    if (keyEvent.ctrlKey !== keycombo.includes('control')) return false;
-
-    // return mapped key & keyboardEvent key match
-    const singleKey = keycombo.split('+').at(-1); // knowing last idx will be key
-    return singleKey === keyEvent.key.toLowerCase();
-  }
-
-  /**
    * Returns action and arguments accelerated by given event. null otherwise.
    * @param {KeyboardEvent} keyEvent Raw `KeyboardEvent` to match accelerators.
    * @returns {String[]?}
    */
   byEvent(keyEvent) {
-    for (const keyCombo in this.#byKeycombo) {
-      if (ComponentAccelerators.#matchEvent(keyCombo, keyEvent))
-        return this.#byKeycombo[keyCombo];
-    }
-    return null;
+    let eventCombo = '';
+    if (keyEvent.ctrlKey) eventCombo += 'control+';
+    if (keyEvent.shiftKey) eventCombo += 'shift+';
+    eventCombo += keyEvent.key.toLowerCase();
+
+    return this.#byKeycombo[eventCombo];
   }
 
   /**
