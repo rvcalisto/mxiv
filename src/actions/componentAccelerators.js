@@ -9,6 +9,14 @@
 export class ComponentAccelerators {
 
   /**
+   * Aliased KeyboardEvent keys.
+   */
+  static #keyAliases = {
+    ' ': 'space',
+    '+': 'plus'
+  };
+
+  /**
    * Keycombo keys, action & args as values.
    * @type {AcceleratorSet}
    */
@@ -49,11 +57,6 @@ export class ComponentAccelerators {
       key = key.replaceAll('+', '');
     }
 
-    // translate aliased keys
-    if ( key.startsWith('space') ) {
-      key = key.replace('space', ' ');
-    }
-
     return modifiers + key;
   }
 
@@ -81,14 +84,7 @@ export class ComponentAccelerators {
     /** @type {AcceleratorSet} */
     const accelSetClone = {};
 
-    // assign entries to clone while translating-back aliased keys
-    for ( let [key, action] of Object.entries(this.#byKeycombo) ) {
-      if ( key.startsWith(' ') ) {
-        key = key.replace(' ', 'space');
-      }
-      
-      accelSetClone[key] = action;
-    }
+    Object.assign(accelSetClone, this.#byKeycombo);
 
     return accelSetClone;
   }
@@ -104,7 +100,7 @@ export class ComponentAccelerators {
       let [command, args] = cmdArgs;
 
       if (!acceleratedCmds[command]) acceleratedCmds[command] = [];
-      acceleratedCmds[command].push(accelKey.replace(' ', 'space'));
+      acceleratedCmds[command].push(accelKey);
     }
 
     this.#byAction = acceleratedCmds;
@@ -119,7 +115,10 @@ export class ComponentAccelerators {
     let eventCombo = '';
     if (keyEvent.ctrlKey) eventCombo += 'control+';
     if (keyEvent.shiftKey) eventCombo += 'shift+';
-    eventCombo += keyEvent.key.toLowerCase();
+
+    // translate aliased keys
+    const key = keyEvent.key.toLowerCase();
+    eventCombo += ComponentAccelerators.#keyAliases[key] || key;
 
     return this.#byKeycombo[eventCombo];
   }
