@@ -90,20 +90,22 @@ export class ComponentAccelerators {
   }
 
   /**
-   * Builds a relation of actions and accelerating keyCombos.
+   * Builds a relation of action slices and accelerating keyCombos.
    */
   #buildAcceleratedActions() {
-    /** @type {AcceleratorSet} */
-    const acceleratedCmds = {};
+    this.#byAction = {};
 
-    for (const [accelKey, cmdArgs] of Object.entries(this.#byKeycombo)) {
-      let [command, args] = cmdArgs;
+    for ( const [keyCombo, action] of Object.entries(this.#byKeycombo) ) {
 
-      if (!acceleratedCmds[command]) acceleratedCmds[command] = [];
-      acceleratedCmds[command].push(accelKey);
+      for (let i = 1; i <= action.length; i++) {
+        const actionSlice = String( action.slice(0, i) );
+
+        if (this.#byAction[actionSlice] == null)
+          this.#byAction[actionSlice] = [];
+
+        this.#byAction[actionSlice].push(keyCombo);
+      }
     }
-
-    this.#byAction = acceleratedCmds;
   }
 
   /**
@@ -126,23 +128,9 @@ export class ComponentAccelerators {
   /**
    * Return an array of keycombos accelarating a given action.
    * @param {String[]} actions Command strings accelerated by keys.
-   * @param {boolean} [exact=false] Either to include all intersecting actions or exact matches only.
    * @returns {String[]}
    */
-  byAction(actions, exact = false) {
-    if (actions.length < 2) return this.#byAction[actions[0]] || [];
-
-    const componentEntries = Object.entries(this.#byKeycombo);
-    const keycombos = [];
-    const matchLength = actions.length;
-
-    for (const [keycombo, cmdArgs] of componentEntries) {
-      const match = exact ? String(actions) === String(cmdArgs) :
-        String(actions) === String(cmdArgs.slice(0, matchLength));
-
-      if (match) keycombos.push(keycombo);
-    }
-
-    return keycombos;
+  byAction(actions) {
+    return this.#byAction[String(actions)] || [];
   }
 }
