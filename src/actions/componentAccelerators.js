@@ -34,27 +34,27 @@ export class ComponentAccelerators {
    * @return {String} Parsed unique accelerator.
    */
   static parseKeycombo(key) {
-    let treatedKey = key.toLowerCase();
+    key = key.toLowerCase();
+    let modifiers = '';
 
-    // set key in predefined order to avoid multiple entries for same combo
-    if ( treatedKey.includes('+') ) {
-      const hasShift = treatedKey.includes('shift');
-      const hasCtrl = treatedKey.includes('control');
+    // rip modifier concatenations into ordered string
+    if ( key.includes('+') ) {
+      for (const modifier of ['control', 'shift']) {
+        if ( !key.includes(modifier) ) continue 
+        
+        modifiers += `${modifier}+`;
+        key = key.replace(modifier, '');
+      }
 
-      // re-assemble combo in predefined order [key+Shift+Control]
-      treatedKey = treatedKey
-        .replaceAll('+', '').replace('shift', '').replace('control', '');
-      
-      if (hasShift) treatedKey += '+shift';
-      if (hasCtrl) treatedKey += '+control';
+      key = key.replaceAll('+', '');
     }
 
     // translate aliased keys
-    if ( treatedKey.startsWith('space') ) {
-      treatedKey = treatedKey.replace('space', ' ');
+    if ( key.startsWith('space') ) {
+      key = key.replace('space', ' ');
     }
 
-    return treatedKey;
+    return modifiers + key;
   }
 
   /**
@@ -122,7 +122,7 @@ export class ComponentAccelerators {
     if (keyEvent.ctrlKey !== keycombo.includes('control')) return false;
 
     // return mapped key & keyboardEvent key match
-    const singleKey = keycombo.split('+')[0]; // knowing first idx will be key
+    const singleKey = keycombo.split('+').at(-1); // knowing last idx will be key
     return singleKey === keyEvent.key.toLowerCase();
   }
 
