@@ -1,7 +1,7 @@
-import { AcceleratorController } from "../actions/acceleratorController.js";
+import { AcceleratorService } from "../actions/acceleratorService.js";
 
 
-AcceleratorController.setBaseDefaults({
+AcceleratorService.setBaseDefaults({
 
   // cmds
   'x': ['cli', 'show'],

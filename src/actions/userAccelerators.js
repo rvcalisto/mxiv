@@ -1,5 +1,5 @@
 import { GenericStorage } from '../components/genericStorage.js';
-import { AcceleratorController } from './acceleratorController.js';
+import { AcceleratorService } from './acceleratorService.js';
 import { ComponentAccelerators } from "./componentAccelerators.js";
 
 
@@ -60,9 +60,9 @@ export const UserAccelerators = new class {
     }
 
     if (component === 'base')
-      AcceleratorController.setBaseCustoms(accelerators);
+      AcceleratorService.setBaseCustoms(accelerators);
     else
-      AcceleratorController.setComponentCustoms(component, accelerators);
+      AcceleratorService.setComponentCustoms(component, accelerators);
 
     if (store) {
       this.#storage.set(component, accelerators);
@@ -94,7 +94,7 @@ export const UserAccelerators = new class {
    * - Elements using CSS variables in their style get updated automatically on change.
    */
   #updateCLIaccelCSSvar() {
-    const baseAccelSet = AcceleratorController.getAccelerators('base');
+    const baseAccelSet = AcceleratorService.getAccelerators('base');
     if (baseAccelSet == null) return;
     
     // get keycombo for the first intersecting action

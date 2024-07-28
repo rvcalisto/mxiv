@@ -2,8 +2,8 @@ import { ItemList } from "../itemList.js";
 import { InputPrompt } from "./inputPrompt.js";
 import { PriorityStack } from "./priorityStack.js";
 import { OptionElement } from "./optionElement.js";
-import { ActionController } from "../../actions/actionController.js";
-import { AcceleratorController } from "../../actions/acceleratorController.js";
+import { ActionService } from "../../actions/actionService.js";
+import { AcceleratorService } from "../../actions/acceleratorService.js";
 import { AppNotifier } from "../notifier.js";
 import { GenericStorage } from "../genericStorage.js";
 
@@ -114,7 +114,7 @@ class AppCmdLine extends HTMLElement {
     command = command || this.#prompt.getText();
     const action = InputPrompt.unescapeIntoArray(command);
 
-    const success = ActionController.currentFrameActions.run(action);
+    const success = ActionService.currentFrameActions.run(action);
     if (success) {
       const textItem = command ? command.trim() : '';
       if (textItem !== '' && textItem !== 'cli repeatLast')
@@ -159,7 +159,7 @@ class AppCmdLine extends HTMLElement {
     const element = OptionElement.createElement(itemOption);
 
     // tag accelerators keys, if any
-    const frameAccelerators = AcceleratorController.currentFrameAccelerators;
+    const frameAccelerators = AcceleratorService.currentFrameAccelerators;
     element.tags = frameAccelerators.byAction([...leadingAction, itemOption.name]);
     
     if (itemOption.type === 'history') {
@@ -188,7 +188,7 @@ class AppCmdLine extends HTMLElement {
    * Genereate hint list based on current this.#prompt text.
    */
   async #displayHints() {
-    const currentActions = ActionController.currentFrameActions.asObject();
+    const currentActions = ActionService.currentFrameActions.asObject();
     const inputTextArray = this.#prompt.getTextArray();
     let [cmd, ...args] = inputTextArray;
     let action = currentActions[cmd];

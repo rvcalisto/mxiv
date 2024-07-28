@@ -8,9 +8,9 @@ import { ComponentActions } from "./componentActions.js";
 
 
 /**
- * Manage actions for a multitude of registered components.
+ * Manages actions for multiple components.
  */
-export const ActionController = new class {
+export const ActionService = new class {
 
   /**
    * Collection of actions per component.

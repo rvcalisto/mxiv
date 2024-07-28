@@ -1,7 +1,7 @@
-import { AcceleratorController } from "../../actions/acceleratorController.js"
+import { AcceleratorService } from "../../actions/acceleratorService.js"
 
 
-AcceleratorController.setComponentDefaults('library', {
+AcceleratorService.setComponentDefaults('library', {
   
   'o'   : ['addToLibrary'],
   'r'   : ['random'],

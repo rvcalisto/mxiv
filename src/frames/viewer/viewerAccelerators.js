@@ -1,7 +1,7 @@
-import { AcceleratorController } from "../../actions/acceleratorController.js"
+import { AcceleratorService } from "../../actions/acceleratorService.js"
 
 
-AcceleratorController.setComponentDefaults('viewer', {
+AcceleratorService.setComponentDefaults('viewer', {
 	// navigation
 	'w' : ['navigate', 'up'],
 	's' : ['navigate', 'down'],
@@ -45,7 +45,7 @@ AcceleratorController.setComponentDefaults('viewer', {
 })
 
 // to be managed by local controller
-AcceleratorController.setComponentDefaults('fileExplorer', {
+AcceleratorService.setComponentDefaults('fileExplorer', {
   'w' : ['navItems', 'up'],
   'ArrowUp' : ['navItems', 'up'],
 

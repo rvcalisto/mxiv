@@ -1,7 +1,7 @@
 import { FRAME } from "../tabs/tab.js";
 import { AppCLI } from "../components/appCli/appCLI.js";
-import { ActionController } from "../actions/actionController.js";
-import { AcceleratorController } from "../actions/acceleratorController.js";
+import { ActionService } from "../actions/actionService.js";
+import { AcceleratorService } from "../actions/acceleratorService.js";
 
 
 // catch and treat keydown events for accelerators
@@ -10,9 +10,9 @@ onkeydown = (e) => {
   if (FRAME == null) return;
   if (AppCLI.active) return AppCLI.toggle(e.key !== 'Escape');
   
-  const action = AcceleratorController.currentFrameAccelerators.byEvent(e);
+  const action = AcceleratorService.currentFrameAccelerators.byEvent(e);
   if (action != null) {
     e.preventDefault();
-    ActionController.currentFrameActions.run(action);
+    ActionService.currentFrameActions.run(action);
   }
 }

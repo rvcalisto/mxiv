@@ -1,4 +1,4 @@
-import { AcceleratorController } from "../../actions/acceleratorController.js";
+import { AcceleratorService } from "../../actions/acceleratorService.js";
 import { FRAME } from "../../tabs/tab.js";
 
 
@@ -8,7 +8,7 @@ import { FRAME } from "../../tabs/tab.js";
 addEventListener('fileExplorerKeyEvent', function handleFileExplorer(e) {
   const keyEvent = e.detail;
 
-  const action = AcceleratorController
+  const action = AcceleratorService
     .getAccelerators('fileExplorer', 'default')
     .byEvent(keyEvent);
 
@@ -28,7 +28,7 @@ addEventListener('fileExplorerKeyEvent', function handleFileExplorer(e) {
 addEventListener('keyup', function releaseViewSlide(e) {
   if (FRAME == null || FRAME.type !== 'viewer') return;
 
-  const action = AcceleratorController
+  const action = AcceleratorService
     .getAccelerators('viewer')
     .byEvent(e);
   

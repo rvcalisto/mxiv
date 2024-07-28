@@ -1,4 +1,4 @@
-import { ActionController } from "../actions/actionController.js"
+import { ActionService } from "../actions/actionService.js"
 import { Tab } from "../tabs/tab.js"
 import { StatusBar } from "../components/statusBar.js"
 import { SessionProfiles } from "../tabs/profiles.js"
@@ -11,7 +11,7 @@ import { FrameRegistry } from "../frames/frameRegistry.js"
 /**
  * Commands that can be user invoked by shortcuts on keyHandler or AppCLI.
  */
-ActionController.setBaseActions({
+ActionService.setBaseActions({
 
   'cli': {
     'desc': 'app command line interface methods',

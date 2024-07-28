@@ -1,4 +1,4 @@
-import { ActionController } from "../../actions/actionController.js"
+import { ActionService } from "../../actions/actionService.js"
 import { FRAME } from "../../tabs/tab.js"
 import { option, standardFilter } from "../../components/appCli/appCLI.js"
 import { AppNotifier } from "../../components/notifier.js"
@@ -7,7 +7,7 @@ import { AppNotifier } from "../../components/notifier.js"
 /**
  * Commands that can be user invoked by shortcuts on keyHandler or IndexCLI.
  */
-ActionController.setComponentActions('viewer', {
+ActionService.setComponentActions('viewer', {
 
   'open': {
     'desc' : 'open file(s) or folder(s)',
