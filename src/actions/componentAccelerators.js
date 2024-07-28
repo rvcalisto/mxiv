@@ -33,7 +33,6 @@ export class ComponentAccelerators {
    */
   constructor(accelerators = {}) {
     this.extend(accelerators, false);
-    this.#buildAcceleratedActions();
   }
 
   /**
@@ -126,11 +125,11 @@ export class ComponentAccelerators {
   }
 
   /**
-   * Return an array of keycombos accelarating a given action.
+   * Return an array of keycombos accelarating a given action, if any.
    * @param {String[]} actions Command strings accelerated by keys.
-   * @returns {String[]}
+   * @returns {String[]?}
    */
   byAction(actions) {
-    return this.#byAction[String(actions)] || [];
+    return this.#byAction[String(actions)];
   }
 }

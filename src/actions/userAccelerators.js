@@ -99,7 +99,7 @@ export const UserAccelerators = new class {
     
     // get keycombo for the first intersecting action
     const action = ['cli', 'show'];
-    const keycombo = baseAccelSet.byAction(action)[0] || '???';
+    const keycombo = baseAccelSet.byAction(action)?.at(0) || '???';
     
     document.documentElement.style.setProperty('--msg-cliAccel', `"${keycombo}"`);
   }
