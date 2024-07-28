@@ -13,77 +13,58 @@ import { ComponentActions } from "./componentActions.js";
 export const ActionService = new class {
 
   /**
-   * Collection of actions per component.
+   * Collection of component actions.
    * @type {Object<string, ComponentActions>}
    */
   #collection = {};
 
   /**
+   * Composable components (non-meta).
    * @type {Set<String>}
    */
-  #registeredComponents = new Set();
+  #components = new Set();
 
   /**
-   * Get component Actions as object. Returns empty object if not stored. 
-   * @param {String} component Component name.
-   * @returns {ActionSet}
-   */
-  #getActionsObject(component) {
-    try {
-      return this.#collection[component].asObject();
-    } catch {
-      return {};
-    }
-  }
-
-  /**
-   * Set base actions to be inherited by other components.
-   * @param {ActionSet} actions 
+   * Set common base actions.
+   * @param {ActionSet} actions Action set.
    */
   setBaseActions(actions) {
     this.#collection['base'] = new ComponentActions(actions);
-    this.#propagateBaseChanges();
+    
+    this.#components.forEach(component => {
+      this.#buildComposedActions(component);
+    });
   }
 
   /**
-   * Set actions for component.
+   * Set component actions.
    * @param {String} component Component name.
    * @param {ActionSet} actions Component actions.
    */
   setComponentActions(component, actions) {
-    this.#registeredComponents.add(component);
+    this.#components.add(component);
 
     this.#collection[component] = new ComponentActions(actions);
-    this.#setComponentComposed(component);
+    this.#buildComposedActions(component);
   }
 
   /**
-   * Creates new action object inheriting base for a given component.
-   * @param {String} component 
+   * Builds composed component actions.
+   * @param {String} component Component name.
    */
-  #setComponentComposed(component) {
+  #buildComposedActions(component) {
     const composedActions = new ComponentActions();
+    const baseActionSet = this.#collection['base']?.asObject() || {};
 
-    composedActions.merge( this.#getActionsObject('base') );
+    composedActions.merge(baseActionSet);
     composedActions.merge( this.#collection[component].asObject() );
 
     this.#collection[`${component}-all`] = composedActions;
   }
 
   /**
-   * (Re)Creates composed actions for every registered component. 
-   */
-  #propagateBaseChanges() {
-    const registeredComponentes = this.#registeredComponents.values();
-
-    for (const component of registeredComponentes) {
-      this.#setComponentComposed(component);
-    }
-  }
-
-  /**
-   * Get component actions.
-   * @param {String} component Component from which to retrieve actions.
+   * Returns component actions.
+   * @param {String} component Component name.
    * @returns {ComponentActions}
    */
   getActions(component) {
@@ -91,11 +72,11 @@ export const ActionService = new class {
   }
 
   /**
-   * Return Actions for current FRAME.
+   * Returns current FRAME Actions.
    * @returns {ComponentActions} 
    */
   get currentFrameActions() {
-    if (!FRAME) return this.#collection['base-all']
+    if (!FRAME) return this.#collection['base'];
     return this.#collection[`${FRAME.type}-all`];
   }
 }

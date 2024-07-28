@@ -13,120 +13,116 @@ import { FRAME } from "../tabs/tab.js";
 export const AcceleratorService = new class {
 
   /**
+   * Collection of component accelerators.
    * @type {Object<string, ComponentAccelerators>}
    */
-  #acceleratorSets = {};
+  #collection = {};
 
   /**
+   * Composable components (non-meta).
    * @type {Set<String>}
    */
-  #registeredComponents = new Set();
+  #components = new Set();
 
   /**
-   * Get AcceleratorSet as object. Returns empty object if not stored.
-   * @param {String} component 
+   * Returns component AcceleratorSet. Empty if not stored.
+   * @param {String} component Component name.
    * @returns {AcceleratorSet}
    */
   #getSet(component) {
-    try {
-      return this.#acceleratorSets[component].asObject();
-    } catch {
-      return {};
-    }
+    return this.#collection[component]?.asObject() || {};
   }
 
   /**
-   * Set default base accelerators to be inherited by other components.
-   * @param {AcceleratorSet} accelerators 
+   * Set common base accelerators.
+   * @param {AcceleratorSet} accelerators Accelerator set.
    */
   setBaseDefaults(accelerators) {
-    this.#acceleratorSets['base'] = new ComponentAccelerators(accelerators);
+    this.#collection['base'] = new ComponentAccelerators(accelerators);
 
-    this.#setComponentComposed('base');
+    this.#buildComposedAccelerators('base');
     this.#propagateBaseChanges();
   }
 
   /**
-   * Extend default base accelerators with user-defined ones. 
-   * @param {AcceleratorSet} accelerators 
+   * Extends common base accelerators with user-defined ones. 
+   * @param {AcceleratorSet} accelerators Accelerator set.
    */
   setBaseCustoms(accelerators) {
-    this.#acceleratorSets['base-user'] = new ComponentAccelerators(accelerators);
+    this.#collection['base-user'] = new ComponentAccelerators(accelerators);
 
-    this.#setComponentComposed('base');
+    this.#buildComposedAccelerators('base');
     this.#propagateBaseChanges();
   }
 
   /**
-   * Set default accelerators for component.
-   * @param {String} component 
-   * @param {AcceleratorSet} accelerators 
+   * Set component default accelerators.
+   * @param {String} component Component name.
+   * @param {AcceleratorSet} accelerators Accelerator set.
    */
   setComponentDefaults(component, accelerators) {
-    this.#registeredComponents.add(component);
+    this.#components.add(component);
 
-    this.#acceleratorSets[component] = new ComponentAccelerators(accelerators);
-    this.#setComponentComposed(component);
+    this.#collection[component] = new ComponentAccelerators(accelerators);
+    this.#buildComposedAccelerators(component);
   }
 
   /**
-   * Extend default accelerators for component with user-defined ones.
-   * @param {String} component 
-   * @param {AcceleratorSet} accelerators 
+   * Extends component default accelerators with user-defined ones.
+   * @param {String} component Component name.
+   * @param {AcceleratorSet} accelerators Accelerator set.
    */
   setComponentCustoms(component, accelerators) {
-    this.#acceleratorSets[`${component}-user`] = new ComponentAccelerators(accelerators);
-    this.#setComponentComposed(component);
+    this.#collection[`${component}-user`] = new ComponentAccelerators(accelerators);
+    this.#buildComposedAccelerators(component);
   }
 
   /**
-   * Creates composed object inheriting composed base, default and user-defined component accelerators.
-   * @param {String} component Component
+   * Builds composed component accelerators.
+   * @param {String} component Component name.
    */
-  #setComponentComposed(component) {
-    const composedSet = new ComponentAccelerators();
+  #buildComposedAccelerators(component) {
+    const composedAccelerators = new ComponentAccelerators();
 
     if (component !== 'base') 
-      composedSet.merge( this.#getSet('base-all'), false );
+      composedAccelerators.merge( this.#getSet('base-all'), false );
 
-    composedSet.merge( this.#acceleratorSets[component].asObject(), false );
-    composedSet.merge( this.#getSet(`${component}-user`) );
+    composedAccelerators.merge( this.#collection[component].asObject(), false );
+    composedAccelerators.merge( this.#getSet(`${component}-user`) );
 
-    this.#acceleratorSets[`${component}-all`] = composedSet;
+    this.#collection[`${component}-all`] = composedAccelerators;
   }
 
   /**
-   * (Re)Creates composed accelerators for every registered component. 
+   * Builds and updates composed accelerators for each component. 
    */
   #propagateBaseChanges() {
-    const registeredComponentes = this.#registeredComponents.values();
-
-    for (const component of registeredComponentes) {
-      this.#setComponentComposed(component);
-    }
+    this.#components.forEach(component => {
+      this.#buildComposedAccelerators(component);
+    });
   }
 
   /**
    * Returns component accelerators.
    * @param {string} component Component name.
-   * @param {'composed'|'default'|'custom'} [type='composed'] Type version to retrieve.
+   * @param {'composed'|'default'|'custom'} [type='composed'] Accelerator layer.
    * @returns {ComponentAccelerators?}
    */
   getAccelerators(component, type = 'composed') {
     if (type === 'composed')
-      return this.#acceleratorSets[`${component}-all`];
+      return this.#collection[`${component}-all`];
     else if (type === 'default')
-      return this.#acceleratorSets[component];
+      return this.#collection[component];
     else
-      return this.#acceleratorSets[`${component}-user`];
+      return this.#collection[`${component}-user`];
   }
 
   /**
-   * Returns current FRAME AcceleratorSet.
+   * Returns current FRAME Accelerators.
    * @returns {ComponentAccelerators}
    */
   get currentFrameAccelerators() {
-    if (!FRAME) return this.#acceleratorSets['base-all']
-    return this.#acceleratorSets[`${FRAME.type}-all`];
+    if (!FRAME) return this.#collection['base-all']
+    return this.#collection[`${FRAME.type}-all`];
   }
 }
