@@ -160,8 +160,7 @@ class AppCmdLine extends HTMLElement {
 
     // tag accelerators keys, if any
     const frameAccelerators = AcceleratorController.currentFrameAccelerators;
-    const keys = frameAccelerators.byAction([...leadingAction, itemOption.name]);
-    if (keys != null) element.tags = keys;
+    element.tags = frameAccelerators.byAction([...leadingAction, itemOption.name]);
     
     if (itemOption.type === 'history') {
       element.onForget = () => this.clearCmdHistory(itemOption.name);

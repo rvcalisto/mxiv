@@ -30,9 +30,9 @@ export class OptionElement extends HTMLElement {
 
   /**
    * Tag decorators.
-   * @type {string[]}
+   * @type {string[]?}
    */
-  tags = [];
+  tags = null;
   
   static {
     customElements.define(OptionElement.tagName, OptionElement);
@@ -55,8 +55,8 @@ export class OptionElement extends HTMLElement {
   connectedCallback() {
     this.#setupBaseElement();
     
-    if (this.tags.length > 0)
-      this.append( this.#tagDecorators() );
+    if (this.tags != null)
+      this.append( this.#tagDecorators(this.tags) );
     else if (this.onForget != null)
       this.append( this.#forgetButton() );
   }
@@ -80,16 +80,17 @@ export class OptionElement extends HTMLElement {
 
   /**
    * Returns HTMLElement with tagged strings.
+   * @param {string[]} tags Tag array.
    * @returns {HTMLElement} 
    */
-  #tagDecorators() {
+  #tagDecorators(tags) {
     const element = document.createElement('div');
     element.className = 'accelerators';
 
-    this.tags.forEach(key => {
+    tags.forEach(tag => {
       const hotkey = document.createElement('p');
       hotkey.className = 'itemTag';
-      hotkey.textContent = key;
+      hotkey.textContent = tag;
       element.appendChild(hotkey);
     });
 
