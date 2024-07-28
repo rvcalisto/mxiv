@@ -32,7 +32,7 @@ export class ComponentAccelerators {
    * @param {AcceleratorSet} accelerators
    */
   constructor(accelerators = {}) {
-    this.extend(accelerators, false);
+    this.merge(accelerators, false);
   }
 
   /**
@@ -60,11 +60,11 @@ export class ComponentAccelerators {
   }
 
   /**
-   * Extend accelerator entries for polymorphism.
-   * @param {AcceleratorSet} accelerators Accelerator properties to overwrite.
+   * Merge accelerator entries for polymorphism.
+   * @param {AcceleratorSet} accelerators Accelerators to merge or overwrite.
    * @param {boolean} [deleteEmpty=true] Delete keys whose value is an empty array.
    */
-  extend(accelerators, deleteEmpty = true) {
+  merge(accelerators, deleteEmpty = true) {
     for (const [key, value] of Object.entries(accelerators)) {
       let treatedKey = ComponentAccelerators.parseKeycombo(key);
 

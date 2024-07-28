@@ -35,10 +35,10 @@ export class ComponentActions {
   }
 
   /**
-   * Extend action entries for polymorphism.
-   * @param {ActionSet} actions Accelerator properties to overwrite.
+   * Merge action entries for polymorphism.
+   * @param {ActionSet} actions Actions to merge or overwrite.
    */
-  extend(actions) {
+  merge(actions) {
     Object.assign(this.#actionSet, actions);
   }
 

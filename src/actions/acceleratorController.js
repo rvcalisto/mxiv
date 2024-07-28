@@ -87,10 +87,10 @@ export const AcceleratorController = new class {
     const composedSet = new ComponentAccelerators();
 
     if (component !== 'base') 
-      composedSet.extend( this.#getSet('base-all'), false );
+      composedSet.merge( this.#getSet('base-all'), false );
 
-    composedSet.extend( this.#acceleratorSets[component].asObject(), false );
-    composedSet.extend( this.#getSet(`${component}-user`) );
+    composedSet.merge( this.#acceleratorSets[component].asObject(), false );
+    composedSet.merge( this.#getSet(`${component}-user`) );
 
     this.#acceleratorSets[`${component}-all`] = composedSet;
   }

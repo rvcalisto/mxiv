@@ -64,8 +64,8 @@ export const ActionController = new class {
   #setComponentComposed(component) {
     const composedActions = new ComponentActions();
 
-    composedActions.extend( this.#getActionsObject('base') );
-    composedActions.extend( this.#collection[component].asObject() );
+    composedActions.merge( this.#getActionsObject('base') );
+    composedActions.merge( this.#collection[component].asObject() );
 
     this.#collection[`${component}-all`] = composedActions;
   }
