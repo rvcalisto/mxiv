@@ -102,4 +102,10 @@ export class GenericFrame extends HTMLElement {
    * @param {'play'|'pause'|'stop'|'next'|'previous'} action 
    */
   mediaControl(action) {}
+
+  /**
+   * Called on Frame Tab selected.
+   * @abstract
+   */
+  onSelected() {}
 }

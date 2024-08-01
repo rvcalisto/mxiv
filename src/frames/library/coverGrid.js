@@ -2,6 +2,7 @@ import { ItemList } from "../../components/itemList.js"
 import { Cover } from "./coverElement.js";
 import { Tab } from "../../tabs/tab.js";
 import { ObservableEvents } from "../../components/observableEvents.js";
+import { GeneralState } from "../../tabs/profiles.js";
 
 
 /**
@@ -110,12 +111,12 @@ export class CoverGrid {
     // console.timeEnd('populate library')
 
     // recover last selection
-    if (CoverGrid.selection) {
-      const lastSelectedPath = CoverGrid.selection.bookPath
-      const lastSelected = this.#list
-        .findItemElement(item => item.path === lastSelectedPath)
+    const lastPath = GeneralState.librarySelection;
+    if (lastPath) {
+      const cover = this.#list
+        .findItemElement(item => item.path === lastPath)
       
-      if (lastSelected) this.selectCover(lastSelected)
+      if (cover) this.selectCover(cover)
     }
 
     this.events.fire('grid:coverUpdate')
@@ -132,9 +133,9 @@ export class CoverGrid {
   /**
    * Force build cache and draw covers.
    */
-  reloadCovers() {
+  async reloadCovers() {
     CoverGrid.#dirtyCache = true
-    this.drawCovers()
+    await this.drawCovers()
   }
 
   /**
@@ -146,6 +147,7 @@ export class CoverGrid {
     if (CoverGrid.selection !== cover ) {
       this.#list.selectIntoFocus(cover)
       CoverGrid.selection = cover
+      GeneralState.librarySelection = cover.bookPath;
       return
     }
 

@@ -68,7 +68,18 @@ export class Library extends GenericFrame {
     Library.#singleInstanceRef = null
   }
 
-  /** @override */
+  /**
+   * @inheritdoc
+   */
+  onSelected() {
+    // scroll selected cover into view
+    const cover = CoverGrid.selection;
+    if (cover) cover.scrollIntoView({ block: 'center' });
+  }
+
+  /**
+   * @inheritdoc
+   */
   status() {
     return {
       title: 'Library',
@@ -173,8 +184,7 @@ export class Library extends GenericFrame {
     // update cover count in status
     this.coverGrid.events.observe('grid:coverUpdate', () => this.refreshStatus())
     
-    // populate coverGrid and setup button events 
-    // [Workaround] Wait 0 so cover.focus() isn't ignored as frame becomes visible
-    setTimeout( () => this.coverGrid.reloadCovers(), 0 );
+    // populate cover grid
+    this.coverGrid.reloadCovers();
   }
 }

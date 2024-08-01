@@ -13,7 +13,15 @@ import { Tab } from "./tab.js"
 /**
  * @typedef SessionProfileType
  * @property {TabProfileType[]} tabs Tabs in session.
+ * @property {GeneralState} general General session state.
  */
+
+/**
+ * General session state.
+ */
+export let GeneralState = {
+  librarySelection: ''
+}
 
 
 /**
@@ -35,7 +43,8 @@ export const SessionProfiles = new class {
   store(name) {
     /** @type {SessionProfileType} */
     const session = {
-      tabs: []
+      tabs: [],
+      general: GeneralState
     }
   
     // store tab data in order of presentation, if allowed and implemented
@@ -43,12 +52,11 @@ export const SessionProfiles = new class {
       const type = tab.frame.type;
       const allowProfiling = FrameRegistry.getPolicy(type)?.allowProfiling;
       
-      const state = allowProfiling ? tab.frame.getState() : null;
-      if (!state) continue;
-  
+      if (!allowProfiling) continue;
+
       session.tabs.push({
         type: type,
-        state: state
+        state: tab.frame.getState() || null
       });
     }
   
@@ -74,9 +82,18 @@ export const SessionProfiles = new class {
     if (clearSession)
       Tab.allTabs.forEach( tab => tab.close(false) );
   
-    // re-create session
+    // recover state and re-create session
+    Object.assign(GeneralState, session.general);
+
     for (const tabStateObj of session.tabs) {
       const { type, state } = tabStateObj;
+
+      // enforce single instance
+      const policy = FrameRegistry.getPolicy(type);
+      if (!policy?.allowDuplicate) {
+        const hasDuplicate = Tab.allTabs.some(tab => tab.frame.type === type);
+        if (hasDuplicate) continue;
+      }
   
       new Tab(type, async (frame) => {
         frame.restoreState(state);

@@ -81,6 +81,7 @@ export class Tab {
     this.frame.focus();
 
     StatusBar.updateStatus( this.frame.status() );
+    this.frame.onSelected();
   }
 
   /**
