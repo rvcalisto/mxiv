@@ -131,6 +131,11 @@ ActionService.setBaseActions({
     'run'  : () => elecAPI.newWindow()
   },
 
+  'fullscreen': {
+    'desc': 'toggle fullscreen',
+    'run': () => elecAPI.toggleFullscreen()
+  },
+
   'accel': {
     'desc': 'manage user accelerators',
     'run': () => {},

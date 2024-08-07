@@ -14,6 +14,7 @@ AcceleratorService.setBaseDefaults({
   'h': ['statusVisibility'],
   'g': ['tab', 'new', 'library'],
   'n': ['newWindow'],
+  'f11': ['fullscreen'],
 
   // tab control
   't+Control': ['tab', 'new'],

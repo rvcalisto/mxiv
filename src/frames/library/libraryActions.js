@@ -152,14 +152,6 @@ ActionService.setComponentActions('library', {
     'desc': 'select random book',
     'run': () => Library.coverGrid.randomCover()
   },
-  
-  'fullscreen': {
-    'desc': 'toggle fullscreen',
-    'run': () => {
-      if (document.fullscreenElement) document.exitFullscreen()
-      else document.body.requestFullscreen()
-    }
-  },
 
   'setCoverSize': {
     'desc': 'set cover height size in pixels, default is 200',
