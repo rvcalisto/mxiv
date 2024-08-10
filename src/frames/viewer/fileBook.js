@@ -174,26 +174,6 @@ export class FileBook {
     })
   }
 
-  /**
-   * Add and remove tags for current file.
-   * @param {Boolean} [add=true] Add tags instead of removing them.
-   * @param {String[]} tags Tags to associate to current file.
-   * @returns {Promise<Boolean>} Either any tags where updated.
-   */
-  async tag(add = true, ...tags) {
-    tags = tags.map( tag => tag.toLowerCase().trim() )
-      .filter(tag => tag !== '') // filter invalid tags
-
-    const currentFile = this.files[this.page]
-    if (!currentFile || !tags.length) return false
-
-    let success
-    if (add) success = await elecAPI.addTags(currentFile.path, ...tags)
-    else success = await elecAPI.removeTags(currentFile.path, ...tags)
-
-    return success
-  }
-
   /** 
    * Set page index while wrapping around if out-of-bound.
    * @param {Number} pageIdx New page index.

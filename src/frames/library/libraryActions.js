@@ -3,11 +3,9 @@ import { CoverGrid } from "./coverGrid.js"
 import { option, standardFilter } from "../../components/appCli/appCLI.js"
 import { FRAME as Library }  from "../../tabs/tab.js"
 import { AppNotifier } from "../../components/notifier.js"
+import { runScript, tag } from "../../components/fileMethods.js"
 
 
-/**
- * Commands that can be user invoked by shortcuts on keyHandler or libCLI.
- */
 ActionService.setComponentActions('library', {
 
   'filter' : {
@@ -40,12 +38,16 @@ ActionService.setComponentActions('library', {
     'methods': {
       'add': {
         'desc': 'add one or more tags to current book',
-        'run': (...tags) => tag(true, ...tags),
+        'run': (...tags) => {
+          tag(CoverGrid.selection?.bookPath, true, ...tags)
+        },
         'options': () => elecAPI.uniqueTags()
       },
       'del': {
         'desc': 'delete one or more tags from current book',
-        'run': (...tags) => tag(false, ...tags),
+        'run': (...tags) => {
+          tag(CoverGrid.selection?.bookPath, false, ...tags)
+        },
         'options': () => {
           if (!CoverGrid.selection) return []
           return elecAPI.getTags(CoverGrid.selection.bookPath)
@@ -180,51 +182,9 @@ ActionService.setComponentActions('library', {
   'runScript': {
     'desc' : 'run user script where %F, %N, %T represent the selected file path, \
       name & type, respectively : <script> <displayMsg?>',
-    'run'  : async (userScript, optMsg) => {
-      if (userScript == null)
-        return AppNotifier.notify('invalid arguments', 'runScript')
-
-      const currentFile = CoverGrid.selection?.bookPath
-      const success = await elecAPI.runOnFile(userScript, currentFile)
-
-      if (!success) {
-        AppNotifier.notify(`this command needs a file to run`, 'runScript')
-      } else {
-        console.log(`Ran user script:`, {
-          script: userScript,
-          file: currentFile
-        })
-
-        if (optMsg != null)
-          AppNotifier.notify(optMsg, 'runScript')
-      }
+    'run'  : async (script, msg) => {
+      await runScript(script, CoverGrid.selection?.bookPath, msg);
     }
   },
 
 })
-
-
-/**
- * Add and remove tags for current book file.
- * @param {Boolean} add Add tags instead of removing them.
- * @param  {...String} tags Tags to associate to current file.
- */
-async function tag(add = true, ...tags) {
-  
-  if (!CoverGrid.selection) {
-    AppNotifier.notify('no book selected', 'tag')
-    return
-  }
-
-  // treat tags
-  tags = tags.map(tag => tag.toLowerCase().trim()).filter(tag => tag)
-  
-  const bookPath = CoverGrid.selection.bookPath
-  if (!tags.length) return AppNotifier.notify('no tags to update')
-
-  let success
-  if (add) success = await elecAPI.addTags(bookPath, ...tags)
-  else success = await elecAPI.removeTags(bookPath, ...tags)
-
-  AppNotifier.notify(`${success ? '' : 'no '}tags updated`, 'tag')
-}

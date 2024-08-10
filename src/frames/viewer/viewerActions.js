@@ -2,11 +2,9 @@ import { ActionService } from "../../actions/actionService.js"
 import { FRAME } from "../../tabs/tab.js"
 import { option, standardFilter } from "../../components/appCli/appCLI.js"
 import { AppNotifier } from "../../components/notifier.js"
+import { runScript, tag } from "../../components/fileMethods.js"
 
 
-/**
- * Commands that can be user invoked by shortcuts on keyHandler or IndexCLI.
- */
 ActionService.setComponentActions('viewer', {
 
   'open': {
@@ -261,24 +259,8 @@ ActionService.setComponentActions('viewer', {
   'runScript': {
     'desc' : 'run user script where %F, %N, %T represent the selected file path, \
       name & type, respectively : <script> <displayMsg?>',
-    'run'  : async (userScript, optMsg) => {
-      if (userScript == null)
-        return AppNotifier.notify('invalid arguments', 'runScript')
-
-      const currentFile = FRAME.fileBook.currentFile?.path
-      const success = await elecAPI.runOnFile(userScript, currentFile)
-
-      if (!success) {
-        AppNotifier.notify(`this command needs a file to run`, 'runScript')
-      } else {
-        console.log(`Ran user script:`, {
-          script: userScript,
-          file: currentFile
-        })
-
-        if (optMsg != null)
-          AppNotifier.notify(optMsg, 'runScript')
-      }
+    'run'  : async (script, msg) => {
+      await runScript(script, FRAME.fileBook.currentFile?.path, msg)
     }
   },
 
@@ -290,16 +272,14 @@ ActionService.setComponentActions('viewer', {
       'add': {
         'desc': 'add one or more tags to current file',
         'run': async (...tags) => {
-          const success = await FRAME.fileBook.tag(true, ...tags)
-          AppNotifier.notify(`${success ? '' : 'no '}tags updated`)
+          await tag(FRAME.fileBook.currentFile?.path, true, ...tags)
         },
         'options': () => elecAPI.uniqueTags()
       },
       'del': {
         'desc': 'delete one or more tags from current file',
         'run': async (...tags) => {
-          const success = await FRAME.fileBook.tag(false, ...tags)
-          AppNotifier.notify(`${success ? '' : 'no '}tags updated`)
+          await tag(FRAME.fileBook.currentFile?.path, false, ...tags)
         },
         'options': () => {
           if (!FRAME.fileBook.currentFile) return []
