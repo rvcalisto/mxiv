@@ -28,7 +28,7 @@ class TagStorage extends JsonStorage {
   #uniqueTagsDirty = true
 
   /**
-   * Use `user/cache/mxiv/tagDB.json` path by default.
+   * Use MXIV tagDB filepath by default.
    * @param {String} storageFile Custom persistence file.
    */
   constructor(storageFile = tagDBFile) {
