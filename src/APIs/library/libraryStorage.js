@@ -1,15 +1,7 @@
 const p = require('path');
-const { homedir } = require('os');
 const { pathToFileURL } = require('url');
 const { JsonStorage } = require('../tool/jsonStorage');
-
-
-/**
- * Library persistent storage file.
- */
-const libraryStorageFile = process.platform === 'win32' ?
-  p.join(/** @type {string} */ (process.env.LOCALAPPDATA), 'mxiv', 'library.json') :
-  p.join(homedir(), '.cache', 'mxiv', 'library.json');
+const { libraryFile } = require('../tool/appPaths');
 
 
 /**
@@ -29,7 +21,7 @@ class LibraryStorage extends JsonStorage {
   #collator = new Intl.Collator('en', { numeric: true })
 
   constructor() {
-    super(libraryStorageFile)
+    super(libraryFile)
     this.getPersistence()
       .catch( err => console.log('MXIV: LibraryStorage not found or initialized.') )
   }

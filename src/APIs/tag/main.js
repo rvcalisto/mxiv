@@ -1,6 +1,4 @@
-const path = require('path');
-const { mkdir } = require('fs');
-const { TagStorage, defaultStorageFile } = require('./tagStorage');
+const { TagStorage } = require('./tagStorage');
 const { broadcast } = require('../tool/coordinationUtils');
 
 /**
@@ -78,49 +76,31 @@ async function listOrphans(deleteOrphans = false) {
 }
 
 /**
- * Recursively create storage file if not already created.
- * @returns {Promise<boolean>} Success.
- */
-async function createTagStorageFile() {
-  const storageDirectory = path.dirname(defaultStorageFile)
-
-  return await new Promise(resolve => {
-    mkdir( storageDirectory, { recursive: true }, async (err) => {
-      if (err) {
-        console.log('MXIV: Failed to create storage directory.\n', err)
-      } else {
-        await tagStorage.persist()
-        console.log('MXIV: Created tag JSON storage at:', defaultStorageFile) 
-      }
-      resolve(!err)
-    })
-  })
-}
-
-/**
- * Create storageFile in filesystem if not created, monitor, re-sync,
- * and broadcast sync IPC request on detected fileStorage changes.
+ * Initialize tagStorage, monitor, re-sync, and broadcast 
+ * sync requests to renderer instances on detected storage changes.
  */
 async function initialize() {
-  const error = await tagStorage.getPersistence()
-    .catch( async () => !await createTagStorageFile() )
+  const uninitialized = await tagStorage.getPersistence()
+    .catch( () => true );
   
-  if (error)
-    return console.error(`MXIV: Failed to create tag storage.`)
+  if (uninitialized) {
+    const error = await tagStorage.persist()
+      .then( () => { console.log('MXIV: Initialized TagStorage.') } )
+      .catch( () => true );
+
+    if (error)
+      return console.error(`MXIV: Failed to initialize TagStorage.`)
+  }
 
   tagStorage.monitorPersistenceFile(() => {
     tagStorage.getPersistence()
     broadcast('tags:sync')
   })
   
-  console.log('MXIV: Monitoring tag persistence file.')
+  console.log('MXIV: Monitoring TagStorage file changes.')
 }
 
 
-/**
- * Initialize tag controller, file monitoring in main process.
- * Send sync requests to renderer instances on detected changes.
- */
 initialize()
 
 

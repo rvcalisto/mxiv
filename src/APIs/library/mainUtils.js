@@ -1,19 +1,12 @@
 const fs = require('fs');
-const os = require('os');
 const p = require('path');
 const { listFiles } = require('../file/fileSearch')
 const { fileType } = require('../file/fileTools')
 const archiveTool = require('../tool/archive');
 const thumbnailTool = require('../tool/thumbnail');
 const { randomUUID } = require('crypto');
+const { libraryCoverDirectory } = require('../tool/appPaths');
 
-
-/**
- * Local folder for cover thumbnail storage.
- */
-const COVERDIR = process.platform === 'win32' ?
-  p.join(process.env.LOCALAPPDATA, 'mxiv', 'covers') :
-  p.join(os.homedir(), '.cache', 'mxiv', 'covers')
 
 /**
  * Generic icon to use secondarily.
@@ -71,13 +64,13 @@ async function getCandidates(folderPath, depth = Infinity, mappedPaths = []) {
  */
 async function createThumbnailDirectory() {
   const folderExists = await new Promise(resolve => {
-    fs.stat( COVERDIR, (err, stat) => resolve(!err && stat != null) )
+    fs.stat( libraryCoverDirectory, (err, stat) => resolve(!err && stat != null) )
   })
   
   return folderExists || new Promise(resolve => {
-    fs.mkdir( COVERDIR, { recursive: true }, (err) => {
+    fs.mkdir( libraryCoverDirectory, { recursive: true }, (err) => {
       if (err) console.log('MXIV: Couldn\'t create thumbnails folder\n', err)
-      else console.log(`MXIV: Created thumbnails folder at '${COVERDIR}'`)
+      else console.log(`MXIV: Created thumbnails folder at '${libraryCoverDirectory}'`)
       resolve(!err)
     })
   })
@@ -89,7 +82,7 @@ async function createThumbnailDirectory() {
  */
 async function deleteThumbnailDirectory() {
   return await new Promise(resolve => {
-    fs.rm(COVERDIR, { recursive: true }, (err) => {
+    fs.rm(libraryCoverDirectory, { recursive: true }, (err) => {
       if (!err) console.log('MXIV: successfuly deleted thumbnail covers folder')
       else console.log('MXIV: couldn\'t delete thumbnail covers folder', err)
       resolve(!err)
@@ -122,7 +115,7 @@ async function createThumbnail(path, id = 0) {
 async function deleteThumbnail(path) {
   if (!path) return false
 
-  const insideCoverDir = p.dirname(path) === COVERDIR
+  const insideCoverDir = p.dirname(path) === libraryCoverDirectory
   if (!insideCoverDir) {
     console.error(`MXIV::FORBIDDEN: Tried to delete non-thumbnail file!\ntargeted path: ${path}`)
     return false
@@ -160,7 +153,7 @@ async function coverFromDirectory(path) {
 
   // generate cover as UUID.jpg
   const coverSource = p.join(path, coverBasename)
-  const coverTarget = p.join(COVERDIR, `${randomUUID()}.jpg`)
+  const coverTarget = p.join(libraryCoverDirectory, `${randomUUID()}.jpg`)
   const thumbnailOK = await thumbnailTool.generateThumbnail(coverSource, coverTarget)
 
   return coverTarget
@@ -186,9 +179,9 @@ async function coverFromArchive(path, id = 0) {
     return await coverPlaceholder()
 
   // extract file and generate cover as UUID.jpg, remove extracted file after
-  const extractionFolder = p.join( COVERDIR, String(id) )
+  const extractionFolder = p.join( libraryCoverDirectory, String(id) )
   const coverSource = await archiveTool.extractOnly(coverBasename, path, extractionFolder)
-  const coverTarget = p.join(COVERDIR, `${randomUUID()}.jpg`)
+  const coverTarget = p.join(libraryCoverDirectory, `${randomUUID()}.jpg`)
   const thumbnailOK = await thumbnailTool.generateThumbnail(coverSource, coverTarget)
   fs.rmSync(coverSource)
   
@@ -201,7 +194,7 @@ async function coverFromArchive(path, id = 0) {
  */
 async function coverPlaceholder() {
   // TODO: custom placeholders by filetype (?)
-  const coverTarget = p.join(COVERDIR, `${randomUUID()}.jpg`)
+  const coverTarget = p.join(libraryCoverDirectory, `${randomUUID()}.jpg`)
 
   return await new Promise(resolve => {
     fs.copyFile( PLACEHOLDERICON, coverTarget, () => resolve(coverTarget) )

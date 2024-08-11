@@ -1,16 +1,6 @@
 const { JsonStorage } = require("../tool/jsonStorage");
-const { homedir } = require("os");
-const path = require("path");
+const { tagDBFile } = require("../tool/appPaths");
 const fs = require('fs');
-
-
-/**
- * Default MXIV tag storage file.
- * @type {String}
- */
-const defaultStorageFile = process.platform === 'win32' ?
-  path.join(/** @type {string} */ (process.env.LOCALAPPDATA), 'mxiv', 'tagDB.json') :
-  path.join(homedir(), '.cache', 'mxiv', 'tagDB.json')
 
 
 /**
@@ -41,7 +31,7 @@ class TagStorage extends JsonStorage {
    * Use `user/cache/mxiv/tagDB.json` path by default.
    * @param {String} storageFile Custom persistence file.
    */
-  constructor(storageFile = defaultStorageFile) {
+  constructor(storageFile = tagDBFile) {
     super(storageFile)
     this.getPersistence()
       .catch( err => console.log('MXIV: TagStorage not found or initialized.') )
@@ -143,4 +133,4 @@ class TagStorage extends JsonStorage {
 }
 
 
-module.exports = { TagStorage, defaultStorageFile }
+module.exports = { TagStorage }

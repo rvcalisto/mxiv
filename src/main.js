@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain, dialog, Menu } = require('electron')
 const { join } = require('path')
+const { initializeBase } = require('./APIs/tool/appPaths')
 
 
 /**
@@ -89,8 +90,9 @@ else if ( !app.requestSingleInstanceLock() ) {
 else {
   
   // Electron initalization complete, setup IPC handlers and create first window
-  app.on('ready', () => {
+  app.on('ready', async () => {
     Menu.setApplicationMenu(null)
+    await initializeBase()
     ipcHandlers()
   
     newWindow().then(win => {
