@@ -1,3 +1,5 @@
+import { matchNameOrTags } from '../../components/fileMethods.js';
+
 /**
  * @typedef {import("../../APIs/file/fileSearch").FileObject} FileObject
  */
@@ -154,24 +156,7 @@ export class FileBook {
     queries = queries.map( query => query.toLowerCase().trim() )
       .filter(query => query !== '') // treat queries
 
-    // require match for all strings unless '--inclusive' is passed
-    const inclusive = queries.includes('--inclusive')
-    const workingQuery = queries.filter(query => !query.includes('--inclusive'))
-
-    return this.filter(file => {
-      const name = file.name.toLowerCase()
-      const fileTags = elecAPI.getTags(file.path)
-      
-      // match on substring in name or for whole tags
-      let match = false
-      for (const str of workingQuery) {
-        match = name.includes(str) || fileTags.includes(str)
-				if (!inclusive && !match) break
-        if (inclusive && match) break
-      }
-
-      return match
-    })
+    return this.filter( (file) => matchNameOrTags(file, queries) );
   }
 
   /** 

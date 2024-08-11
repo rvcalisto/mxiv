@@ -3,6 +3,7 @@ import { Cover } from "./coverElement.js";
 import { Tab } from "../../tabs/tab.js";
 import { ObservableEvents } from "../../components/observableEvents.js";
 import { GeneralState } from "../../tabs/profiles.js";
+import { matchNameOrTags } from '../../components/fileMethods.js';
 
 
 /**
@@ -64,31 +65,6 @@ export class CoverGrid {
   }
 
   /**
-   * Returns library entry filter based on name and tags.
-   * @param {string[]} queries 
-   * @returns {(entry:LibraryEntry)=>boolean}
-   */
-  #libraryFilter(queries) {
-    return (entry) => {
-      const bookTags = elecAPI.getTags(entry.path)
-      const bookName = entry.name.toLowerCase()
-
-      for (let query of queries) {
-        if (query[0] === '-') {
-          // exclude tag query from results
-          const match = bookTags.includes( query.slice(1) )
-          if (match) return false
-        } else {
-          const match = bookName.includes(query) || bookTags.includes(query)
-          if (!match) return false
-        }
-      }
-
-      return true
-    }
-  }
-
-  /**
    * Draw covers whose path or tags includes query. Draws all if not given.
    * @param {String[]} [queries] Filter covers.
    */
@@ -96,7 +72,7 @@ export class CoverGrid {
     if (CoverGrid.#dirtyCache) await this.#buildCache()
 
     // all queries must match either path or a tag. Exclusive.
-    const filterFunc = !queries ? undefined : this.#libraryFilter(queries)
+    const filterFunc = !queries ? undefined : (file) => matchNameOrTags(file, queries);
 
     // console.time('populate library')
     this.#list.populate(CoverGrid.#libraryCache, (entry) => {

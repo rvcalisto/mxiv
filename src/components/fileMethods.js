@@ -47,3 +47,28 @@ export async function runScript(userScript, filepath, optMsg) {
   if (optMsg)
     AppNotifier.notify(optMsg, 'runScript');
 }
+
+/**
+ * Check file against substrings or tags.
+ * - Prepend '-' to a query to exclude a tag.
+ * @param {{ name: string, path: string }} file File to test against.
+ * @param {string[]} queries Substrings or tags to check.
+ * @returns {boolean} Match
+ */
+export function matchNameOrTags(file, queries) {
+  const tags = elecAPI.getTags(file.path);
+  const name = file.name.toLowerCase();
+  
+  for (const query of queries) {
+    if (query[0] === '-') {
+      // exclude tag query from results
+      if ( tags.includes( query.slice(1) ) )
+        return false;
+    } else {
+      if ( !name.includes(query) && !tags.includes(query) )
+        return false;
+    }
+  }
+  
+  return true;
+}

@@ -238,11 +238,10 @@ ActionService.setComponentActions('viewer', {
   },
 
   'filter': {
-    'desc' : 'filter files by name or tags, list tags with ?, use --inclusive to match on either string',
+    'desc' : 'filter files by name or tags, list tags with ?, prepend - to exclude it',
     'run'  : (...queries) => FRAME.filter(...queries),
     'options': (query) => {
       if (query[0] === '?') return elecAPI.uniqueTags()
-      else if ( query.startsWith('--') ) return [option('--inclusive', 'match on either string')]
       else return FRAME.fileBook.files.map(i => i.name)
     },
     'customFilter': (query) => {
