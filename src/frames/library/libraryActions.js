@@ -9,11 +9,11 @@ import { runScript, tag } from "../../components/fileMethods.js"
 ActionService.setComponentActions('library', {
 
   'filter' : {
-    'desc' : 'filter book by names or tags. Prepend a - to exclude tag',
+    'desc' : 'filter books by name or tags, list tags with ?, prepend - to exclude it',
     'run' : () => {},
     'options' : (query, allArgs) => {
-      // inject tag completion if using 'tag:'
-      if (query.slice(0, 4) == 'tag:') return elecAPI.uniqueTags()
+      // inject tag completion if query begins with '?'
+      if (query[0] === '?') return elecAPI.uniqueTags()
 
       // treat queries
       const queries = allArgs.map(str => str.toLowerCase().trim()).filter(str => str)
@@ -26,7 +26,7 @@ ActionService.setComponentActions('library', {
       return []
     },
     'customFilter': (query) => {
-      if (query.slice(0, 4) == 'tag:') query = query.slice(4)
+      if (query[0] === '?') query = query.slice(1)
       return standardFilter(query)
     }
   },

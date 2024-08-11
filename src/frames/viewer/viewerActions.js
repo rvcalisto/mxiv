@@ -238,15 +238,15 @@ ActionService.setComponentActions('viewer', {
   },
 
   'filter': {
-    'desc' : 'filter files by name or tags, pass --inclusive to match on either string',
+    'desc' : 'filter files by name or tags, list tags with ?, use --inclusive to match on either string',
     'run'  : (...queries) => FRAME.filter(...queries),
     'options': (query) => {
-      if (query.slice(0, 4) == 'tag:') return elecAPI.uniqueTags()
-      else if (query.slice(0, 2) == '--') return [option('--inclusive', 'match on either string')]
+      if (query[0] === '?') return elecAPI.uniqueTags()
+      else if ( query.startsWith('--') ) return [option('--inclusive', 'match on either string')]
       else return FRAME.fileBook.files.map(i => i.name)
     },
     'customFilter': (query) => {
-      if (query.slice(0, 4) == 'tag:') query = query.slice(4)
+      if (query[0] === '?') query = query.slice(1)
       return standardFilter(query)
     }
   },
