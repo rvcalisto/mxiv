@@ -66,6 +66,7 @@ export class Library extends GenericFrame {
 
   disconnectedCallback() {
     Library.#singleInstanceRef = null
+    CoverGrid.selection = null
   }
 
   /**
