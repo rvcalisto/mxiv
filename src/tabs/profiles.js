@@ -79,12 +79,12 @@ export const SessionProfiles = new class {
       return;
     }
   
-    if (clearSession)
+    if (clearSession) {
       Tab.allTabs.forEach( tab => tab.close(false) );
+      Object.assign(GeneralState, session.general);
+    }
   
     // recover state and re-create session
-    Object.assign(GeneralState, session.general);
-
     for (const tabStateObj of session.tabs) {
       const { type, state } = tabStateObj;
 
