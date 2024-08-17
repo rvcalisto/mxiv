@@ -3,168 +3,147 @@ const fs = require('fs');
 
 
 /**
- * @template T
  * Persistent JSON storage.
+ * @template T
+ * @template {Map<string, T>} [W=Map<string, T>]
  */
 class JsonStorage {
 
   /**
    * Persistent JSON filepath.
    */
-  #storageFile = ''
+  #storageFile = '';
 
   /**
    * As fs.watch runs the callback twice on every single file write, 
    * track the number of calls and only process when it's even.
    */
-  #watchCount = 0
+  #watchCount = 0;
 
   /**
-   * Last storage file read modified time. Null if unsupported.
-   * @type {Number?}
+   * Last read storage file modified-time.
+   * @type {Number|undefined}
    */
-  #lastModifiedTime
+  #lastReadTime;
 
   /**
-   * Storage object to persist from and to file.
-   * @type {Object<string, T>}
+   * Last sync'd storage file JSON text.
    */
-  #storageObject = {}
+  #cachedStateJSON = '{}';
+
+  /**
+   * Storage state wrapper class.
+   * @typedef {function(new:W, [string, T][])} Wrapper
+   */
+
+  /**
+   * Storage state wrapper class.
+   * @type {Wrapper}
+   */
+  #wrapper;
 
   /**
    * Initialize storage instance.
    * @param {string} storageFile Persistent JSON storage filepath.
+   * @param {Wrapper} [wrapper=Map] Custom state wrapper class.
    */
-  constructor(storageFile) {
-    this.#storageFile = storageFile
+  constructor(storageFile, wrapper) {
+    this.#storageFile = storageFile;
+
+    // @ts-ignore (TS psychobabble)
+    this.#wrapper = wrapper || Map;
   }
 
   /**
-   * Returns persistence file modified time. Null if disabled.
+   * Returns storage file last modified-time. Null if file inaccessible.
    * @returns {Promise<Number?>}
    */
-  async #readModifiedTime() {
+  async getLastModified() {
     return await new Promise(resolve => {
-      fs.stat( this.#storageFile, (err, stats) => resolve(stats?.mtimeMs) )
-    })
+      fs.stat( this.#storageFile, (err, stats) => resolve(stats?.mtimeMs) );
+    });
   }
 
   /**
-   * Load storage object from JSON file and sync, if not already. Reject on error.
+   * Returns state snapshot from current storage file. Reject on error.
+   * - Can be used to test read-access to storage file.
+   * @param {boolean} [ignoreException=false] Suppress exception, return snapshot. False by default.
    * @throws {PromiseRejectionEvent} On failure.
-   * @returns {Promise<void>}
+   * @returns {Promise<W>} State snapshot.
    */
-  async getPersistence() {
-    // skip only if modified times match
-    const modifiedTime = await this.#readModifiedTime()
-    if (modifiedTime != null && modifiedTime === this.#lastModifiedTime) return
+  async getState(ignoreException = false) {
+    const modifiedTime = await this.getLastModified() || Date.now();
 
-    return await new Promise( (resolve, reject) => {
-      fs.readFile(this.#storageFile, 'utf8', async (err, data) => {
-        if (err) {
-          reject(err)
-        } else {
-          this.#lastModifiedTime = modifiedTime
-          this.#storageObject = JSON.parse(data)
-          resolve()
-        }
-      })
-    })
+    if (modifiedTime !== this.#lastReadTime) {
+      this.#cachedStateJSON = await new Promise((resolve, reject) => {
+        fs.readFile(this.#storageFile, 'utf8', async (err, text) => {
+          if (err) {
+            ignoreException ? resolve(this.#cachedStateJSON) : reject(err);
+          } else {
+            this.#lastReadTime = modifiedTime;
+            resolve(text);
+          }
+        });
+      });
+    }
+
+    const storageObject = JSON.parse(this.#cachedStateJSON);
+    return new this.#wrapper( Object.entries(storageObject) );
   }
 
   /**
-   * Persist storage to json file and sync. Reject on error.
+   * Persist state snapshot to storage file. Reject on error.
+   * - Can be used to test write-access to storage file.
+   * @param {Map<string, T>} state State snapshot to persist.
    * @throws {PromiseRejectionEvent} On failure.
    * @returns {Promise<void>}
    */
-  async persist() {
-    const json = JSON.stringify(this.#storageObject)
+  async setState(state) {
+    const storageObject = Object.fromEntries( state.entries() );
+    const json = JSON.stringify(storageObject);
 
-    return await new Promise( (resolve, reject) => {
+    return await new Promise((resolve, reject) => {
       fs.writeFile(this.#storageFile, json, 'utf8', async (err) => {
         if (err) {
-          reject(err)
+          reject(err);
         } else {
-          this.#lastModifiedTime = await this.#readModifiedTime()
-          resolve()
+          this.#cachedStateJSON = json;
+          this.#lastReadTime = await this.getLastModified() || Date.now();
+          resolve();
         }
-      })
-    })
+      });
+    });
   }
 
   /**
-   * Insert or update entry. Changes must be persisted.
-   * @param {string} key Entry key.
-   * @param {T} object Entry value.
+   * Run transaction on fresh state, persist changes if no exception thrown.
+   * @param {(state: W) => void|Promise<void>} transaction Transaction.
+   * @returns {Promise<boolean>} Success.
    */
-  set(key, object) {
-    this.#storageObject[key] = object;
+  async write(transaction) {
+    const state = await this.getState(true);
+
+    try {
+      await transaction(state);
+      await this.setState(state);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
   /**
-   * Get entry.
-   * @param {string} key Entry key.
-   * @returns {T|undefined} Entry value.
-   */
-  get(key) {
-    return this.#storageObject[key];
-  }
-
-  /**
-   * Delete entry. Changes must be persisted.
-   * @param {string} key Entry key.
-   */
-  delete(key) {
-    delete this.#storageObject[key];
-  }
-
-  /**
-   * Delete all entries. Changes must be persisted.
-   */
-  clear() {
-    this.#storageObject = {};
-  }
-
-  /**
-   * Return keys.
-   * @returns {string[]}
-   */
-  keys() {
-    return Object.keys(this.#storageObject);
-  }
-
-  /**
-   * Return values.
-   * @returns {T[]}
-   */
-  values() {
-    return Object.values(this.#storageObject);
-  }
-
-  /**
-   * Return entries.
-   * @returns {[string, T][]}
-   */
-  entries() {
-    return Object.entries(this.#storageObject);
-  }
-
-  /**
-   * Monitor persistence file and run callback on detected changes. 
+   * Watch storage file, run callback on detected changes. 
    * @param {()=>void} callback Callback function.
    */
-  async monitorPersistenceFile(callback) {
-    
-    if (!callback)
-      return
-
-    // watch triggers twice on writting. Only process even counts
-    fs.watch(this.#storageFile, async () => {
+  watchStorage(callback) {
+    // watch triggers twice on write. Only process even counts
+    fs.watch(this.#storageFile, () => {
       if (++this.#watchCount % 2 === 0)
-        await callback()
-    })
+        callback();
+    });
   }
 }
 
 
-module.exports = { JsonStorage }
+module.exports = { JsonStorage };

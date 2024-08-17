@@ -1,4 +1,5 @@
-const { TagStorage } = require('./tagStorage');
+// @ts-check
+const { TagStorage, TagState } = require('./tagStorage');
 const { ipcRenderer } = require('electron');
 
 
@@ -7,6 +8,15 @@ const { ipcRenderer } = require('electron');
  */
 const tagStorage = new TagStorage()
 
+/**
+ * Cached TagStoraged properties.
+ * @type {{state: TagState, uniqueTags: string[]}}
+ */
+const cache = {
+  state: new TagState(),
+  uniqueTags: []
+};
+
 
 /**
  * Return file tags as an array.
@@ -14,7 +24,7 @@ const tagStorage = new TagStorage()
  * @returns {String[]}
  */
 function getTags(filePath) {
-  return tagStorage.get(filePath)
+  return cache.state.get(filePath);
 }
 
 /**
@@ -22,21 +32,22 @@ function getTags(filePath) {
  * @returns {String[]}
  */
 function uniqueTags() {
-  return tagStorage.uniqueTags()
-}
-
-/**
- * Return information object about the current DB state.
- */
-function info() {
-  return tagStorage.info()
+  return cache.uniqueTags;
 }
 
 /**
  * List database entries whose files are no longer accessible.
  */
 async function listOrphans() {
-  tagStorage.listOrphans(false)
+  await tagStorage.listOrphans(false);
+}
+
+/**
+ * Refresh cache with up-to-date values.
+ */
+async function updateTagCache() {
+  cache.state = await tagStorage.getState();
+  cache.uniqueTags = cache.state.uniqueTags();
 }
 
 /**
@@ -45,10 +56,13 @@ async function listOrphans() {
  */
 ipcRenderer.on('coord:onbroadcast', async (e, message) => {
   if (message === 'tags:sync') {
-    await tagStorage.getPersistence()
-    console.log('MXIV::broadcast: tags:sync')
+    updateTagCache();
+    console.log('MXIV::broadcast: tags:sync');
   }
 })
 
 
-module.exports = { getTags, uniqueTags, info, listOrphans }
+updateTagCache();
+
+
+module.exports = { getTags, uniqueTags, listOrphans };

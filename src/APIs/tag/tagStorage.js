@@ -1,52 +1,26 @@
+// @ts-check
 const { JsonStorage } = require("../tool/jsonStorage");
 const { tagDBFile } = require("../tool/appPaths");
 const fs = require('fs');
 
 
 /**
- * Persistent tag storage.
- * @extends {JsonStorage<string[]>}
+ * TagStorage state wrapper.
+ * @extends {Map<string, string[]>}
  */
-class TagStorage extends JsonStorage {
+class TagState extends Map {
 
   /**
-   * Initialized persistent JSON filepath.
-   */
-  #storageFile = ''
-
-  /** 
-   * Store computed unique tags for consecutive calls.
-   * @type {String[]}
-   */
-  #uniqueTagsCache = []
-
-  /**
-   * If true, next uniqueTags access will first compute array instead 
-   * of just returning the stored value in order to save performance.
-   * @type {Boolean}
-   */
-  #uniqueTagsDirty = true
-
-  /**
-   * Use MXIV tagDB filepath by default.
-   * @param {String} storageFile Custom persistence file.
-   */
-  constructor(storageFile = tagDBFile) {
-    super(storageFile)
-    this.getPersistence()
-      .catch( err => console.log('MXIV: TagStorage not found or initialized.') )
-
-    this.#storageFile = storageFile
-  }
-
-  /**
-   * Insert or update tags. Delete entry if tags are empty. Changes must be persisted.
+   * Insert or update tags. Delete entry if tags are empty.
    * @param {String} filePath Absolute path to file.
    * @param {String[]} tags File tags.
    */
   set(filePath, tags) {
-    if (tags.length > 0) super.set(filePath, tags)
-    else super.delete(filePath)
+    tags.length > 0 ?
+      super.set(filePath, tags) :
+      this.delete(filePath);
+    
+    return this;
   }
 
   /**
@@ -55,49 +29,54 @@ class TagStorage extends JsonStorage {
    * @returns {String[]}
    */
   get(filePath) {
-    return super.get(filePath) || []
+    return super.get(filePath) || [];
   }
-
+  
   /**
    * Return unique tags.
    * @returns {string[]}
    */
   uniqueTags() {
-    if (this.#uniqueTagsDirty) {
-      console.time('computeUniqueTags')
-      this.#uniqueTagsCache = [ ...new Set( this.values().flat() ) ]
-      this.#uniqueTagsDirty = false
-      console.timeEnd('computeUniqueTags')
-    }
-
-    return this.#uniqueTagsCache
+    console.time('computeUniqueTags');
+    const tags = new Set( [...this.values()].flat() );
+    console.timeEnd('computeUniqueTags');
+    
+    return [...tags];
   }
+}
+
+
+/**
+ * Persistent tag storage.
+ * @extends {JsonStorage<string[], TagState>}
+ */
+class TagStorage extends JsonStorage {
 
   /**
-   * @inheritdoc
+   * Initialized persistent JSON filepath.
    */
-  async getPersistence() {
-    return await super.getPersistence()
-      .then( () => { this.#uniqueTagsDirty = true } )
-  }
-  
+  #storageFile = '';
+
   /**
-   * @inheritdoc
+   * Use MXIV tagDB filepath by default.
+   * @param {String} storageFile Custom persistence file.
    */
-  async persist() {
-    return await super.persist()
-      .then( () => { this.#uniqueTagsDirty = true })
+  constructor(storageFile = tagDBFile) {
+    super(storageFile, TagState);
+    this.#storageFile = storageFile;
   }
 
   /**
    * Return information about current tag storage state.
    */
-  info() {
+  async info() {
+    const state = await this.getState(true);
+
     return {
       storageFile: this.#storageFile,
-      entryCount: this.keys().length,
-      tagCount: this.uniqueTags().length
-    }
+      entryCount: state.size,
+      tagCount: state.uniqueTags().length
+    };
   }
 
   /**
@@ -106,31 +85,38 @@ class TagStorage extends JsonStorage {
    * @param {boolean} [deleteOrphans=false] Either to delete orphaned entries if found.
    */
   async listOrphans(deleteOrphans = false) {
-    const taskPromises = [], /** @type {string[]} */ orphans = []
+    const taskPromises = [], orphans = [];
+    const state = await this.getState(true);
 
-    for ( const keyPath of this.keys() ) {
+    for ( const filepath of state.keys() ) {
       taskPromises.push( new Promise(resolve => {
-        fs.access(keyPath, err => {
-          if (err) orphans.push(keyPath)
-          resolve(true)
-        })
-      }))
+        fs.access(filepath, (err) => {
+          if (err) 
+            orphans.push(filepath);
+
+          resolve(true);
+        });
+      }));
     }
 
-    await Promise.all(taskPromises)
+    await Promise.all(taskPromises);
     
     if (orphans.length < 1) {
-      console.log('\nNo orphan entries to clean.') 
+      console.log('\nNo orphan entries to clean.');
     } else {
-      console.log(`${orphans.length} orphan entries found:`, orphans)
-      if (!deleteOrphans) return
+      console.log(`${orphans.length} orphan entries found:`, orphans);
 
-      for (const key of orphans) this.delete(key)
-      await this.persist()
-      console.log('Cleaned', orphans.length, 'orphan entries.')
+      if (deleteOrphans) {
+        await this.write(db => {
+          for (const key of orphans)
+            db.delete(key);
+        });
+        
+        console.log('Cleaned', orphans.length, 'orphan entries.');
+      }
     }
   }
 }
 
 
-module.exports = { TagStorage }
+module.exports = { TagStorage, TagState };

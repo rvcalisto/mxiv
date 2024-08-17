@@ -52,22 +52,17 @@ async function migrateOldData() {
     fs.renameSync(oldDataPath, newDataPath);
 
     // update 'coverPath', 'coverURL' for library entries
-    const { pathToFileURL } = await import('url');
-    const { JsonStorage } = await import('../tool/jsonStorage.js');
+    const { libraryStorage } = await import('../library/libraryStorage.js');
+    const state = await libraryStorage.getState()
+      .catch(() => {}); // no storage file to migrate
 
-    const libStorage = new JsonStorage(libraryFile);
-    const error = await libStorage.getPersistence()
-      .catch(err => true); // err if empty
+    if (state != null) {
+      for (const [key, value] of state) {
+        const coverPath = value.coverPath.replace(oldDataPath, newDataPath);
+        state.setFromCover(key, coverPath);
+      };
 
-    if (!error) {
-      for ( const [key, value] of libStorage.entries() ) {
-        value.coverPath = value.coverPath.replace(oldDataPath, newDataPath);
-        value.coverURL = pathToFileURL(value.coverPath);
-  
-        libStorage.set(key, value);
-      }
-  
-      await libStorage.persist();
+      libraryStorage.setState(state);
     }
     
     console.log(`MXIV: Migrated "${oldDataPath}" to "${newDataPath}".`);

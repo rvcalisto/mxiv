@@ -1,3 +1,4 @@
+// @ts-check
 const p = require('path');
 const { pathToFileURL } = require('url');
 const { JsonStorage } = require('../tool/jsonStorage');
@@ -14,29 +15,24 @@ const { libraryFile } = require('../tool/appPaths');
 
 
 /**
- * @extends {JsonStorage<LibraryEntry>}
+ * LibraryStorage state wrapper.
+ * @extends {Map<string, LibraryEntry>} 
  */
-class LibraryStorage extends JsonStorage {
+class LibraryState extends Map {
 
-  #collator = new Intl.Collator('en', { numeric: true })
-
-  constructor() {
-    super(libraryFile)
-    this.getPersistence()
-      .catch( err => console.log('MXIV: LibraryStorage not found or initialized.') )
-  }
+  static #collator = new Intl.Collator('en', { numeric: true })
 
   /**
-   * Insert or update LibraryEntry object from cover. Changes must be persisted.
+   * Add library entry by cover path.
    * @param {String} path Folder/archive path.
-   * @param {String} cover Cover thumbnail path.
+   * @param {String} coverPath Cover thumbnail path.
    */
-  setFromCover(path, cover) {
+  setFromCover(path, coverPath) {
     this.set(path, {
       'name': p.basename(path),
       'path': path,
-      'coverPath': cover,
-      'coverURL': pathToFileURL(cover).href,
+      'coverPath': coverPath,
+      'coverURL': pathToFileURL(coverPath).href,
     });
   }
 
@@ -44,11 +40,46 @@ class LibraryStorage extends JsonStorage {
    * Return sorted library items.
    * @returns {LibraryEntry[]}
    */
-  values() {
-    return super.values()
-      .sort( (a, b) => this.#collator.compare(a.path, b.path) );
+  sortedValues() {
+    return [...super.values()]
+      .sort( (a, b) => LibraryState.#collator.compare(a.path, b.path) );
   }
 }
+
+/**
+ * @extends {JsonStorage<LibraryEntry, LibraryState>}
+ */
+class LibraryStorage extends JsonStorage {
+  
+  /**
+   * @type {{state: LibraryState?, lastModified: number}}
+   */
+  #cache = {
+    state: null,
+    lastModified: 0
+  }
+
+  constructor() {
+    super(libraryFile, LibraryState);
+  }
+
+  /**
+   * Build and returns state cache. Rebuilds automatically on modified-time mismatch.
+   * - Avoids creating new state snapshots for recurrent read operations.
+   * @returns {Promise<LibraryState>}
+   */
+  async getStateFromCache() {
+    const lastModified = await this.getLastModified();
+
+    if (!this.#cache.state || this.#cache.lastModified !== lastModified) {
+      this.#cache.state = await this.getState(true);
+      this.#cache.lastModified = lastModified || Date.now();
+    }
+
+    return this.#cache.state;
+  }
+}
+
 
 /**
  * Persistent library storage.
@@ -57,4 +88,4 @@ class LibraryStorage extends JsonStorage {
 const libraryStorage = new LibraryStorage();
 
 
-module.exports = { libraryStorage }
+module.exports = { libraryStorage, LibraryState };

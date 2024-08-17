@@ -14,26 +14,16 @@ const tagStorage = new TagStorage()
  * @returns {Promise<Boolean>}
  */
 async function tagFile(filePath, ...tags) {
-  // sync before
-  await tagStorage.getPersistence()
+  return await tagStorage.write(db => {
+    const oldSet = new Set( db.get(filePath) );
+    const tagSet = new Set(tags);
+    const newSet = oldSet.union(tagSet);
 
-  let tagsAdded = 0
-  const newTags = tagStorage.get(filePath)
-  
-  // don't add duplicates
-  for (const tag of tags) {
-    if ( newTags.includes(tag) ) continue
-    newTags.push(tag)
-    tagsAdded++
-  }
-
-  // save to storage
-  if (tagsAdded > 0) {
-    tagStorage.set(filePath, newTags)
-    await tagStorage.persist()
-  }
-
-  return tagsAdded > 0
+    if (oldSet.size != newSet.size) 
+      db.set(filePath, [...newSet]);
+    else
+      throw 'rollback'; // don't persist
+  });
 }
 
 /**
@@ -43,28 +33,17 @@ async function tagFile(filePath, ...tags) {
  * @returns {Promise<Boolean>}
  */
 async function untagFile(filePath, ...tags) {
-  // sync before
-  await tagStorage.getPersistence()
-
-  let tagsRemoved = 0
-  const newTags = tagStorage.get(filePath)
-  if (newTags.length === 0) return false
+  return await tagStorage.write(db => {
+    const oldSet = new Set( db.get(filePath) );
+    const tagSet = new Set(tags);
+    const newSet = oldSet.difference(tagSet);
   
-  for (const tag of tags) {
-    const idx = newTags.indexOf(tag)
-    if (idx > -1) {
-      newTags.splice(idx, 1)
-      tagsRemoved++
-    }
-  }
-
-  // save to storage
-  if (tagsRemoved > 0) {
-    tagStorage.set(filePath, newTags)
-    await tagStorage.persist()
-  }
-
-  return tagsRemoved > 0
+    // save to storage
+    if (oldSet.size != newSet.size)
+      db.set(filePath, [...newSet]);
+    else
+      throw 'rollback';
+  });
 }
 
 /**
@@ -80,21 +59,21 @@ async function listOrphans(deleteOrphans = false) {
  * sync requests to renderer instances on detected storage changes.
  */
 async function initialize() {
-  const uninitialized = await tagStorage.getPersistence()
-    .catch( () => true );
+  const uninitialized = await tagStorage.getState()
+    .then(() => false)
+    .catch(() => true);
   
   if (uninitialized) {
-    const error = await tagStorage.persist()
-      .then( () => { console.log('MXIV: Initialized TagStorage.') } )
-      .catch( () => true );
+    const error = await tagStorage.setState( new Map() )
+      .then(() => { console.log('MXIV: Initialized TagStorage.') } )
+      .catch(() => true);
 
     if (error)
       return console.error(`MXIV: Failed to initialize TagStorage.`)
   }
 
-  tagStorage.monitorPersistenceFile(() => {
-    tagStorage.getPersistence()
-    broadcast('tags:sync')
+  tagStorage.watchStorage(() => {
+    broadcast('tags:sync');
   })
   
   console.log('MXIV: Monitoring TagStorage file changes.')
