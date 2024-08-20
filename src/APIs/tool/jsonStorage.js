@@ -99,7 +99,8 @@ class JsonStorage {
    * @returns {Promise<void>}
    */
   async setState(state) {
-    const storageObject = Object.fromEntries( state.entries() );
+    // get object from native class iterator, hopefully not overridden 
+    const storageObject = Object.fromEntries(state);
     const json = JSON.stringify(storageObject);
 
     return await new Promise((resolve, reject) => {

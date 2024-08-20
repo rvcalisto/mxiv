@@ -59,11 +59,11 @@ async function listOrphans(deleteOrphans = false) {
  * sync requests to renderer instances on detected storage changes.
  */
 async function initialize() {
-  const uninitialized = await tagStorage.getState()
-    .then(() => false)
-    .catch(() => true);
+  const storageExists = await tagStorage.getLastModified() != null;
+  if (storageExists)
+    await tagStorage.upgradeStructure(); // TODO: remove later
   
-  if (uninitialized) {
+  if (!storageExists) {
     const error = await tagStorage.setState( new Map() )
       .then(() => { console.log('MXIV: Initialized TagStorage.') } )
       .catch(() => true);
