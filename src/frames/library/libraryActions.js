@@ -155,16 +155,27 @@ ActionService.setComponentActions('library', {
     'run': () => Library.coverGrid.randomCover()
   },
 
-  'setCoverSize': {
-    'desc': 'set cover height size in pixels, default is 200',
+  'coverSize': {
+    'desc': 'set cover height size in pixels (default: 200)',
     'run': (size = '200') => {
-      if (isNaN(parseInt(size))) {
-        AppNotifier.notify(`${size} is not a number`, 'setSize')
-        return
-      }
+      let value = parseInt( size.trim() );
+      if ( isNaN(value) || value < 100 )
+        value = 200;
       
-      if (!size.trim()) size = '200'
-      document.body.style.setProperty('--cover-height', size + 'px')
+      Library.coverGrid.setCoverSize(value);
+      AppNotifier.notify(`cover height sized to ${value}px`, 'coverSize');
+    }
+  },
+  
+  'itemsPerPage': {
+    'desc': 'set how many items are displayed per page (default: 100)',
+    'run': (count = '100') => {
+      let value = parseInt( count.trim() );
+      if ( isNaN(value) || value < 10 )
+        value = 100;
+      
+      Library.coverGrid.setItemsPerPage(value);
+      AppNotifier.notify(`showing ${value} items per page`, 'itemsPerPage');
     }
   },
 

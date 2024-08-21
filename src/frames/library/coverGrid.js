@@ -4,6 +4,7 @@ import { Tab } from "../../tabs/tab.js";
 import { ObservableEvents } from "../../components/observableEvents.js";
 import { GeneralState } from "../../tabs/profiles.js";
 import { matchNameOrTags } from '../../components/fileMethods.js';
+import { UserPreferences } from "../../components/userPreferences.js";
 
 
 /**
@@ -53,6 +54,8 @@ export class CoverGrid {
    */
   constructor(hostList) {
     this.#list = hostList
+    this.#list.itemsPerPage = UserPreferences.libraryItemsPerPage;
+    document.body.style.setProperty('--cover-height', `${UserPreferences.libraryCoverSize}px`);
   }
 
   /**
@@ -62,6 +65,25 @@ export class CoverGrid {
     CoverGrid.#libraryCache = await elecAPI.getLibraryEntries()
     CoverGrid.#dirtyCache = false
     console.log('Library cache (re)built.');
+  }
+  
+  /**
+   * Set how many items to display per page. Reload covers.
+   * @param {number} count
+   */
+  setItemsPerPage(count) {
+    UserPreferences.libraryItemsPerPage = count;
+    this.#list.itemsPerPage = count;
+    this.drawCovers();
+  }
+  
+  /**
+   * Set cover height size in pixels.
+   * @param {number} size
+   */
+  setCoverSize(size) {
+    UserPreferences.libraryCoverSize = size;
+    document.body.style.setProperty('--cover-height', `${size}px`);
   }
 
   /**
