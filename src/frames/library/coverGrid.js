@@ -84,6 +84,10 @@ export class CoverGrid {
   setCoverSize(size) {
     UserPreferences.libraryCoverSize = size;
     document.body.style.setProperty('--cover-height', `${size}px`);
+    this.events.fire('grid:coverUpdate');
+    
+    const cover = CoverGrid.selection;
+    if (cover) cover.scrollIntoView({ block: 'center' });
   }
 
   /**
@@ -121,11 +125,14 @@ export class CoverGrid {
   }
 
   /**
-   * Number of covers listed.
-   * @returns {number}
+   * Cover grid info.
    */
-  getCoverCount() {
-    return this.#list.itemCount
+  getInfo() {
+    return {
+      itemCount: this.#list.itemCount,
+      itemsPerPage: this.#list.itemsPerPage,
+      coverSize: document.body.style.getPropertyValue('--cover-height')
+    };
   } 
 
   /**

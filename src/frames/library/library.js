@@ -82,10 +82,12 @@ export class Library extends GenericFrame {
    * @inheritdoc
    */
   status() {
+    const { itemCount, itemsPerPage, coverSize } = this.coverGrid.getInfo();
+    
     return {
       title: 'Library',
       infoLeft: 'Library',
-      infoRight: `[${this.coverGrid.getCoverCount()}]`,
+      infoRight: `${itemsPerPage} @ ${coverSize} [${itemCount}]`,
       infoLeftFunc: null
     }
   }
