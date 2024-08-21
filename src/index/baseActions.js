@@ -2,33 +2,29 @@ import { ActionService } from "../actions/actionService.js"
 import { Tab } from "../tabs/tab.js"
 import { StatusBar } from "../components/statusBar.js"
 import { SessionProfiles } from "../tabs/profiles.js"
-import { AppCLI, option, standardFilter } from "../components/appCli/appCLI.js"
+import { actionPalette, option, standardFilter } from "../components/actionPalette/actionPalette.js"
 import { UserAccelerators } from "../actions/userAccelerators.js"
 import { AppNotifier } from "../components/notifier.js"
 import { FrameRegistry } from "../frames/frameRegistry.js"
 
 
-/**
- * Commands that can be user invoked by shortcuts on keyHandler or AppCLI.
- */
 ActionService.setBaseActions({
-
-  'cli': {
-    'desc': 'app command line interface methods',
+  
+  'palette': {
+    'desc': 'action palette methods',
     'run': () => {},
-
     'methods': {
       'show': {
-        'desc' : 'open app\'s command line interface on optional string',
-        'run'  : (customStr) => AppCLI.toggle(true, customStr)
+        'desc': 'show action palette, optionally with a given string',
+        'run': (customStr) => actionPalette.toggle(true, customStr)
       },
       'repeatLast': {
-        'desc' : 'repeat last command',
-        'run'  : () => AppCLI.redoCmd()
+        'desc': 'repeat last executed action',
+        'run': () => actionPalette.repeatAction()
       },
-      'clear' : {
-        'desc' : 'clear command history',
-        'run'  : () => AppCLI.clearCmdHistory()
+      'clear': {
+        'desc': 'clear previously executed actions from history',
+        'run': () => actionPalette.clearActionHistory()
       }
     }
   },
@@ -177,27 +173,6 @@ ActionService.setBaseActions({
           return options.sort( (a, b) => coll.compare(a.name, b.name) )
         }
       },
-    }
-  },
-
-  '.testAction': {
-    'desc' : 'this is a test action',
-    'run'  : (firstArg, ...args) => console.log(`first arg: ${firstArg} \nargs:`, ...args),
-    'options': (lastArg, allArgs) => ['1', '2', '3', '4', '5'],
-
-    'methods': {
-      'firstMethod': {
-        'desc': 'a method with options',
-        'run': (...args) => console.log('all args received:', ...args),
-        'options': (lastArg, allArgs) => {
-          console.log('options receive\nlastArg:', lastArg,'\nallArgs:', allArgs)
-          return ['apple', 'banana', option('coconut', 'has water inside')]
-        }
-      },
-      'secondMethod': {
-        'desc': 'no options in this method',
-        'run': (args) => console.log('all args received:', ...args)
-      }
     }
   },
 

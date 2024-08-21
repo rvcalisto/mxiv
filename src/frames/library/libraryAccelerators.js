@@ -11,12 +11,12 @@ AcceleratorService.setComponentDefaults('library', {
   'Space'         : ['book', 'open'],
   'Shift+Space'   : ['book', 'open', 'newTab'],
 
-  'x' : ['cli', 'show'],
-  'f' : ['cli', 'show', 'filter '],
-  't' : ['cli', 'show', 'tag add '],
-  'u' : ['cli', 'show', 'tag del '],
-  'Shift+r'   : ['cli', 'repeatLast'],
-  'Control+l' : ['cli', 'clear'],
+  'x' : ['palette', 'show'],
+  'f' : ['palette', 'show', 'filter '],
+  't' : ['palette', 'show', 'tag add '],
+  'u' : ['palette', 'show', 'tag del '],
+  'Shift+r'   : ['palette', 'repeatLast'],
+  'Control+l' : ['palette', 'clear'],
   
   // horizontal navigation
   'ArrowRight' : ['moveSelection', 'horizontally', 'next'],

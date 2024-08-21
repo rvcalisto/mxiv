@@ -1,5 +1,5 @@
 /**
- * AppCLI input prompt component.
+ * ActionPalette input prompt component.
  */
 export class InputPrompt {
 

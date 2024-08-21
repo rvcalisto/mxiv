@@ -4,11 +4,11 @@ import { AcceleratorService } from "../actions/acceleratorService.js";
 AcceleratorService.setBaseDefaults({
 
   // cmds
-  'x': ['cli', 'show'],
-  'r+Shift': ['cli', 'repeatLast'],
-  'l+Control': ['cli', 'clear'],
-  'f+Shift': ['cli', 'show', 'find '],
-  'f+Control': ['cli', 'show', 'filter '],
+  'x': ['palette', 'show'],
+  'r+Shift': ['palette', 'repeatLast'],
+  'l+Control': ['palette', 'clear'],
+  'f+Shift': ['palette', 'show', 'find '],
+  'f+Control': ['palette', 'show', 'filter '],
 
   // app
   'h': ['statusVisibility'],

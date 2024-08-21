@@ -9,14 +9,14 @@
 
 ## Overview
 
-MXIV is a keyboard-oriented media viewer intended to navigate heterogeneous galleries, displaying images & videos interchangeably. For interactivity, all actions can be called or keyboard-accelerated from the app's "CLI".
+MXIV is a keyboard-oriented media viewer intended to navigate heterogeneous galleries, displaying images & videos interchangeably. For interactivity, all actions can be discovered, ran and accelerated from the action palette.
 
 ## Features
 
 - **Explorer** - Navigate through files & folders without leaving the window
 - **Multimedia** - Display a large range of formats such as PNG, GIF, WEBP, WEBM, MP3, MP4...
 - **Interactive** - Fit display to width, height, set zoom, loop videos, play slideshows...
-- **Searchable** - Open multiple folders as one, find or filter files through the app CLI
+- **Searchable** - Open multiple folders as one, find or filter files through actions
 - **Tabs** - Create, switch or duplicate tabs. Then save, restore or delete session profiles
 - **Tags** - Simple but extendable JSON tag database for file tracking
 - **Library** - Gather folders & archives for tagging, search and quick access

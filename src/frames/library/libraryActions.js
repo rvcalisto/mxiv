@@ -1,6 +1,6 @@
 import { ActionService } from "../../actions/actionService.js"
 import { CoverGrid } from "./coverGrid.js"
-import { option, standardFilter } from "../../components/appCli/appCLI.js"
+import { option, standardFilter } from "../../components/actionPalette/actionPalette.js"
 import { FRAME as Library }  from "../../tabs/tab.js"
 import { AppNotifier } from "../../components/notifier.js"
 import { runScript, tag } from "../../components/fileMethods.js"

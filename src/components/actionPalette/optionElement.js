@@ -1,5 +1,5 @@
 /**
- * @typedef {import('./appCLI').OptionObject} OptionObject
+ * @typedef {import('./actionPalette').OptionObject} OptionObject
  */
 
 

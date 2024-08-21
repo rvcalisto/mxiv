@@ -302,8 +302,8 @@
         content: "";
       }
 
-      [cliAccel]::after {
-        content:var(--msg-cliAccel);
+      [actPaletteAccel]::after {
+        content:var(--txt-actPaletteAccel);
         background: #292929;
         border-radius: .2em;
         padding: 0px .4em;
@@ -426,7 +426,7 @@
           <div style="display: flex; flex-direction: column; align-items: center; margin: auto;">
             <img style="object-fit: scale-down; -webkit-user-drag: none" src="../icons/mxiv-alpha.svg">
             <p style="color: dimgray; font-size: small;">
-              press <strong cliAccel></strong> to open the CLI
+              press <strong actPaletteAccel></strong> to show actions
             </p>
           </div>
         </div>
@@ -457,7 +457,7 @@
     </div>
   </template>
 
-  <template id="appCliTemplate">
+  <template id="actionPaletteTemplate">
     <style>
       * {
         padding: 0%;
@@ -938,7 +938,7 @@
     </header>
     <main>
       <div id="contents"></div>
-      <app-cli></app-cli>
+      <action-palette></action-palette>
       <div id="appNotifier"></div>
     </main>
     <footer id="bar">

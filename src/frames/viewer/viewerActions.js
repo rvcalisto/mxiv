@@ -1,6 +1,6 @@
 import { ActionService } from "../../actions/actionService.js"
 import { FRAME } from "../../tabs/tab.js"
-import { option, standardFilter } from "../../components/appCli/appCLI.js"
+import { option, standardFilter } from "../../components/actionPalette/actionPalette.js"
 import { AppNotifier } from "../../components/notifier.js"
 import { runScript, tag } from "../../components/fileMethods.js"
 

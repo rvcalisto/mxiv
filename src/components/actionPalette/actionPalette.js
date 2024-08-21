@@ -9,7 +9,7 @@ import { GenericStorage } from "../genericStorage.js";
 
 
 /**
- * Descriptive option object for display in AppCmdLine.
+ * Descriptive option object for display in ActionPalette.
  * @typedef OptionObject
  * @property {String} name Option name.
  * @property {String} desc Option description.
@@ -18,11 +18,11 @@ import { GenericStorage } from "../genericStorage.js";
 
 
 /**
- * Command line interface for executing app methods. 
+ * Display hints, methods and execute actions for current component.
  */
-class AppCmdLine extends HTMLElement {
+class ActionPalette extends HTMLElement {
 
-  static tagName = 'app-cli';
+  static tagName = 'action-palette';
 
   /**
    * Hint element list.
@@ -60,7 +60,7 @@ class AppCmdLine extends HTMLElement {
   active = false;
 
   connectedCallback() {
-    const fragment = document.getElementById('appCliTemplate').content;
+    const fragment = document.getElementById('actionPaletteTemplate').content;
     this.attachShadow({ mode: 'open' });
     this.shadowRoot.append( fragment.cloneNode(true) );
 
@@ -73,7 +73,7 @@ class AppCmdLine extends HTMLElement {
 
   /**
    * Toggle visibility. Focus prompt if opening while already open.
-   * @param {Boolean} open Open or close CLI.
+   * @param {Boolean} open Open or close action palette.
    * @param {String} [optionalStr] Open on custom string.
    */
   toggle(open, optionalStr = '') {
@@ -107,44 +107,47 @@ class AppCmdLine extends HTMLElement {
   }
 
   /**
-   * Run current CLI command.
-   * @param {String} [command] Custom CLI command.
+   * Run given action text, otherwise get it from input.
+   * @param {String} [actionText] Optional action text.
    */
-  #runCmd(command) {
-    command = command || this.#prompt.getText();
-    const action = InputPrompt.unescapeIntoArray(command);
+  #runAction(actionText) {
+    actionText = actionText || this.#prompt.getText();
+    const action = InputPrompt.unescapeIntoArray(actionText);
+
+    if (action.length < 1)
+      return; 
 
     const success = ActionService.currentFrameActions.run(action);
     if (success) {
-      const textItem = command ? command.trim() : '';
-      if (textItem !== '' && textItem !== 'cli repeatLast')
-        return this.#actionStack.insert(command);
+      const textItem = actionText.trim();
+      if (textItem !== 'palette repeatLast')
+        this.#actionStack.insert(actionText);
+    } else {
+      AppNotifier.notify(`"${action[0]}" is not an action in current context`, 'actionPalette');
     }
-    
-    AppNotifier.notify(`"${action[0]}" is not an action in current context`, 'appCLI');
   }
 
   /**
-   * Erase past commands from history.
+   * Erase past executed action or actions from history.
    * @param {String} [historyItem] If given, remove only this item from history.
    */
-  clearCmdHistory(historyItem) {
+  clearActionHistory(historyItem) {
     if (historyItem == null) {
       this.#actionStack.clearAll();
-      AppNotifier.notify('history cleared', 'appCLI:clear');
+      AppNotifier.notify('history cleared', 'actionPalette:clear');
     } else {
       this.#actionStack.remove(historyItem);
-      AppNotifier.notify('history item removed', 'appCLI:forget');
+      AppNotifier.notify('history item removed', 'actionPalette:forget');
       this.toggle(true); // recapture focus from 'forget' button click
     }
   }
 
   /**
-   * Repeat last command.
+   * Repeat last executed action.
    */
-  redoCmd() {
+  repeatAction() {
     if (this.#actionStack.items.length > 0)
-      this.#runCmd(this.#actionStack.items[0]);
+      this.#runAction(this.#actionStack.items[0]);
   }
 
   /**
@@ -163,7 +166,7 @@ class AppCmdLine extends HTMLElement {
     element.tags = frameAccelerators.byAction([...leadingAction, itemOption.name]);
     
     if (itemOption.type === 'history') {
-      element.onForget = () => this.clearCmdHistory(itemOption.name);
+      element.onForget = () => this.clearActionHistory(itemOption.name);
     }
 
     element.onclick = () => {
@@ -178,7 +181,7 @@ class AppCmdLine extends HTMLElement {
     element.ondblclick = () => {
       element.onAccess();
       this.toggle(false);
-      this.#runCmd();
+      this.#runAction();
     };
 
     return element;
@@ -246,7 +249,7 @@ class AppCmdLine extends HTMLElement {
       this.#store.set('stack', this.#actionStack.items);
     });
 
-    // close CLI if clicking out of focus
+    // close action palette if clicking out of focus
     this.#background.onclick = (e) => this.toggle(e.target !== this.#background);
 
     // display hints on value input
@@ -294,7 +297,7 @@ class AppCmdLine extends HTMLElement {
           this.#displayHints();
         } else {
           this.toggle(false);
-          this.#runCmd();
+          this.#runAction();
         }
       }
     };
@@ -303,7 +306,7 @@ class AppCmdLine extends HTMLElement {
 
 
 /**
- * Returns rich option object to be displayed by AppCmdLine.
+ * Returns rich option object to be displayed by ActionPalette.
  * @param {String} name Option name.
  * @param {String} [desc] Option description.
  * @param {'action'|'history'|'generic'} [type='generic'] Option type.
@@ -338,9 +341,9 @@ export function standardFilter(query) {
 
 
 /**
- * Command line interface for application instance.
- * @type {AppCmdLine}
+ * Action palette for current context.
+ * @type {ActionPalette}
  */
-export const AppCLI = /** @type {AppCmdLine} */ (document.querySelector(AppCmdLine.tagName));
+export const actionPalette = /** @type {ActionPalette} */ (document.querySelector(ActionPalette.tagName));
 
-customElements.define(AppCmdLine.tagName, AppCmdLine);
+customElements.define(ActionPalette.tagName, ActionPalette);

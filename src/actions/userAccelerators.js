@@ -16,7 +16,7 @@ export const UserAccelerators = new class {
   /**
    * @type {GenericStorage<AcceleratorSet>}
    */
-  #storage = new GenericStorage('userHotkeys');
+  #storage = new GenericStorage('userAccelerators');
 
   static {
     elecAPI.onBroadcast( (e, message, ...args) => {
@@ -69,7 +69,7 @@ export const UserAccelerators = new class {
       elecAPI.broadcast('accel:sync');
     }
     
-    this.#updateCLIaccelCSSvar();
+    this.#updateActionPaletteAcceleratorCSSvar();
   }
 
   /**
@@ -79,7 +79,7 @@ export const UserAccelerators = new class {
     const entries = this.#storage.entries();
 
     // no user accelerators to apply, generate CSS var only
-    if ( entries.length < 1 ) return this.#updateCLIaccelCSSvar();
+    if ( entries.length < 1 ) return this.#updateActionPaletteAcceleratorCSSvar();
 
     for (const [component, accelerators] of entries) {
       if ( Object.keys(accelerators).length > 0 )
@@ -88,19 +88,52 @@ export const UserAccelerators = new class {
   }
 
   /**
-   * Update `--msg-cliAccel` CSS variable value with first 
+   * Update `--txt-actPaletteAccel` CSS variable value with first 
    * found keycombo accelerating the `cli show` base action.
-   * - This is then displayed in `Viewer` to conduct new users to the CLI accelerator.
+   * - This is then displayed in `Viewer` to conduct new users to the action palette.
    * - Elements using CSS variables in their style get updated automatically on change.
    */
-  #updateCLIaccelCSSvar() {
+  #updateActionPaletteAcceleratorCSSvar() {
     const baseAccelSet = AcceleratorService.getAccelerators('base');
     if (baseAccelSet == null) return;
     
     // get keycombo for the first intersecting action
-    const action = ['cli', 'show'];
+    const action = ['palette', 'show'];
     const keycombo = baseAccelSet.byAction(action)?.at(0) || '???';
     
-    document.documentElement.style.setProperty('--msg-cliAccel', `"${keycombo}"`);
+    document.documentElement.style.setProperty('--txt-actPaletteAccel', `"${keycombo}"`);
   }
 }
+
+/**
+ * Migrate 'userHotkeys' storage to 'userAccelerators' if empty.
+ * Replace 'cli' with 'palette'.
+ * TODO: Remove later.
+ */
+function cliToPalette() {
+  /** @type {GenericStorage<AcceleratorSet>}*/
+  const userAccelerators = new GenericStorage('userAccelerators');
+
+  if (userAccelerators.entries().length > 0)
+    return;
+  
+  /** @type {GenericStorage<AcceleratorSet>}*/
+  const userHotkeys = new GenericStorage('userHotkeys');
+  
+  for ( const [component, hotkeys] of userHotkeys.entries() ) {
+    const accelerators = {};
+    
+    Object.entries(hotkeys).forEach(([key, action]) => {
+      if (action.length > 0)
+        action[0] = action[0].replace('cli', 'palette');
+      
+      accelerators[key] = action;
+    });
+    
+    userAccelerators.set(component, accelerators);
+  }
+  
+  console.log('migrated "cli" to "palette"');
+}
+
+cliToPalette();
