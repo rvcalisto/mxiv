@@ -11,10 +11,9 @@ AcceleratorService.setComponentDefaults('library', {
   'Space'         : ['book', 'open'],
   'Shift+Space'   : ['book', 'open', 'newTab'],
 
-  'x' : ['palette', 'show'],
-  'f' : ['palette', 'show', 'filter '],
-  't' : ['palette', 'show', 'tag add '],
-  'u' : ['palette', 'show', 'tag del '],
+  'f' : ['palette', 'show', 'filter'],
+  't' : ['palette', 'show', 'tag add'],
+  'u' : ['palette', 'show', 'tag del'],
   'Shift+r'   : ['palette', 'repeatLast'],
   'Control+l' : ['palette', 'clear'],
   
@@ -29,5 +28,5 @@ AcceleratorService.setComponentDefaults('library', {
   'w'         : ['moveSelection', 'vertically', 'back'],
   'ArrowDown' : ['moveSelection', 'vertically', 'next'],
   's'         : ['moveSelection', 'vertically', 'next'],
-})
-
+  
+});

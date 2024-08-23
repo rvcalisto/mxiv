@@ -7,8 +7,8 @@ AcceleratorService.setBaseDefaults({
   'x': ['palette', 'show'],
   'r+Shift': ['palette', 'repeatLast'],
   'l+Control': ['palette', 'clear'],
-  'f+Shift': ['palette', 'show', 'find '],
-  'f+Control': ['palette', 'show', 'filter '],
+  'f+Shift': ['palette', 'show', 'find'],
+  'f+Control': ['palette', 'show', 'filter'],
 
   // app
   'h': ['statusVisibility'],
