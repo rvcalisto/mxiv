@@ -121,7 +121,7 @@ class ActionPalette extends HTMLElement {
     if (success) {
       const textItem = actionText.trim();
       if (textItem !== 'palette repeatLast')
-        this.#actionStack.insert(actionText);
+        this.#actionStack.insert(textItem);
     } else {
       AppNotifier.notify(`"${action[0]}" is not an action in current context`, 'actionPalette');
     }

@@ -28,14 +28,42 @@ export class InputPrompt {
   }
 
   /**
-   * Returns string with whitespaces double quoted and escape existing ones.
-   * - Ex: `my "quoted" file.mp4` => `"my \"quoted\" file.mp4"`
+   * Enclose white-spaced words in double-quotes, escape inner ones.
+   * ```
+   * // becomes: '"path/to/my \"quoted\" file.mp4"'
+   * escapeQuoteSpaces('/path/to/my "quoted" file.mp4');
+   * ```
    * @param {String} text String to parse.
-   * @returns {String} Double quotted and escaped string.
+   * @returns {String} Treated text
    */
-  static escapeDoubleQuotes(text) {
-    const whiteSpaces = text.split(' ').length > 1;
-    return whiteSpaces ? `"${text.replaceAll(`"`, `\\"`)}"` : text;
+  static escapeQuoteSpaces(text) {
+    text = text.trim();
+    if ( !text.includes(' ') )
+      return text;
+    
+    // identify path separators, get words
+    let pathSep = '', /** @type {string[]} */ words =  [];
+    for (const sep of ['/', '\\']) {
+      words = text.split(sep);
+      if (words.length > 1) {
+        pathSep = sep;
+        break;
+      }
+    }
+    
+    let treatedText = '';
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
+      if ( word.includes(' ') )
+        treatedText += `"${word.replaceAll('"', '\\"')}"`;
+      else
+        treatedText += word;
+      
+      if (i < words.length -1)
+        treatedText += pathSep;
+    }
+    
+    return treatedText;
   }
 
   /**
@@ -116,9 +144,14 @@ export class InputPrompt {
 
       newText = `${cmd}`;
       for (const arg of [...args, text]) {
-        newText += ` ${InputPrompt.escapeDoubleQuotes(arg)}`;
+        newText += ` ${InputPrompt.escapeQuoteSpaces(arg)}`;
       }
     }
+    
+    // append trailing whitespace when applicable to trigger next suggestions
+    const lastChar = newText.at(-1);
+    if (lastChar != null && lastChar !== '/' && lastChar !== '\\')
+      newText += ' ';
 
     this.#input.value = newText;
     this.#input.scrollLeft = 9999; // scroll to end of text (hopefully)
