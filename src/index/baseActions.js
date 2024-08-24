@@ -49,13 +49,15 @@ ActionService.setBaseActions({
       },
       'move': {
         'desc' : 'move current tab to the right or left',
-        'run'  : (right = 'right') => Tab.selected.move(right === 'right'),
-        'options': () => [option('right', 'default'), 'left']
+        'run'  : (next = 'right') => Tab.selected.move(next !== 'left'),
+        'options': (lastArg, args) => args.length < 2 ?
+          [option('right', 'default'), 'left'] : []
       },
       'cycle': {
         'desc' : 'cycle through tabs',
-        'run'  : (next = 'next') => Tab.cycleTabs(next === 'next'),
-        'options': () => [option('next', 'default'), 'back']
+        'run'  : (next = 'next') => Tab.cycleTabs(next !== 'back'),
+        'options': (lastArg, args) => args.length < 2 ?
+          [option('next', 'default'), 'back'] : []
       },
       'close': {
         'desc' : 'close current tab',
@@ -78,7 +80,8 @@ ActionService.setBaseActions({
           const value = show === 'on' ? true : show === 'off' ? false : undefined
           Tab.toggleHeaderBar(value)
         },
-        'options': () => [option('toggle', 'default'), 'on', 'off']
+        'options': (lastArg, args) => args.length < 2 ?
+          [option('toggle', 'default'), 'on', 'off'] : []
       }
     }
   },
@@ -90,7 +93,8 @@ ActionService.setBaseActions({
     'methods': {
       'load': {
         'desc': 'load session profile',
-        'run': (name, clearSession = 'default') => SessionProfiles.load(name, clearSession == 'default'),
+        'run': (name, clearSession = 'default') =>
+          SessionProfiles.load(name, clearSession !== 'keepSession'),
         'options': (query, args) => {
           if (args.length === 1) return SessionProfiles.list()
           if (args.length === 2) return [
