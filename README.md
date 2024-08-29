@@ -53,7 +53,7 @@ However, if you **already** have [**Electron**][1] installed **or want to packag
 electron "<path to your extracted mxiv archive>" 
 ```
  -->
-> Regardless of method, make sure [7z][2] and [convert][4] binaries are **available from your [PATH][6]** to use their features, as they're not redistributed within the packages.
+> Regardless of method, make sure [7z][2] and [magick][4] binaries are **available from your [PATH][6]** to use their features, as they're not redistributed within the packages.
 
 ## Repository Setup
 

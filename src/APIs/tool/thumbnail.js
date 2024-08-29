@@ -1,5 +1,5 @@
 const child_process = require("child_process");
-const cmd = 'convert' // ImageMagick
+const cmd = 'magick' // ImageMagick
 
 
 /**
