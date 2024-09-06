@@ -1,5 +1,5 @@
-const { Worker, workerData, parentPort, isMainThread } = require('worker_threads')
-const { createThumbnail } = require('./mainUtils')
+import { Worker, workerData, parentPort, isMainThread } from 'worker_threads'
+import { createThumbnail } from './mainUtils.js'
 
 
 if (!isMainThread)
@@ -19,7 +19,7 @@ if (!isMainThread)
  * @param {((value:ThumbnailWorkerMessage)=>void)} callback Callback to run on thread message.
  * @param {Number} [threads=2] Threads to use. 2 by default. 
  */
-async function createThumbnailMultiThreaded(files, callback, threads = 2) {
+export async function createThumbnailMultiThreaded(files, callback, threads = 2) {
   const part = Math.ceil(files.length / threads)
   const taskPromises = []
 
@@ -28,7 +28,7 @@ async function createThumbnailMultiThreaded(files, callback, threads = 2) {
     if (slice.length < 1) continue
 
     taskPromises.push(new Promise(resolve => {
-      new Worker(__filename, { workerData: { id: i, files: slice } })
+      new Worker(import.meta.filename, { workerData: { id: i, files: slice } })
         .on('message', callback)
         .on('exit', () => { resolve() })
     }))
@@ -53,6 +53,3 @@ async function processThumbnails() {
     })
   }
 }
-
-
-module.exports = { createThumbnailMultiThreaded }

@@ -1,8 +1,8 @@
 // @ts-check
-const p = require('path');
-const { pathToFileURL } = require('url');
-const { JsonStorage } = require('../tool/jsonStorage');
-const { libraryFile } = require('../tool/appPaths');
+import p from 'path';
+import { pathToFileURL } from 'url';
+import { JsonStorage } from '../tool/jsonStorage.js';
+import { libraryFile } from '../tool/appPaths.js';
 
 
 /**
@@ -18,7 +18,7 @@ const { libraryFile } = require('../tool/appPaths');
  * LibraryStorage state wrapper.
  * @extends {Map<string, LibraryEntry>} 
  */
-class LibraryState extends Map {
+export class LibraryState extends Map {
 
   static #collator = new Intl.Collator('en', { numeric: true })
 
@@ -85,7 +85,4 @@ class LibraryStorage extends JsonStorage {
  * Persistent library storage.
  * @type {LibraryStorage}
  */
-const libraryStorage = new LibraryStorage();
-
-
-module.exports = { libraryStorage, LibraryState };
+export const libraryStorage = new LibraryStorage();

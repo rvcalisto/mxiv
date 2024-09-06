@@ -1,8 +1,8 @@
-const fs = require('fs');
-const p = require('path');
-const { tmpdir } = require('os');
-const { fileType } = require('./fileTools');
-const archiveTool = require('../tool/archive');
+import fs from 'fs';
+import p from 'path';
+import { tmpdir } from 'os';
+import { fileType } from './fileTools.js';
+import * as archiveTool from '../tool/archive.js';
 
 /**
  * Temporary directory where to extract archives.
@@ -18,7 +18,7 @@ const TMPPREFIX = 'mxiv-';
 /**
  * Manage temporary folders created to view archives.
  */
-const TemporaryFolders = new class {
+export const TemporaryFolders = new class {
 
   /**
    * Track archives temporarily extracted and their consumers.
@@ -130,6 +130,3 @@ const TemporaryFolders = new class {
     }
   }
 };
-
-
-module.exports = { TemporaryFolders };

@@ -1,5 +1,4 @@
-const { BrowserWindow } = require("electron");
-const { ipcMain } = require("electron");
+import { BrowserWindow, ipcMain } from 'electron';
 
 
 /**
@@ -13,7 +12,7 @@ const mutexLocks = {};
  * @param {string} name Lock identifier.
  * @returns {Boolean} Success
  */
-function requestLock(name) {
+export function requestLock(name) {
   if (mutexLocks[name]) return false;
 
   mutexLocks[name] = true;
@@ -24,7 +23,7 @@ function requestLock(name) {
  * Release mutex lock.
  * @param {Number} name Lock identifier.
  */
-function releaseLock(name) {
+export function releaseLock(name) {
   mutexLocks[name] = false;
 }
 
@@ -33,7 +32,7 @@ function releaseLock(name) {
  * @param {string} message Message identifier.
  * @param  {...any} payload Additional arguments.
  */
-function broadcast(message, ...payload) {
+export function broadcast(message, ...payload) {
   BrowserWindow.getAllWindows().forEach(win => {
     win.webContents.send('coord:onbroadcast', message, ...payload);
   });
@@ -57,6 +56,3 @@ ipcMain.handle('coord:broadcast', (e, message, ...args) => {
       win.webContents.send('coord:onbroadcast', message, ...args);
   });
 });
-
-
-module.exports = { requestLock, releaseLock, broadcast };

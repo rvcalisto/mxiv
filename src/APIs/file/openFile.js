@@ -1,8 +1,8 @@
-const fs = require('fs');
-const p = require('path');
-const { listFiles, fileObj } = require('./fileSearch')
-const { expandPath, fileType } = require('./fileTools')
-const { TemporaryFolders } = require('./temporaryFolders')
+import fs from 'fs';
+import p from 'path';
+import { listFiles, fileObj } from './fileSearch.js'
+import { expandPath, fileType } from './fileTools.js'
+import { TemporaryFolders } from './temporaryFolders.js'
 
 
 /**
@@ -20,7 +20,7 @@ const { TemporaryFolders } = require('./temporaryFolders')
  * @param {String} ownerID Keeps track of temporary folder (archives) ownership.
  * @returns {Promise<BookObject>}
  */
-async function open(paths, ownerID) {
+export async function open(paths, ownerID) {
 
   /** Archives openned in current call. */
   const workingArchives = []
@@ -104,9 +104,6 @@ async function open(paths, ownerID) {
  * Remove all temporary folders associated with ownerID. For unpriviledged contexts.
  * @param {String} ownerID Tab instance to be cleaned.
  */
-function clearTmp(ownerID) {
+export function clearTmp(ownerID) {
   TemporaryFolders.surrenderLeases(ownerID)
 }
-
-
-module.exports = { open, clearTmp }

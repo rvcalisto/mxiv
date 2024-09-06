@@ -1,5 +1,5 @@
-const { ipcMain } = require('electron')
-const mainTagStorage = require('./main')
+import { ipcMain } from 'electron'
+import * as mainTagStorage from './main.js'
 
 
 ipcMain.handle('tags:add', async (e, path, ...tags) => {

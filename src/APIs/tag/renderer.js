@@ -1,6 +1,6 @@
 // @ts-check
-const { TagStorage, TagState } = require('./tagStorage');
-const { ipcRenderer } = require('electron');
+import { TagStorage, TagState } from './tagStorage.js';
+import { ipcRenderer } from 'electron';
 
 
 /**
@@ -23,7 +23,7 @@ const cache = {
  * @param {String} filePath Absolute path to file.
  * @returns {String[]}
  */
-function getTags(filePath) {
+export function getTags(filePath) {
   return cache.state.get(filePath);
 }
 
@@ -31,14 +31,14 @@ function getTags(filePath) {
  * Return unique tags.
  * @returns {String[]}
  */
-function uniqueTags() {
+export function uniqueTags() {
   return cache.uniqueTags;
 }
 
 /**
  * List database entries whose files are no longer accessible.
  */
-async function listOrphans() {
+export async function listOrphans() {
   await tagStorage.listOrphans(false);
 }
 
@@ -63,6 +63,3 @@ ipcRenderer.on('coord:onbroadcast', async (e, message) => {
 
 
 updateTagCache();
-
-
-module.exports = { getTags, uniqueTags, listOrphans };

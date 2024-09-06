@@ -1,7 +1,7 @@
 // @ts-check
-const { JsonStorage } = require("../tool/jsonStorage");
-const { tagDBFile } = require("../tool/appPaths");
-const fs = require('fs');
+import { JsonStorage } from '../tool/jsonStorage.js';
+import { tagDBFile } from '../tool/appPaths.js';
+import fs from 'fs';
 
 
 /**
@@ -16,7 +16,7 @@ const fs = require('fs');
 /**
  * TagStorage state wrapper. Abstracts away serialized data.
  */
-class TagState extends Map {
+export class TagState extends Map {
 
   /**
    * Meta entry keys.
@@ -274,7 +274,7 @@ class TagState extends Map {
  * Persistent tag storage.
  * @extends {JsonStorage<string[], TagState>}
  */
-class TagStorage extends JsonStorage {
+export class TagStorage extends JsonStorage {
 
   /**
    * Initialized persistent JSON filepath.
@@ -382,6 +382,3 @@ class TagStorage extends JsonStorage {
     }
   }
 }
-
-
-module.exports = { TagStorage, TagState };

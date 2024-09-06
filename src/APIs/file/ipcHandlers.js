@@ -1,7 +1,7 @@
-const { ipcMain } = require("electron")
-const openFile = require('./openFile')
-const fileSearch = require('./fileSearch')
-const fileTools = require('./fileTools')
+import { ipcMain } from 'electron'
+import * as openFile from './openFile.js'
+import * as fileSearch from './fileSearch.js'
+import * as fileTools from './fileTools.js'
 
 
 // open files

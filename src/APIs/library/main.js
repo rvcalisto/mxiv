@@ -1,6 +1,6 @@
-const utils = require('./mainUtils');
-const { libraryStorage } = require('./libraryStorage');
-const { createThumbnailMultiThreaded } = require('./thumbnailWorker');
+import * as utils from './mainUtils.js';
+import { libraryStorage } from './libraryStorage.js';
+import { createThumbnailMultiThreaded } from './thumbnailWorker.js';
 
 
 /**
@@ -18,7 +18,7 @@ const { createThumbnailMultiThreaded } = require('./thumbnailWorker');
  * @param {true} recursively Either to evaluate subfolders recursively.
  * @returns {Promise<Number>} New paths added.
  */
-async function addToLibrary(senderWin, folderPath, recursively = true) {
+export async function addToLibrary(senderWin, folderPath, recursively = true) {
 
   // check cover directory, try creating if not found
   if ( !await utils.createThumbnailDirectory() ) {
@@ -59,7 +59,7 @@ async function addToLibrary(senderWin, folderPath, recursively = true) {
  * Return sorted Library entries for displaying.
  * @returns {Promise<import("./libraryStorage").LibraryEntry[]>}
  */
-async function getLibraryEntries() {
+export async function getLibraryEntries() {
   return await libraryStorage.getStateFromCache()
     .then(state => state.sortedValues() );
 }
@@ -69,7 +69,7 @@ async function getLibraryEntries() {
  * @param {String} path Library object key. Path to stored book.
  * @returns {Promise<boolean>} Success.
  */
-async function removeFromLibrary(path) {
+export async function removeFromLibrary(path) {
   await libraryStorage.write(async db => {
     const entry = db.get(path);
     
@@ -92,7 +92,7 @@ async function removeFromLibrary(path) {
  * Delete entire library & cover thumbnail folder.
  * @returns {Promise<boolean>} Success.
  */
-async function clearLibrary() {
+export async function clearLibrary() {
   const success = await utils.deleteThumbnailDirectory()
   if (success)
     libraryStorage.write(state => state.clear() )
@@ -102,6 +102,3 @@ async function clearLibrary() {
 
 
 // TODO: procedure to clean orphaned entries on sync (end of addToLibrary)
-
-
-module.exports = { getLibraryEntries, addToLibrary, removeFromLibrary, clearLibrary }

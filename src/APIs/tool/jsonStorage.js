@@ -1,5 +1,5 @@
 // @ts-check
-const fs = require('fs');
+import fs from 'fs';
 
 
 /**
@@ -7,7 +7,7 @@ const fs = require('fs');
  * @template T
  * @template {Map<string, T>} [W=Map<string, T>]
  */
-class JsonStorage {
+export class JsonStorage {
 
   /**
    * Persistent JSON filepath.
@@ -145,6 +145,3 @@ class JsonStorage {
     });
   }
 }
-
-
-module.exports = { JsonStorage };

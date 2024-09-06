@@ -1,5 +1,5 @@
-const child_process = require("child_process");
-const path = require("path");
+import child_process from 'child_process';
+import path from 'path';
 
 
 const isWin32 = process.platform === 'win32'; 
@@ -14,7 +14,7 @@ if (isWin32) process.env.PATH += ";C:\\Program Files\\7-Zip"
  * Check if Tool is accessible.
  * @returns {Promise<Boolean>} Either if tool is acessible.
  */
-async function hasTool() {
+export async function hasTool() {
   return await new Promise(resolve => {
     child_process.exec(`${cmd} --help`, (err) => resolve(!err) )
   })
@@ -26,7 +26,7 @@ async function hasTool() {
  * @param {String} archiveFile Path to archive to extract files from.
  * @param {String} extractTo Path to folder to extract files onto.
  */
-async function extract(archiveFile, extractTo) {
+export async function extract(archiveFile, extractTo) {
   // extract, preserve directory sctructure
   // 7z x "<archiveFile>" -o"<extractTo>"
   
@@ -44,7 +44,7 @@ async function extract(archiveFile, extractTo) {
  * @param {String} archiveFile Path to archive file.
  * @returns {Promise<String[]>} Archive's basename files.
  */
-async function fileList(archiveFile) {
+export async function fileList(archiveFile) {
   const rawList = await new Promise(resolve => {
     child_process.exec(`${cmd} l -slt -ba "${archiveFile}"`, (err, stdout) => {
       resolve( stdout.toString().split(newlineCode) )
@@ -66,7 +66,7 @@ async function fileList(archiveFile) {
  * @param {String} extractTo Folder path to extrat file onto.
  * @returns {Promise<String>} Path to extracted file.
  */
-async function extractOnly(file, archiveFile, extractTo) {
+export async function extractOnly(file, archiveFile, extractTo) {
   const fileIsNested = path.dirname(file) !== '.'
   
   // if archived file is nested (in a subdirectory), 7z "e" option will only
@@ -79,6 +79,3 @@ async function extractOnly(file, archiveFile, extractTo) {
     })
   })
 }
-
-
-module.exports = { fileList, extract, extractOnly, hasTool }

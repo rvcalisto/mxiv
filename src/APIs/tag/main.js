@@ -1,5 +1,5 @@
-const { TagStorage } = require('./tagStorage');
-const { broadcast } = require('../tool/coordinationUtils');
+import { TagStorage } from './tagStorage.js';
+import { broadcast } from '../tool/coordinationUtils.js';
 
 /**
  * Tag Storage to atomically transact with in main process.
@@ -13,7 +13,7 @@ const tagStorage = new TagStorage()
  * @param {String[]} tags
  * @returns {Promise<Boolean>}
  */
-async function tagFile(filePath, ...tags) {
+export async function tagFile(filePath, ...tags) {
   return await tagStorage.write(db => {
     const oldSet = new Set( db.get(filePath) );
     const tagSet = new Set(tags);
@@ -32,7 +32,7 @@ async function tagFile(filePath, ...tags) {
  * @param {String[]} tags
  * @returns {Promise<Boolean>}
  */
-async function untagFile(filePath, ...tags) {
+export async function untagFile(filePath, ...tags) {
   return await tagStorage.write(db => {
     const oldSet = new Set( db.get(filePath) );
     const tagSet = new Set(tags);
@@ -50,7 +50,7 @@ async function untagFile(filePath, ...tags) {
  * List database entries whose files are no longer accessible.
  * @param {false} deleteOrphans Either to delete orphans entries if found.
  */
-async function listOrphans(deleteOrphans = false) {
+export async function listOrphans(deleteOrphans = false) {
   await tagStorage.listOrphans(deleteOrphans)
 }
 
@@ -81,6 +81,3 @@ async function initialize() {
 
 
 initialize()
-
-
-module.exports = { tagFile, untagFile, listOrphans }

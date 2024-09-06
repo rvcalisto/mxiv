@@ -1,6 +1,6 @@
-const fs = require('fs');
-const p = require('path');
-const { expandPath, fileType } = require('./fileTools')
+import fs from 'fs';
+import p from 'path';
+import { expandPath, fileType } from './fileTools.js';
 
 
 /**
@@ -18,7 +18,7 @@ let hintCache = {}
 /**
  * Clear all cache objects.
  */
-function clearCache() {
+export function clearCache() {
   lsCache = {}
   hintCache = {}
 }
@@ -38,7 +38,7 @@ function clearCache() {
  * @param {String} path Path to folder.
  * @returns {Promise<LSObject>} Listed files separated by category.
  */
-async function listFiles(path) {
+export async function listFiles(path) {
 
   path = expandPath(path)
 
@@ -99,7 +99,7 @@ async function listFiles(path) {
  * @param {String} queryPath Path to list files.
  * @returns {Promise<String[]>}
  */
-async function listPaths(queryPath) {
+export async function listPaths(queryPath) {
   // treat working path
   let workingPath = expandPath( queryPath || process.cwd() )
 
@@ -170,13 +170,10 @@ async function listPaths(queryPath) {
  * @param {String} fullpath Absolute path. (Ex: `/home/user/Pictures/duck.png`)
  * @returns {FileObject} Wrapped file.
  */
-function fileObj(category, name, fullpath) {
+export function fileObj(category, name, fullpath) {
   return {
     path : fullpath,
     name : name,
     category : category
   }
 }
-
-
-module.exports = { listFiles, listPaths, clearCache, fileObj }

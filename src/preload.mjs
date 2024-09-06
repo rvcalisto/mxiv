@@ -1,6 +1,6 @@
-const { contextBridge, ipcRenderer, webFrame } = require("electron")
-const { pathToFileURL } = require('url')
-const localTagStorage = require('./APIs/tag/renderer')
+import { contextBridge, ipcRenderer, webFrame } from 'electron';
+import { pathToFileURL } from 'url';
+import * as localTagStorage from './APIs/tag/renderer.js';
 
 
 contextBridge.exposeInMainWorld('elecAPI', {
@@ -44,4 +44,4 @@ contextBridge.exposeInMainWorld('elecAPI', {
   onOpen: (details) => ipcRenderer.on('window:open', details),
   toggleFullscreen: async () => ipcRenderer.invoke('window:fullscreen'),
   onFullscreen: (isFullscreen) => ipcRenderer.on('window:onFullscreen', isFullscreen),
-})
+});

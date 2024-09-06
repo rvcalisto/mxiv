@@ -1,5 +1,5 @@
-const { ipcMain } = require("electron");
-const libraryMain = require("./main");
+import { ipcMain } from 'electron';
+import * as libraryMain from './main.js';
 
 
 ipcMain.handle('library:add', async (e, path, recursively) => {

@@ -1,17 +1,17 @@
-const fs = require('fs');
-const p = require('path');
-const { listFiles } = require('../file/fileSearch')
-const { fileType } = require('../file/fileTools')
-const archiveTool = require('../tool/archive');
-const thumbnailTool = require('../tool/thumbnail');
-const { randomUUID } = require('crypto');
-const { libraryCoverDirectory } = require('../tool/appPaths');
+import fs from 'fs';
+import p from 'path';
+import { listFiles } from '../file/fileSearch.js'
+import { fileType } from '../file/fileTools.js'
+import * as archiveTool from '../tool/archive.js';
+import * as thumbnailTool from '../tool/thumbnail.js';
+import { randomUUID } from 'crypto';
+import { libraryCoverDirectory } from '../tool/appPaths.js';
 
 
 /**
  * Generic icon to use secondarily.
  */
-const PLACEHOLDERICON = p.join(__dirname,
+const PLACEHOLDERICON = p.join(import.meta.dirname,
   '../../icons/libraryIconPlaceholder.jpg')
 
 /**
@@ -34,7 +34,7 @@ let canThumbnail = thumbnailTool.hasTool().then(value => canThumbnail = value)
  * @param {String[]} mappedPaths Used internally on recursive calls.
  * @returns {Promise<String[]>} Mapped paths.
  */
-async function getCandidates(folderPath, depth = Infinity, mappedPaths = []) {
+export async function getCandidates(folderPath, depth = Infinity, mappedPaths = []) {
   const ls = await listFiles(folderPath)
 
   // add archives
@@ -62,7 +62,7 @@ async function getCandidates(folderPath, depth = Infinity, mappedPaths = []) {
  * Check if cover thumbnail path exists, try to create it if not found.
  * @returns {Promise<Boolean>} Either path exists at the end of execution.
  */
-async function createThumbnailDirectory() {
+export async function createThumbnailDirectory() {
   const folderExists = await new Promise(resolve => {
     fs.stat( libraryCoverDirectory, (err, stat) => resolve(!err && stat != null) )
   })
@@ -80,7 +80,7 @@ async function createThumbnailDirectory() {
  * Delete entire library & cover thumbnail folder.
  * @returns {Promise<Boolean>} Success.
  */
-async function deleteThumbnailDirectory() {
+export async function deleteThumbnailDirectory() {
   return await new Promise(resolve => {
     fs.rm(libraryCoverDirectory, { recursive: true }, (err) => {
       if (!err) console.log('MXIV: successfuly deleted thumbnail covers folder')
@@ -98,7 +98,7 @@ async function deleteThumbnailDirectory() {
  * @param {number} [id=0] Extraction folder name, used by threads.
  * @returns {Promise<String>} Path to generated thumbnail.
  */
-async function createThumbnail(path, id = 0) {
+export async function createThumbnail(path, id = 0) {
   if (!canThumbnail)
     return await coverPlaceholder()
   else if ( fileType(path) === 'archive' )
@@ -112,7 +112,7 @@ async function createThumbnail(path, id = 0) {
  * @param {String} path Path to thumbnail.
  * @returns {Promise<Boolean>} Success.
  */
-async function deleteThumbnail(path) {
+export async function deleteThumbnail(path) {
   if (!path) return false
 
   const insideCoverDir = p.dirname(path) === libraryCoverDirectory
@@ -200,6 +200,3 @@ async function coverPlaceholder() {
     fs.copyFile( PLACEHOLDERICON, coverTarget, () => resolve(coverTarget) )
   })
 }
-
-
-module.exports = { getCandidates, createThumbnail, deleteThumbnail, createThumbnailDirectory, deleteThumbnailDirectory }

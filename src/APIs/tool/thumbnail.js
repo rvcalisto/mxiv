@@ -1,4 +1,4 @@
-const child_process = require("child_process");
+import child_process from 'child_process';
 const cmd = 'magick' // ImageMagick
 
 
@@ -12,7 +12,7 @@ const MAXSIZE = 200
  * Check if Tool is accessible.
  * @returns {Promise<Boolean>} Either if tool is acessible.
  */
-async function hasTool() {
+export async function hasTool() {
   return await new Promise(resolve => {
     child_process.exec(`${cmd} -version`, (err) => resolve(!err))
   })
@@ -24,12 +24,9 @@ async function hasTool() {
  * @param {String} destination Thumbnail path.
  * @returns {Promise<Boolean>} `Success` Boolean.
  */
-async function generateThumbnail(origin, destination) {
+export async function generateThumbnail(origin, destination) {
   return await new Promise(resolve => {
     child_process.exec(`${cmd} "${origin}[0]" -thumbnail ${MAXSIZE} "${destination}"`, 
     (err, stdout, stderr) => resolve(!err) )
   })
 }
-
-
-module.exports = { generateThumbnail, hasTool }

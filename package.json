@@ -1,9 +1,10 @@
 {
   "name": "mxiv",
   "productName": "mxiv",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "Media explorer and interactive viewer",
-  "main": "src/main.js",
+  "main": "src/main.mjs",
+  "type": "module",
   "scripts": {
     "start": "electron-forge start",
     "package": "electron-forge package",

@@ -1,7 +1,7 @@
-const { platform, env } = require('process');
-const { homedir } = require('os');
-const { join, isAbsolute } = require('path');
-const fs = require('fs');
+import { platform, env } from 'process';
+import { homedir } from 'os';
+import { join, isAbsolute } from 'path';
+import fs from 'fs';
 
 
 // XDG compliant base
@@ -14,23 +14,23 @@ const dataHome = platform === 'win32' ?
 /**
  * MXIV tag file absolute path.
  */
-const tagDBFile = join(dataHome, 'mxiv', 'tagDB.json');
+export const tagDBFile = join(dataHome, 'mxiv', 'tagDB.json');
 
 /**
  * MXIV library file absolute path.
  */
-const libraryFile = join(dataHome, 'mxiv', 'library.json');
+export const libraryFile = join(dataHome, 'mxiv', 'library.json');
 
 /**
  * MXIV library cover directory absolute path.
  */
-const libraryCoverDirectory = join(dataHome, 'mxiv', 'covers');
+export const libraryCoverDirectory = join(dataHome, 'mxiv', 'covers');
 
 
 /**
  * Recursively create MXIV base data directory.
  */
-async function initializeBase() {
+export async function initializeBase() {
   await migrateOldData();
   fs.mkdirSync( join(dataHome, 'mxiv') , { recursive: true });
 }
@@ -68,6 +68,3 @@ async function migrateOldData() {
     console.log(`MXIV: Migrated "${oldDataPath}" to "${newDataPath}".`);
   }
 }
-
-
-module.exports = { tagDBFile, libraryFile, libraryCoverDirectory, initializeBase }

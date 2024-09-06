@@ -1,7 +1,7 @@
-const { exec } = require("child_process");
-const p = require('path');
-const { rmSync } = require('fs');
-const { homedir } = require('os');
+import { exec } from 'child_process';
+import p from 'path';
+import { rmSync } from 'fs';
+import { homedir } from 'os';
 
 
 /**
@@ -10,7 +10,7 @@ const { homedir } = require('os');
  * @param {String} file File path or basename.
  * @returns Type String.
  */
-function fileType(file) {
+export function fileType(file) {
 
   switch ( p.extname(file) ) {
     case '.jpg': case '.jpeg': case '.png':
@@ -32,7 +32,7 @@ function fileType(file) {
  * @param {String} path Path to expand.
  * @returns {String}
  */
-function expandPath(path) {
+export function expandPath(path) {
   if (path[0] === '~') path = homedir() + path.slice(1);
   return p.resolve(path) // resolve "./", "../" & other relative paths
 }
@@ -43,7 +43,7 @@ function expandPath(path) {
  * @param {String} filePath Absolute file path.
  * @returns {Boolean} Success.
  */
-function deleteFile(filePath) {
+export function deleteFile(filePath) {
   try {
     rmSync(filePath)
     return true
@@ -67,7 +67,7 @@ function deleteFile(filePath) {
  * @param {string} [filepath] Absolute path to file to run script on.
  * @returns {Boolean} Success.
  */
-function runOnFile(script, filepath) {
+export function runOnFile(script, filepath) {
   const needFile = script.includes('%F') || script.includes('%N') || script.includes('%T')
   if (needFile && !filepath) return false
 
@@ -81,6 +81,3 @@ function runOnFile(script, filepath) {
   exec(script) // non blocking
   return true
 }
-
-
-module.exports = { expandPath, fileType, deleteFile, runOnFile }
