@@ -27,10 +27,17 @@
 
 [icon=new]::before {
   content: "+";
+  font-size: large;
 }
 
 [icon=playing]::before {
   content: "";
+  font-size: larger;
+}
+
+[icon=close]::before {
+  content: "";
+  font-size: large;
 }
 
 body,
@@ -48,72 +55,99 @@ body {
 
 #tabs {
   display: flex;
+  padding: .25em;
+  gap: .25em;
+  --px-slide-offset: 0px;
 }
 
 .tab,
 #newTab {
-  padding: 1px 1em;
+  padding: .2em .3em;
+  border-radius: .3em;
   white-space: nowrap;
   overflow: hidden;
   background: inherit;
   
   color: gray;
-  transition: .15s;
-  max-width: fit-content;
-  width: 200px;
+  max-width: 14em;
+  width: 100%;
   display: flex;
+  
+  &:not(.selected):hover,
+  &:not(.selected):active {
+    background: #232323;
+  }
+  
+  &.selected {
+    color: whitesmoke;
+    background: linear-gradient(135deg, #fdfdfd08 66%, transparent 0),
+    linear-gradient(135deg, #fdfdfd08 33%, transparent 0), #2d2d2d;
+  }
+  
+  p {
+    width: 100%;
+    padding-left: .3em;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+  
+  &.slide-left {
+    transform: translateX( calc( var(--px-slide-offset) * -1 ) );
+  }
+  
+  &.slide-right {
+    transform: translateX(var(--px-slide-offset));
+  }
+  
+  &.animated {
+    transition: .15s;
+  }
+}
+
+.tab:not(:hover, .selected)::after {
+  content: "|"; /* separator */
+  opacity: .3;
 }
 
 #newTab {
-  min-width: 20px;
-  padding: 1px 0px;
   display: block;
+  max-width: 1.5em;
   text-align: center;
+  
+  &:hover {
+    color: whitesmoke;
+    cursor: pointer;
+  }
 }
 
-/* cast shadow over selected tab neighbors */
-.tab.selected + .tab,
-.tab.selected + #newTab {
-  background: linear-gradient(90deg, black, transparent);
-}
-.tab:has(+ .tab.selected) {
-  background: linear-gradient(-90deg, black, transparent);
-}
-
-/* ovewrite background shadow effect on hover for below */
-.tab:hover,
-#newTab:hover {
-  background: #303030 !important;
-}
-
-.tab:active, 
-#newTab:active {
-  background: #414141 !important;
-}
-
-.tab.selected {
-  background: linear-gradient(180deg, var(--cl-accent) 2px, transparent 0px) !important;
-  color: whitesmoke;
-}
-
-/* play state icon */
 .tab button {
-  background: transparent;
-  border: none;
-  color: whitesmoke;
   font-size: x-small;
-  transform: translateX(-.5em);
   transition: .2s;
+  opacity: .3;
+  
+  color: whitesmoke;
+  background: transparent;
+  
+  width: 2em;
+  min-width: 2em;
+  
+  border: none;
+  border-radius: .3em;
+  
+  &:hover {
+    background: #4b4b4b;
+    cursor: pointer;
+    opacity: 1;
+  }
 }
 
-.tab button:hover {
-  color: orange;
+.tab:not(:hover, .selected) button.closeTab {
+  display: none;
 }
 
-/* tab name */
-.tab p {
-  text-overflow: ellipsis;
-  overflow: hidden;
+.tab:hover button.closeTab,
+.tab.selected button.closeTab {
+  margin-left: auto;
 }
 
 main {

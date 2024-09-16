@@ -1,16 +1,11 @@
 import { Tab } from "./tab.js"
+import setDragEvent from "./tabHeaderDrag.js"
 
 
 /**
  * Tab HTML header element.
  */
 export class TabHeader {
-
-  static #DRAG = {
-    'origin' : null,
-    'originOnLeft' : false, // use after() or before()
-    'destination' : null,
-  }
 
   /** 
    * @type {WeakMap<Element, TabHeader>} 
@@ -26,6 +21,9 @@ export class TabHeader {
 
   /** @type {HTMLParagraphElement} */
   #nameLabel
+  
+  /** @type {HTMLButtonElement} */
+  #closeButton
 
   /**
    * Old bar visibility value before fullscreen.
@@ -63,6 +61,7 @@ export class TabHeader {
     this.#nameLabel = document.createElement('p')
 
     this.#playButton = document.createElement('button')
+    this.#playButton.title = 'playing (click to pause)'
     this.#playButton.setAttribute('icon', 'playing')
     this.#playButton.style.display = 'none'
 
@@ -71,55 +70,30 @@ export class TabHeader {
       e.stopImmediatePropagation()
       this.tabInstance.frame.mediaControl('pause')
     }
+    
+    this.#closeButton = document.createElement('button')
+    this.#closeButton.title = 'close tab'
+    this.#closeButton.className = 'closeTab'
+    this.#closeButton.setAttribute('icon', 'close')
+    this.#closeButton.onclick = (e) => {
+      e.stopImmediatePropagation()
+      this.tabInstance.close()
+    }
 
     // compose & append container, frame to document
-    container.append(this.#playButton, this.#nameLabel)
+    container.append(this.#playButton, this.#nameLabel, this.#closeButton)
     if (Tab.selected) Tab.selected.header.#element.after(container)
     else document.getElementById('newTab').before(container)
 
     // set tab events
+    setDragEvent(container)
     container.onclick = () => this.tabInstance.select()
-    container.onauxclick = () => this.tabInstance.duplicate()
-    container.oncontextmenu = () => this.tabInstance.close()
-    TabHeader.#setDrag(container)
-
-    return container
-  }
-
-  /** 
-   * Setup mouse drag events for tab button element.
-   * @param {HTMLElement} btn Button element to set events.
-   */
-  static #setDrag(btn) {
-    const DRAG = this.#DRAG
-
-    // drag: set tab origin
-    btn.onmousedown = (e) => {
-      if (e.button === 0) DRAG.origin = btn
+    container.onauxclick = (e) => {
+      if (e.button === 1)
+        this.tabInstance.duplicate()
     }
-
-    // drag: draw border relative to origin
-    btn.onmouseenter = (e) => {
-      if (!DRAG.origin || DRAG.origin === btn || !e.buttons) return
-      // identify origin position to destination
-      const tabBtns = [...document.getElementsByClassName('tab')]
-      const originIdx = tabBtns.indexOf(DRAG.origin)
-      const targetIdx = tabBtns.indexOf(btn)
-
-      DRAG.originOnLeft = originIdx < targetIdx
-      btn.style.borderLeft = DRAG.originOnLeft ? '' : 'solid'
-      btn.style.borderRight = DRAG.originOnLeft ? 'solid' : ''
-    }
-
-    // drag: clear borders on element exit 
-    btn.onmouseleave = () => btn.style.borderLeft = btn.style.borderRight = ''
     
-    // drag: change order
-    btn.onmouseup = (e) => {
-      if (!DRAG.origin || e.button !== 0 || DRAG.origin === btn) return
-      DRAG.originOnLeft ? btn.after(DRAG.origin) : btn.before(DRAG.origin)
-      btn.style.borderLeft = btn.style.borderRight = ''
-    }
+    return container
   }
 
   /**
