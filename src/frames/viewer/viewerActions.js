@@ -217,9 +217,10 @@ ActionService.setComponentActions('viewer', {
       'mode': {
         'desc': 'set mode or collapse/expand panel',
         'run': (mode = 'toggle') => {
-          if (mode === 'playlist') FRAME.fileExplorer.toggleMode('playlist')
-          else if (mode === 'explorer') FRAME.fileExplorer.toggleMode('explorer')
-          else FRAME.fileExplorer.toggleMode()
+          if (mode === FRAME.fileExplorer.mode)
+            FRAME.fileExplorer.togglePanel()
+          else
+            FRAME.fileExplorer.toggleMode(mode)
         },
         'options': (lastArg, allArgs) => allArgs.length < 2 ? [
           option('toggle', 'alternate between modes (default)'), 

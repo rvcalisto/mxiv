@@ -1,4 +1,4 @@
-import { ItemList } from "../../components/itemList.js"
+import { ItemList } from "../../components/itemList.js";
 import { AppNotifier } from "../../components/notifier.js";
 
 
@@ -12,304 +12,298 @@ import { AppNotifier } from "../../components/notifier.js";
  */
 export class FileExplorer extends HTMLElement {
 
-  static tagName = 'file-explorer'
-  
+  static tagName = 'file-explorer';
+
   /**
    * Last populated object list cache.
    * @type {FileObject[]}
    */
-  #explorerCache = []
+  #explorerCache = [];
 
   /**
-   * Prevent empty list if first presentation is in playlist mode.
+   * @type {FileObject}
    */
-  #playlistSynced = false
+  #currentDirectoryFile;
+
+  /**
+   * @type {FileObject}
+   */
+  #parentDirectoryFile;
+
+  /**
+   * FileObjects from element references.
+   * @type {WeakMap<HTMLElement, FileObject>}
+   */
+  #element2file = new WeakMap();
+
+  /**
+   * Prevent empty listing on first playlist presentation.
+   */
+  #playlistInitialized = false;
 
   /**
    * File item list.
    * @type {ItemList<FileObject, HTMLElement>}
    */
-  #list
+  #list;
 
   /**
-   * File search prompt.
    * @type {HTMLInputElement}
    */
-  #search
+  #searchPrompt;
 
   /**
-   * Parent diretory path for Explorer mode.
+   * Current directory path for Explorer mode.
    */
-  #upperDir = ''
+  currentDir = '~/';
 
   /** 
-   * FileBook, set upstream.
+   * FileBook for playlist, set upstream.
    * @type {import('./fileBook.js').FileBook}
    */
-  fileBook
+  fileBook;
 
   /**
    * Presentation mode.
    * @type {'explorer'|'playlist'}
    */
-  mode = 'explorer'
+  mode = 'explorer';
 
-  /**
-   * Current directory path for Explorer mode.
-   */
-  currentDir = '~/'
-
-  #collator = new Intl.Collator('en', { numeric: true })
-
+  #collator = new Intl.Collator('en', { numeric: true });
 
   connectedCallback() {
-    // attatch shadow root, append template
-    this.attachShadow({ mode: 'open' })
-    const fragment = document.getElementById('fileExplorerTemplate').content
+    this.attachShadow({ mode: 'open' });
+    const fragment = document.getElementById('fileExplorerTemplate').content;
     this.shadowRoot.append( fragment.cloneNode(true) );
 
-    // get properties
-    this.#search = this.shadowRoot.getElementById('search')
-    this.#list = this.shadowRoot.getElementById('itemList')
+    this.#searchPrompt = this.shadowRoot.getElementById('search');
+    this.#list = this.shadowRoot.getElementById('itemList');
 
-    // init input listeners and hide element
-    this.#initEvents()
-    this.style.display = 'none'
-    this.onblur()
+    this.style.display = 'none'; // starts hidden
+    this.#initEvents();
+    this.onblur();
   }
 
   /** 
-   * Returns file item element.
-   * @param {FileObject} file 
+   * Create item element from file object.
+   * @param {FileObject} file
+   * @returns {HTMLElement}
    */
-  #fileItem(file) {
-    const item = document.createElement('p')
-    item.setAttribute('icon', file.category)
-    item.className = 'itemFont item'
-    item.textContent = file.name
-    item.filePath = file.path // to preserve selection on reload()
-
-    item.onclick = () => {
-      this.#list.selectIntoFocus(item)
-
-      // list directory or open media
-      if (file.category === 'folder') this.listDirectory(file.path)
-      else {
-        this.dispatchEvent( new CustomEvent('fileExplorer:open', {
-          composed: true, detail: file.path 
-        }))
-      }
-    }
-
-    return item
+  #createFileElement(file) {
+    const element = document.createElement('p');
+    element.setAttribute('icon', file.category);
+    element.className = 'itemFont item';
+    element.textContent = file.name;
+    element.onclick = () => this.select(element);
+    
+    this.#element2file.set(element, file);
+    
+    return element;
   }
 
   /**
-   * Update FileExplorer header elements.
+   * Update header elements.
    * @param {'explorer'|'playlist'} icon Icon to show.
-   * @param {String} secondaryLabel De-empasized label.
+   * @param {String} secondaryLabel De-emphasized label.
    * @param {String} primaryLabel Emphasized label.
    * @param {String} title Text on mouse hover.
    * @param {()=>void} [clickFunc] On click function.
    */
   #updateHeader(icon, secondaryLabel, primaryLabel, title, clickFunc) {
-    const parentLabel = this.shadowRoot.getElementById('parDir')
-    parentLabel.textContent = secondaryLabel
+    const parentLabel = this.shadowRoot.getElementById('parDir');
+    parentLabel.textContent = secondaryLabel;
     
-    const currentLabel = this.shadowRoot.getElementById('curDir')
-    currentLabel.textContent = primaryLabel
+    const currentLabel = this.shadowRoot.getElementById('curDir');
+    currentLabel.textContent = primaryLabel;
 
-    const header = this.shadowRoot.getElementById('dirBar')
-    header.setAttribute('icon', icon)
-    header.onclick = () => { clickFunc ? clickFunc() : null }
-    header.title = title
+    const header = this.shadowRoot.getElementById('dirBar');
+    header.setAttribute('icon', icon);
+    header.title = title;
+    header.onclick = () => clickFunc ? clickFunc() : null;
   }
 
-  /** 
-   * List files in given path in explorer mode.
+  /**
+   * Change explorer directory. Cache results on success.
+   * @param {string} path Directory path.
+   * @returns {Promise<boolean>} Success
    */
-  async listDirectory(path) {
+  async #changeDirectory(path) {
     /** @type {import("../../APIs/file/fileSearch.js").LSObject} */
-    const lsObj = await elecAPI.scanPath(path)
-    const empty = (lsObj.directories.length + lsObj.archives.length + lsObj.files.length) < 1
-    const differentDirectory = this.currentDir !== lsObj.target.path
-
-    // allow empty re-lists on same directory only (reload)
-    if (empty && differentDirectory) {
-      AppNotifier.notify(`${lsObj.target.name}: no supported files to list`, 'listDirectory')
-      return
+    const lsObj = await elecAPI.scanPath(path);
+    
+    // sort categories individually, then merge in order
+    for (const key of ['directories', 'archives', 'files'])
+      lsObj[key].sort( (fileA, fileB) => this.#collator.compare(fileA.path, fileB.path) );
+    
+    const directoryFiles = lsObj.directories.concat(lsObj.archives, lsObj.files);
+    if (directoryFiles.length < 1) {
+      AppNotifier.notify(`${lsObj.target.name}: no supported files to list`, 'chdir');
+      return false;
     }
+    
+    this.#explorerCache = directoryFiles;
+    this.#parentDirectoryFile = lsObj.upperDir;
+    this.#currentDirectoryFile = lsObj.target;
+    this.currentDir = lsObj.target.path;
+    return true;
+  }
 
-    this.currentDir = lsObj.target.path
-    this.#upperDir = lsObj.upperDir.path
+  #drawDirectory() {
+    this.#updateHeader('explorer', 
+      this.#parentDirectoryFile.name, this.#currentDirectoryFile.name, 
+      this.#currentDirectoryFile.path, () => this.backOneFolder());
 
-    // update header elements
-    this.#updateHeader('explorer', lsObj.upperDir.name, 
-      lsObj.target.name, path, () => this.backOneFolder() )
-  
-    // sort values
-    for (const key of ['directories', 'archives', 'files']) {
-      lsObj[key].sort( (fileA, fileB) =>
-        this.#collator.compare(fileA.path, fileB.path)
-      )
-    }
-
-    // order files (directories, archives & files), cache and populate list
-    this.mode = 'explorer'
-    this.#explorerCache = lsObj.directories.concat(lsObj.archives, lsObj.files)
     this.#list.populate(this.#explorerCache, 
-      item => this.#fileItem(item), file => file.name[0] !== '.')
-
-    // clear search, focus first item
-    this.toggleSearch(false)
-    this.#list.navItems()
+      item => this.#createFileElement(item), file => file.name[0] !== '.');
+    
+    this.toggleSearch(false);
+    this.navItems();
   }
 
-  /**
-   * List files from FileBook in playlist mode.
-   */
-  listFiles() {
-    // update header elements
-    const pathFiles = this.fileBook.paths
+  #drawPlaylist() {
     this.#updateHeader('playlist', 'playlist', 
-      pathFiles.map(i => i.name).toString(), 
-      pathFiles.map(i => i.path).toString())
+      this.fileBook.paths.map(i => i.name).toString(), 
+      this.fileBook.paths.map(i => i.path).toString());
 
-    // draw playlist
-    this.mode = 'playlist'
-    this.#playlistSynced = true
+    this.#playlistInitialized = true;
     this.#list.populate(this.fileBook.files, 
-      item => this.#fileItem(item), file => file.name[0] !== '.')
-
-    // try selecting current file, else focus first item
-    if ( !this.syncSelection() ) this.#list.navItems()
-    this.toggleSearch(false)
+      item => this.#createFileElement(item), file => file.name[0] !== '.');
+    
+    this.toggleSearch(false);
+    this.syncSelection() || this.navItems();
   }
 
   /**
-   * Sync selection with fileBook current page file.
+   * Draw list for current mode. Initialize cache if empty.
+   */
+  async #drawList() {
+    if (this.mode === 'playlist')
+      this.#drawPlaylist();
+    else { 
+      if (this.#explorerCache.length < 1)
+        await this.#changeDirectory(this.currentDir);
+      
+      this.#drawDirectory();
+    }
+  }
+
+  /**
+   * Filter current list based on search query.
+   */
+  #filterList() {
+    const workList = this.mode === 'playlist' ? this.fileBook.files : this.#explorerCache;
+    const query = this.#searchPrompt.value.toLowerCase().trim();
+    
+    this.#list.populate(workList, (file) => this.#createFileElement(file), (file) => {
+      const fileIsDot = file.name[0] === '.', queryIsDot = query[0] === '.';
+      if (query === '')
+        return !fileIsDot; // empty, match all but dot files
+      
+      const match = file.name.toLowerCase().includes(query);
+      return fileIsDot ? match && queryIsDot : match;
+    });
+    
+    this.#list.navItems(); // focus first item
+  }
+
+  /**
+   * Sync selection with fileBook currently selected file.
    * @param {String} [filePath] Custom filepath to select instead.
    * @returns {Boolean} Success.
    */
   syncSelection(filePath) {
-    const currentFile = this.fileBook.currentFile
-    filePath = filePath || currentFile?.path || ''
+    filePath = filePath ?? (this.fileBook.currentFile?.path || '');
     
-    const item = this.#list.findItemElement(item => filePath === item.path)
-    if (!item) return false
-  
-    this.#list.selectIntoFocus(item)
-    return true
+    const item = this.#list.findItemElement(item => filePath === item.path);
+    if (!item)
+      return false;
+    
+    this.#list.selectIntoFocus(item);
+    return true;
+  }
+
+  scrollSelectionIntoView() {
+    const selection = this.#list.getSelectedElement();
+    selection?.scrollIntoView({ block: 'center' });
   }
 
   /**
-   * Navigate list item selection.
+   * Navigate and update list selection.
+   * @param {'up'|'down'} [down='down'] Direction.
    */
   navItems(down = 'down') {
-    const element = this.#list.navItems(down === 'down')
-    if (element) element.scrollIntoView({ block:"center" })
+    const element = this.#list.navItems(down === 'down');
+    element?.scrollIntoView({ block: 'center' });
   }
 
   /**
    * View selected media file or open selected folder.
+   * @param {HTMLElement?} [element] 
    */
-  select() {
-    const selected = this.#list.getSelectedElement()
-    if (selected) selected.click()
+  select( element = this.#list.getSelectedElement() ) {
+    if (element == null)
+      return;
+    
+    this.#list.selectIntoFocus(element);
+    const file = /** @type {FileObject} */ (this.#element2file.get(element));
+    
+    if (file.category === 'folder') {
+      this.#changeDirectory(file.path)
+        .then(success => success && this.#drawDirectory() );
+    } else {
+      const options = { composed: true, detail: file.path };
+      this.dispatchEvent( new CustomEvent('fileExplorer:open', options) );
+    }
   }
-  
+
   /**
    * Goes to parent folder when in Explorer mode.
    */
   async backOneFolder() {
-    if (this.mode === 'playlist') return
-
-    const previousDir = this.currentDir
-    await this.listDirectory(this.#upperDir)
-    this.syncSelection(previousDir)
+    if (this.mode !== 'explorer') 
+      return;
+    
+    const previousDirectory = this.currentDir;
+    await this.#changeDirectory(this.#parentDirectoryFile.path);
+    
+    this.#drawDirectory();
+    this.syncSelection(previousDirectory);
   }
 
   /**
-   * Reload file listings while keeping selection.
+   * Invalidate caches, reload listings. Preserve selection.
    */
   async reload() {
-    // avoid unecessary reload for uninitialized FileExplorer
-    if (!this.isVisible && this.#list.itemCount < 1) return
-
-    const path = this.#list.getSelectedElement()?.filePath
+    this.#playlistInitialized = false;
+    this.#explorerCache = [];
     
-    if (this.mode === 'playlist') this.listFiles()
-    else await this.listDirectory(this.currentDir)
+    if ( !this.checkVisibility() )
+      return; // hidden, skip reload after cache invalidation
 
-    if (path) this.syncSelection(path)
+    const previousElement = this.#list.getSelectedElement();
+    const previousFile = previousElement ?
+      this.#element2file.get(previousElement) : null;
+
+    await this.#drawList();
+    if (previousFile != null)
+      this.syncSelection(previousFile.path);
   }
 
   /**
    * Toggle search prompt on/off.
+   * @param {boolean} [show=true]
    */
   toggleSearch(show = true) {
     if (show) {
-      this.#search.style.display = ''
-      this.#search.focus()
+      this.#searchPrompt.style.display = '';
+      this.#searchPrompt.focus();
     } else {
-      this.#search.value = ''
-      this.#search.style.display = 'none'
-      if (this.mode === 'playlist') this.syncSelection()
+      this.#searchPrompt.value = '';
+      this.#searchPrompt.style.display = 'none';
+      
+      if (this.mode === 'playlist')
+        this.syncSelection();
     }
-  }
-
-  /**
-   * Filter list items based on search query.
-   */
-  #searchQuery() {
-    const workList = this.mode === 'playlist' ? this.fileBook.files : this.#explorerCache
-    const query = this.#search.value
-    
-    // filter files
-    this.#list.populate(workList, (item) => this.#fileItem(item),
-    (file) => {
-      const fileIsDot = file.name[0] === '.', queryIsDot = query[0] === '.'
-      if ( !query.trim() ) return !fileIsDot
-
-      const match = file.name.toLowerCase().includes( query.toLowerCase() )
-      return fileIsDot ? match && queryIsDot : match
-    })
-  
-    // focus first item
-    this.#list.navItems()
-  }
-
-  #initEvents() {
-    // opacity on focus visual queue, search on input
-    this.onblur = () => this.style.opacity = '.6'
-    this.onfocus = () => this.style.opacity = '1'
-    this.#search.oninput = () => this.#searchQuery()
-    
-    // remove focus from, close search prompt
-    this.#search.onkeydown = (e) => {
-      if (e.key === 'Enter' || e.key === 'Escape' || e.key === 'Tab') {
-        e.preventDefault()
-        if (!this.#search.value) this.toggleSearch(false)
-        this.focus()
-      }
-
-      // close search on empty backspace
-      if (e.key === 'Backspace' && !this.#search.value.length) this.toggleSearch(false)
-    }
-    
-    // bubble events as long as search prompt isn't focused
-    this.onkeydown = (e) => {
-      e.stopImmediatePropagation()
-      if (this.shadowRoot.activeElement !== this.#search)
-        dispatchEvent( new CustomEvent('fileExplorerKeyEvent', { detail : e }) )
-    }
-  }
-
-  /**
-   * Either FileExplorer panel is visible.
-   */
-  get isVisible() {
-    return this.style.display === ''
   }
 
   /**
@@ -318,13 +312,15 @@ export class FileExplorer extends HTMLElement {
    * @param {'explorer'|'playlist'} [newMode] 
    */
   async toggleMode(newMode) {
-    if (newMode === this.mode) return this.togglePanel()
-    if (!newMode) newMode = this.mode === 'explorer' ? 'playlist' : 'explorer'
+    this.mode = newMode ?? (this.mode === 'explorer' ? 'playlist' : 'explorer');
 
-    this.animate([{ filter: 'blur(10px)' }, { filter: 'blur(0px)' }], { duration: 150 })
+    this.animate([{ filter: 'blur(10px)' }, { filter: 'blur(0px)' }], { duration: 150 });
+    await this.#drawList();
 
-    newMode === 'playlist' ? this.listFiles() : await this.listDirectory(this.currentDir)
-    if (!this.isVisible) this.togglePanel(true)
+    if ( !this.checkVisibility() )
+      this.togglePanel(true);
+    
+    this.focus();
   }
 
   /**
@@ -333,31 +329,61 @@ export class FileExplorer extends HTMLElement {
    * @param {Number} duration Hide/show animation duration (ms).
    * @returns {Promise<true>} Promise that resolves at animation completion.
    */
-  async togglePanel(show = !this.isVisible, duration = 150) {
-    if (show === this.isVisible) return true // skip animation
+  async togglePanel(show = !this.checkVisibility(), duration = 150) {
+    if ( show === this.checkVisibility() )
+      return true; // skip animation
 
-    // populate list on first presentation if not already
-    const isPlaylist = this.mode === 'playlist'
-    const populated = isPlaylist ? this.#playlistSynced : this.#explorerCache.length
-    if (show && !populated) isPlaylist ? this.listFiles() : await this.listDirectory(this.currentDir)
+    // populate list if uninitialized
+    const isPlaylist = this.mode === 'playlist';
+    const unitialized = isPlaylist ? !this.#playlistInitialized : this.#explorerCache.length < 1;
+    if (show && unitialized)
+      await this.#drawList();
 
-    // resolve on end of animation or instantly if state hasn't changed
-    return new Promise( (resolve, reject) => {
-      this.style.display = ''
-      if ( show && (isPlaylist || !populated) ) this.syncSelection()
+    return new Promise(resolve => {
+      this.style.display = '';
+      if ( show && (isPlaylist || unitialized) )
+        this.syncSelection();
+      else if (show)
+        this.scrollSelectionIntoView();
 
       this.animate([
         { width: '0px', minWidth: show ? '0px' : '' },
         { width: '0px', minWidth: show ? '' : '0px' }
-      ], {
-        duration: duration
-      }).onfinish = () => {
+      ], { duration: duration }).onfinish = () => {
         this.style.display = show ? '' : 'none'
         show ? this.focus() : this.blur()
-        resolve(true)
+        resolve(true);
       }
-    })
+    });
+  }
+
+  #initEvents() {
+    this.onblur = () => this.style.opacity = '.6';
+    this.onfocus = () => this.style.opacity = '1';
+    this.#searchPrompt.oninput = () => this.#filterList();
+    
+    // remove focus from search prompt, hide it if empty
+    this.#searchPrompt.onkeydown = (e) => {
+      if (e.key === 'Enter' || e.key === 'Escape' || e.key === 'Tab') {
+        e.preventDefault();
+        this.#searchPrompt.value.trim() === '' && this.toggleSearch(false);
+        this.focus();
+      }
+
+      if (e.key === 'Backspace' && this.#searchPrompt.value.trim() === '') {
+        e.stopImmediatePropagation();
+        this.toggleSearch(false);
+        this.focus();
+      }
+    }
+
+    // bubble events as long as search prompt isn't focused
+    this.onkeydown = (e) => {
+      e.stopImmediatePropagation();
+      if (this.shadowRoot.activeElement !== this.#searchPrompt)
+        dispatchEvent( new CustomEvent('fileExplorerKeyEvent', { detail : e }) );
+    }
   }
 }
 
-customElements.define(FileExplorer.tagName, FileExplorer)
+customElements.define(FileExplorer.tagName, FileExplorer);

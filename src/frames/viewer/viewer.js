@@ -87,7 +87,7 @@ export class Viewer extends GenericFrame {
       fileExplorer: {
         dir: this.fileExplorer.currentDir,
         mode: this.fileExplorer.mode,
-        show: this.fileExplorer.isVisible
+        show: this.fileExplorer.checkVisibility()
       },
     }
   }
@@ -297,13 +297,20 @@ export class Viewer extends GenericFrame {
     const isFullscreen = await elecAPI.toggleFullscreen()
     
     if (isFullscreen) {
-      this.fileExplorerWasOpen = this.fileExplorer.isVisible
+      this.fileExplorerWasOpen = this.fileExplorer.checkVisibility()
       await this.fileExplorer.togglePanel(false)
     }
     else if (this.fileExplorerWasOpen) {
       await this.fileExplorer.togglePanel(!isFullscreen)
       this.fileExplorer.blur()
     }
+  }
+  
+  /**
+   * @inheritdoc
+   */
+  onSelected() {
+    this.fileExplorer.scrollSelectionIntoView();
   }
   
   /**
@@ -354,8 +361,8 @@ export class Viewer extends GenericFrame {
       viewComponent.scrollToEnd(!this.#lastFlipRight) // auto scroll on page display
 
       // sync selection to viewer if in playlist modde
-      const fileExplorer = this.fileExplorer
-      if (fileExplorer.isVisible && fileExplorer.mode === 'playlist') fileExplorer.syncSelection()
+      if (this.fileExplorer.checkVisibility() && this.fileExplorer.mode === 'playlist')
+        this.fileExplorer.syncSelection()
     })
   }
 
