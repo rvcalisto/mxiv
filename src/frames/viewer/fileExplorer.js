@@ -357,6 +357,10 @@ export class FileExplorer extends HTMLElement {
     });
   }
 
+  checkVisibility() {
+    return this.style.display === ''
+  }
+
   #initEvents() {
     this.onblur = () => this.style.opacity = '.6';
     this.onfocus = () => this.style.opacity = '1';
