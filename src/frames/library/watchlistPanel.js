@@ -108,8 +108,8 @@ export class WatchlistPanel {
       div.className = 'folderItem'
       div.innerHTML = `
         <p>${item.path}</p>
-        <p title="evaluate subfolders">recursive<input type="checkbox""></p>
-        <button>remove folder</button>`;
+        <label title="evaluate subfolders"><input type="checkbox"">recursive</label>
+        <button icon="close" title="remove from list"></button>`;
 
       folderList.appendChild(div);
       const recursiveCheck = div.getElementsByTagName('input')[0];

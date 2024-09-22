@@ -692,7 +692,11 @@
       }
 
       [icon=close]::before {
-        content: "";
+        content: "";
+      }
+
+      [icon=addfolder]::before {
+        content: "";
       }
 
       #wrapper {
@@ -741,6 +745,7 @@
 
       cover-element {
         height: var(--cover-height);
+        font-size: calc(var(--cover-height) * .065);
         aspect-ratio: .7;
         background-repeat: no-repeat;
         background-size: 100% 100%;
@@ -758,18 +763,17 @@
         }
         
         .coverTitle {
-          font-weight: bold;
           color: whitesmoke;
-          border-radius: inherit;
-          background: linear-gradient(0deg, rgba(0, 0, 0, 0.5), transparent);
-          text-shadow: 0px 0px 8px black;
+          font-size: inherit;
+          font-weight: bold;
+          text-align: center;
+          text-shadow: 0px 0px 6px black;
           width: 100%;
           height: fit-content;
-          text-align: center;
           position: absolute;
           bottom: 0px;
           padding-bottom: 4px;
-          font-size: calc(var(--cover-height) * .065);
+          background: linear-gradient(0deg, rgba(0, 0, 0, 0.5), transparent);
         }
         
         .coverRemoveButton {
@@ -778,7 +782,7 @@
           padding: 0px;
           position: absolute;
           color: whitesmoke;
-          font-size: calc(var(--cover-height) * .065);
+          font-size: inherit;
           display: none;
           background: #00000045;
           
@@ -799,14 +803,14 @@
         flex-direction: column;
         position: absolute;
         margin: .2em;
-      }
-
-      .menubar > button {
-        font-family: "font-awesome";
-        font-size: large;
-        color: whitesmoke;
-        background: var(--cl-accent);
-        box-shadow: 2px 2px black;
+        
+        button {
+          font-family: "font-awesome";
+          font-size: large;
+          color: whitesmoke;
+          background: var(--cl-accent);
+          box-shadow: 2px 2px #00000090;
+        }
       }
 
       .label {
@@ -834,25 +838,25 @@
         transition: .2s;
         outline: none;
         min-width: 1.5em;
-        min-height: 1.5em;
+        aspect-ratio: 1;
         margin: 2px;
         cursor: pointer;
-      }
+        
+        &:hover, 
+        &:focus {
+          filter: brightness(1.5);
+        }
 
-      button:hover, 
-      button:focus {
-        filter: brightness(1.5);
-      }
-
-      button:active {
-        filter: brightness(.5);
+        &:active {
+          filter: brightness(.5);
+        }
       }
 
       .overlay {
         position: absolute;
         width: 100%;
         height: 100%;
-        background: #000000a3;
+        background: #00000090;
         display: flex;
         flex-direction: column;
         align-content: center;
@@ -865,45 +869,59 @@
         flex-direction: column;
         width: 75%;
         height: 50%;
-        box-shadow: 2px 2px 15px 5px black;
-      }
-
-      #folderListHeader {
-        background: #080808;
-        display: flex;
-        align-items: center;
-        padding: 0.5em 1.5em;
-        color: gray;
-        justify-content: space-between;
-      }
-
-      #folderList {
-        display: flex;
-        flex-direction: column;
-        background: #282828;
-        padding: .5em;
-        height: 100%;
-        gap: .5em;
-        overflow: auto;
-      }
-
-      .folderItem {
-        display: flex;
-        gap: 1em;
-        padding: .2em 1em;
-        height: fit-content;
-        color: silver;
-        background: #0000002e;
-        align-items: center;
-        border-radius: 4px;
-      }
-
-      .folderItem > p:nth-child(2) {
-        display: inherit;
-        gap: .2em;
-        flex-direction: row-reverse;
-        margin-left: auto;
-        width: fit-content;
+        border-radius: .4em;
+        box-shadow: 0px 0px 15px 0px black;
+        
+        button {
+          height: 2em;
+          width: 2em;
+        }
+        
+        #folderListHeader {
+          background: #080808;
+          display: flex;
+          align-items: center;
+          padding: 0.5em 1.5em;
+          color: silver;
+          justify-content: space-between;
+          border-radius: .4em .4em 0 0;
+        }
+        
+        #folderList {
+          display: flex;
+          flex-direction: column;
+          background: #282828;
+          padding: .5em;
+          height: 100%;
+          gap: .5em;
+          overflow: auto;
+          border-radius: 0 0 .4em .4em;
+          
+          .folderItem {
+            display: flex;
+            gap: 1em;
+            padding: .2em 1em;
+            height: fit-content;
+            color: silver;
+            background: #0000002e;
+            align-items: center;
+            border-radius: 4px;
+            overflow-wrap: anywhere;
+            
+            label {
+              display: inherit;
+              gap: .5em;
+              flex-direction: row-reverse;
+              margin-left: auto;
+              width: fit-content;
+              overflow-wrap: break-word;
+            }
+            
+            input[type="checkbox"] {
+              width: 1.2em;
+            }
+          }
+        }
       }
 
       /* scroll styling */
@@ -935,8 +953,8 @@
       <div class="overlay" style="display: none; opacity: 0;">
         <div id="watchListPanel">
           <div id="folderListHeader">
-            <p>watchlist</p>
-            <button id="addToWatch">add folder</button>
+            <p>Watchlist</p>
+            <button id="addToWatch" icon="addfolder" title="add folder"></button>
           </div>
           <div id="folderList"></div>
         </div>
