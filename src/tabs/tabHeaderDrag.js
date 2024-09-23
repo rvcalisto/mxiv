@@ -79,7 +79,7 @@ function onDragTab(e) {
   
   let leftmostTab = null;
   tabElements.forEach(element => {
-    if ( element === selectedTab || !element.classList.contains('tab') )
+    if ( !element.classList.contains('tab') )
       return;
     
     const currentTabLeft = element.offsetLeft;
