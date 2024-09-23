@@ -11,6 +11,10 @@ export class TabHeader {
    * @type {WeakMap<Element, TabHeader>} 
    */
   static #classMap = new WeakMap()
+  
+  static #tabsContainer = /** @type {HTMLElement} */ (document.querySelector('header'))
+  
+  static #tabsContainerHeight = getComputedStyle(this.#tabsContainer).height
 
   #nameCount = 1
 
@@ -176,7 +180,7 @@ export class TabHeader {
    * @returns {TabHeader[]}
    */
   static get allHeaders() {
-    const elements = document.getElementsByClassName('tab')
+    const elements = this.#tabsContainer.getElementsByClassName('tab')
     return [...elements].map(element => TabHeader.#classMap.get(element))
   }
 
@@ -184,15 +188,21 @@ export class TabHeader {
    * Get Header Bar visibility.
    */
   static isBarVisible() {
-    return document.getElementById('tabs').style.display === ''
+    return this.#tabsContainer.style.display === ''
   }
   
   /**
    * Toggle Header Bar visibility.
    * @param {Boolean} [show] Either to force visibility on or off.
    */
-  static toggleHeaderBar(show) {
-    if (show == null) show = !this.isBarVisible()
-    document.getElementById('tabs').style.display = show ? '' : 'none'
+  static toggleHeaderBar( show = !this.isBarVisible() ) {
+    this.#tabsContainer.style.display = ''
+    
+    this.#tabsContainer.animate([
+      { height: show ? '0px' : this.#tabsContainerHeight },
+      { height: show ? this.#tabsContainerHeight : '0px' }
+    ], { duration: 80 }).onfinish = () => {
+      this.#tabsContainer.style.display = show ? '' : 'none'
+    }
   }
 }
