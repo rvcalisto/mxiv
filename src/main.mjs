@@ -81,7 +81,7 @@ function ipcHandlers() {
 
 
 // quit as part of the squirrel.windows installation procedure
-if ( process.platform === 'win32' && await import('electron-squirrel-startup') ) {
+if ( process.platform === 'win32' && (await import('electron-squirrel-startup')).default ) {
   app.quit();
 }
 
