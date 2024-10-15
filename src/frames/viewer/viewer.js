@@ -323,8 +323,11 @@ export class Viewer extends GenericFrame {
     viewComponent.ondrop = (e) => {
       e.preventDefault();
       e.stopPropagation();
-      const files = e.dataTransfer.files
-      this.open(...Object.keys(files).map((key) => files[key].path))
+      
+      const filepaths = Object.values(e.dataTransfer.files)
+        .map( file => elecAPI.getPathForFile(file) );
+      
+      this.open(...filepaths);
     }
 
     // needed for drop event

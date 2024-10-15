@@ -176,12 +176,18 @@ export class Library extends GenericFrame {
     // drag'n'drop into library
     const wrapper = this.shadowRoot.getElementById('wrapper')
     wrapper.ondrop = async (e) => {
-      e.preventDefault(); e.stopPropagation();
-      const files = e.dataTransfer.files
-      await this.addToLibrary( ...Object.values(files).map(file => file.path) )
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const filepaths = Object.values(e.dataTransfer.files)
+        .map( file => elecAPI.getPathForFile(file) );
+      
+      await this.addToLibrary(...filepaths);
     }
+    
     wrapper.ondragover = (e) => {
-      e.preventDefault(); e.stopPropagation();
+      e.preventDefault();
+      e.stopPropagation();
     }
 
     // update cover count in status

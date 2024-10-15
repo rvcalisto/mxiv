@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, webFrame } from 'electron';
+import { contextBridge, webUtils, ipcRenderer, webFrame } from 'electron';
 import { pathToFileURL } from 'url';
 import * as localTagStorage from './APIs/tag/renderer.js';
 
@@ -27,6 +27,7 @@ contextBridge.exposeInMainWorld('elecAPI', {
   getFileURL: (path) => pathToFileURL(path).href,
   runOnFile: async (userScript, currentFile) => ipcRenderer.invoke('file:runScript', userScript, currentFile),
   deleteFile: async (path) => ipcRenderer.invoke('file:delete', path),
+  getPathForFile: (file) => webUtils.getPathForFile(file),
 
   // discover files
   queryPath: async (path) => ipcRenderer.invoke('file:queryPath', path),
