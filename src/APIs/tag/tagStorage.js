@@ -291,33 +291,6 @@ export class TagStorage extends JsonStorage {
   }
 
   /**
-   * Upgrade old storage structure when applicable.
-   * - TODO: Remove later.
-   * @returns {Promise<void>}
-   */
-  async upgradeStructure() {
-    await new Promise(resolve => {
-      fs.readFile(this.#storageFile, 'utf8', async (err, text) => {
-        const storageObject = !err && JSON.parse(text);
-
-        if (!err && storageObject._control == null) {
-          console.time('MXIV: Upgraded TagDB structure');
-          
-          const newState = new TagState();
-          const oldState = new Map( Object.entries(storageObject) );
-
-          oldState.forEach( (tags, filepath) => newState.set(filepath, tags) );
-          await this.setState(newState);
-
-          console.timeEnd('MXIV: Upgraded TagDB structure');
-        }
-        
-        resolve(true);
-      });
-    });
-  }
-
-  /**
    * @override
    * Clean orphaned tags before persisting.
    * @param {Map<string>|TagState} state 

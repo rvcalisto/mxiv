@@ -60,8 +60,6 @@ export async function listOrphans(deleteOrphans = false) {
  */
 async function initialize() {
   const storageExists = await tagStorage.getLastModified() != null;
-  if (storageExists)
-    await tagStorage.upgradeStructure(); // TODO: remove later
   
   if (!storageExists) {
     const error = await tagStorage.setState( new TagState() )
