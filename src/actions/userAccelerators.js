@@ -104,36 +104,3 @@ export const UserAccelerators = new class {
     document.documentElement.style.setProperty('--txt-actPaletteAccel', `"${keycombo}"`);
   }
 }
-
-/**
- * Migrate 'userHotkeys' storage to 'userAccelerators' if empty.
- * Replace 'cli' with 'palette'.
- * TODO: Remove later.
- */
-function cliToPalette() {
-  /** @type {GenericStorage<AcceleratorSet>}*/
-  const userAccelerators = new GenericStorage('userAccelerators');
-
-  if (userAccelerators.entries().length > 0)
-    return;
-  
-  /** @type {GenericStorage<AcceleratorSet>}*/
-  const userHotkeys = new GenericStorage('userHotkeys');
-  
-  for ( const [component, hotkeys] of userHotkeys.entries() ) {
-    const accelerators = {};
-    
-    Object.entries(hotkeys).forEach(([key, action]) => {
-      if (action.length > 0)
-        action[0] = action[0].replace('cli', 'palette');
-      
-      accelerators[key] = action;
-    });
-    
-    userAccelerators.set(component, accelerators);
-  }
-  
-  console.log('migrated "cli" to "palette"');
-}
-
-cliToPalette();
