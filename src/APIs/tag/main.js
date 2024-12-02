@@ -1,4 +1,4 @@
-import { TagStorage } from './tagStorage.js';
+import { TagState, TagStorage } from './tagStorage.js';
 import { broadcast } from '../tool/coordinationUtils.js';
 
 /**
@@ -64,7 +64,7 @@ async function initialize() {
     await tagStorage.upgradeStructure(); // TODO: remove later
   
   if (!storageExists) {
-    const error = await tagStorage.setState( new Map() )
+    const error = await tagStorage.setState( new TagState() )
       .then(() => { console.log('MXIV: Initialized TagStorage.') } )
       .catch(() => true);
 
