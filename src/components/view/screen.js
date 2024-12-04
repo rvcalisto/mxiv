@@ -38,13 +38,16 @@ export class ViewScreen {
   }
 
   /**
-   * Display default View content.
+   * Clear track state, unload media and display content.
+   * @param {HTMLElement} [content=this.#emptyView] Content to display, logo by default.
    */
-  displayEmpty() {
+  displayEmpty(content = this.#emptyView) {
     this.#view.trackBar.detach()
     this.#view.media.abLoop(null)
 
-    this.img.outerHTML = this.#emptyView.outerHTML
+    const view = this.img
+    view.src = ''
+    view.replaceWith(content)
   }
 
   /**
@@ -65,11 +68,8 @@ export class ViewScreen {
     
     if (!success) return success
     
-    this.#view.trackBar.detach()
-    this.#view.media.abLoop(null)
-  
     // replace previous element with new image
-    this.#view.shadowRoot.getElementById('view').replaceWith(img)
+    this.displayEmpty(img)
 
     img.ondblclick = () => this.#view.events.fire('view:fullscreen')
     
@@ -95,7 +95,7 @@ export class ViewScreen {
     if (!success) return success
     
     // replace previous element with new video
-    this.#view.shadowRoot.getElementById('view').replaceWith(vid)
+    this.displayEmpty(vid)
 
     // obey autoplay property but toggle on for next videos (for restoring videos as paused)
     if (this.#view.autoplay) this.#view.media.playToggle(true)
@@ -106,7 +106,6 @@ export class ViewScreen {
     this.#view.media.setVolume(this.#view.volume * 100)
     this.#view.media.muteToggle(this.#view.mute)
     this.#view.media.onEndRepeat(this.#view.onEnd)
-    this.#view.media.abLoop(null)
 
     // set methods
     vid.oncanplay = null // null event as video seek also triggers it

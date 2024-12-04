@@ -69,7 +69,7 @@ export class View extends HTMLElement {
   // prevent ghost intervals after DOM removal
   disconnectedCallback() {
     this.slideshow.toggle(false, false)
-    this.media.abLoop(null)
+    this.screen.displayEmpty()
   }
 
   /**
