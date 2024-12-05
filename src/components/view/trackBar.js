@@ -115,8 +115,14 @@ export class TrackBar {
     }
   
     // track label
-    const duration = this.#view.media.secToHMS(vidDuration)
-    const time = this.#view.media.secToHMS(vid.currentTime)
+    let duration = this.#view.media.secToHMS(vidDuration)
+    let time = this.#view.media.secToHMS(vid.currentTime)
+
+    if ( duration.startsWith('00:') ) {
+      duration = duration.slice(3)
+      time = time.slice(3)
+    }
+
     trackTimeLabel.textContent = `${time} / ${duration}`
   
     // bar progress
@@ -143,6 +149,18 @@ export class TrackBar {
     // sync loop
     const loopBtn = this.#view.shadowRoot.getElementById('trackLoop')
     loopBtn.setAttribute('icon', this.#view.onEnd)
+    // sync pitch
+    const pitchBtn = this.#view.shadowRoot.getElementById('trackPitch')
+    pitchBtn.setAttribute('icon', vid.preservesPitch ? 'speed' : 'speed-pitch')
+    // sync speed
+    const speedLabel = this.#view.shadowRoot.getElementById('speedText')
+    speedLabel.textContent = `x${vid.playbackRate.toFixed(2)}`
+    // sync ab loop
+    const abLoopBtn = this.#view.shadowRoot.querySelector('.abLoop')
+    abLoopBtn.setAttribute('state', 
+      this.#view.bLoop < Infinity ? 'ab' :
+      this.#view.aLoop < Infinity ? 'a' : ''
+    )
   }
 
   /**
@@ -167,6 +185,19 @@ export class TrackBar {
     muteBtn.parentElement.addEventListener('wheel', (e) => {
       this.#view.media.setVolume(e.deltaY > 0 ? '-5' : '+5')
     }, { passive: true })
+
+    // pitch toggle
+    const speedBtn = this.#view.shadowRoot.getElementById('speedText')
+    speedBtn.parentElement.onclick = () => this.#view.media.preservePitch()
+
+    // speed wheel
+    speedBtn.parentElement.addEventListener('wheel', (e) => {
+      this.#view.media.playbackRate(e.deltaY > 0 ? '-.25' : '+.25')
+    }, { passive: true })
+
+    // ab loop
+    const abLoopBtn = this.#view.shadowRoot.querySelector('.abLoop')
+    abLoopBtn.onclick = () => this.#view.media.abLoop()
 
     // ⏸⯈
     const pauseBtn = this.#view.shadowRoot.getElementById('trackPause')
@@ -195,7 +226,6 @@ export class TrackBar {
 
       const seekTime = this.#seekTo(e)
       if (e.buttons == 1) vid.currentTime = seekTime
-      if (e.buttons == 2) this.#view.media.abLoop() // loop
       // vid updates slowly, update bar for visual smoothness
       this.updateTrack()
     }

@@ -301,6 +301,14 @@
       [icon=vol-mute]::before {
         content: "";
       }
+      
+      [icon=speed]::before {
+        content: "";
+      }
+
+      [icon=speed-pitch]::before {
+        content: "";
+      }
 
       [actPaletteAccel]::after {
         content:var(--txt-actPaletteAccel);
@@ -377,26 +385,56 @@
         border-bottom: solid;
         border-width: thin;
       }
+      
+      .trackButtons {
+        display: flex;
+        align-items: baseline;
+        gap: .6em;
 
-      .trackBtn {
-        color: azure;
-        border: none;
-        background: inherit;
-        transition: .1s;
-        cursor: pointer;
-        width: 1em;
+        button {
+          width: 1em;
+        }
+
+        div {
+          display: flex;
+          align-items: baseline;
+          gap: .3em;
+          margin: 0 .25em;
+        }
+
+        & > *:not(.passive) {
+          color: azure;
+          background: inherit;
+          border: none;
+          transition: .1s;
+          cursor: pointer;
+
+          &:hover {
+            transform: scale(1.5);
+          }
+
+          &:active {
+            transform: scale(1.15);
+            filter: brightness(.5);
+          }
+        }
+
+        .abLoop {
+          color: silver;
+          background: azure;
+          padding: 0 .3em;
+          font-weight: bold;
+          border-radius: .3em;
+
+          &[state=a] :nth-child(1) {
+            color: var(--cl-accent);
+          }
+
+          &[state=ab] {
+            color: var(--cl-accent);
+          }
+        }
       }
-
-      .trackBtn:hover {
-        transform: scale(1.5);
-        filter: brightness(1.25);
-      }
-
-      .trackBtn:active {
-        transform: scale(1.15);
-        filter: brightness(.5);
-      }
-
 
       /* scroll styling */
       ::-webkit-scrollbar {
@@ -440,17 +478,24 @@
               <div id="vidHandle"></div>
             </div>
           </div>
-          <div style="display: flex; align-items: baseline; gap: 8px;">
-            <button id="trackSkipL" class="trackBtn"></button>
-            <button id="trackPause" class="trackBtn"></button>
-            <button id="trackSkipR" class="trackBtn"></button>
-            <p id="trackText"></p>
-            <div style="display: flex; align-items: baseline;" class="trackBtn">
-              <p style="padding: 0px 5px;" id="trackMute"></p>
+          <div class="trackButtons">
+            <button id="trackSkipL"></button>
+            <button id="trackPause"></button>
+            <button id="trackSkipR"></button>
+            <p id="trackText" class="passive"></p>
+            <div style="transform-origin: left;">
+              <p id="trackMute"></p>
               <p id="volumeText">100%</p>
             </div>
-            <div style="margin-left: auto;"></div>
-            <button id="trackLoop" class="trackBtn"></button>
+            <div style="transform-origin: right; margin-left: auto;">
+              <p id="trackPitch" icon="speed"></p>
+              <p id="speedText">x1.0</p>
+            </div>
+            <div class="abLoop" style="gap: 0">
+              <p>A</p>
+              <p>B</p>
+            </div>
+            <button id="trackLoop"></button>
           </div>
         </div>
       </div>

@@ -148,6 +148,7 @@ export class ViewMedia {
 
     const fixedRate = vid.playbackRate.toFixed(2)
     this.#view.events.fire('view:notify', `playback rate set to ${fixedRate}`, 'playbackRate')
+    this.#view.trackBar.peek()
   }
 
   /**
@@ -162,6 +163,7 @@ export class ViewMedia {
     else vid.preservesPitch = preserve
 
     this.#view.events.fire('view:notify', `preservePitch: ${vid.preservesPitch}`, 'prePitch')
+    this.#view.trackBar.peek()
   }
   
   /**
@@ -204,6 +206,7 @@ export class ViewMedia {
     if (this.#view.aLoop == Infinity) {
       this.#view.aLoop = tgtTime
       this.#view.events.fire('view:notify', `A loop on ${this.secToHMS(tgtTime)}`)
+      this.#view.trackBar.peek()
       return
     }
 
@@ -213,18 +216,21 @@ export class ViewMedia {
       if (tgtTime <= this.#view.aLoop) {
         this.abLoop(null)
         this.#view.events.fire('view:notify', `B loop before A, clear`)
+        this.#view.trackBar.peek()
         return
       }
 
       this.#view.bLoop = tgtTime
       this.#view.events.fire('view:notify', `B loop on ${this.secToHMS(tgtTime)}`)
       if (!vid.paused) this.#abLoopInterval()
+      this.#view.trackBar.peek()
       return
     }
 
     // clear loop
     this.abLoop(null)
     this.#view.events.fire('view:notify', 'AB loop clear')
+    this.#view.trackBar.peek()
   }
 
   /**
