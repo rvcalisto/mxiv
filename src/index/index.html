@@ -368,24 +368,33 @@
       #vidTrack {
         cursor: pointer;
         padding: .5em 0px;
+
+        #vidTime {
+          height: inherit;
+          background: var(--cl-accent);
+          cursor: pointer;
+        }
+
+        #vidLoop {
+          height: inherit;
+          background: orange;
+          position: absolute;
+          cursor: pointer;
+          pointer-events: none;
+        }
+
+        #vidHandle {
+          background: snow;
+          width: 2px;
+          height: inherit;
+          pointer-events: none;
+          border-top: solid;
+          border-bottom: solid;
+          border-width: thin;
+          z-index: 2;
+        }
       }
 
-      #vidTime {
-        height: inherit;
-        background: var(--cl-accent);
-        cursor: pointer;
-      }
-
-      #vidHandle {
-        background: snow;
-        width: 2px;
-        height: inherit;
-        pointer-events: none;
-        border-top: solid;
-        border-bottom: solid;
-        border-width: thin;
-      }
-      
       .trackButtons {
         display: flex;
         align-items: baseline;
@@ -476,6 +485,7 @@
           <div id="vidTrack">
             <div style="height: .4em; background: #ffffff52; display: flex; align-items: center;">
               <div id="vidTime"></div>
+              <div id="vidLoop"></div>
               <div id="vidHandle"></div>
             </div>
           </div>

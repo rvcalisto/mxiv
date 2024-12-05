@@ -158,12 +158,27 @@ export class TrackBar {
     // sync speed
     const speedLabel = this.#view.shadowRoot.getElementById('speedText')
     speedLabel.textContent = `x${vid.playbackRate.toFixed(2)}`
-    // sync ab loop
+    // sync ab loop button
     const abLoopBtn = this.#view.shadowRoot.querySelector('.abLoop')
     abLoopBtn.setAttribute('state', 
       this.#view.bLoop < Infinity ? 'ab' :
       this.#view.aLoop < Infinity ? 'a' : ''
     )
+    // sync ab loop section
+    const trackLoopBar = this.#view.shadowRoot.getElementById('vidLoop')
+    if (this.#view.aLoop < Infinity) {
+      const marginLeft = (this.#view.aLoop / vid.duration) * 100
+      trackLoopBar.style.marginLeft = `${marginLeft.toFixed(2)}%`
+      trackLoopBar.style.width = '2px'
+      
+      if (this.#view.bLoop < Infinity) {
+        const width = (this.#view.bLoop / vid.duration) * 100
+        trackLoopBar.style.width = `${width.toFixed(2) - marginLeft.toFixed(2)}%`
+      }
+    } else {
+      trackLoopBar.style.marginLeft = '0%'
+      trackLoopBar.style.width = '0%'
+    }
   }
 
   /**
