@@ -78,8 +78,11 @@ export class TrackBar {
 
     this.#peekTimer = setTimeout(() => {
       const vid = this.#videoElement
-      // videoWidth == 0 : audio-only
-      if (vid && !vid.paused && vid.videoWidth) this.hide()
+      const mouseOver = this.#panelElement.matches(':hover')
+      
+      if (!mouseOver && vid && !vid.paused && vid.videoWidth > 0)
+        this.hide()
+      
     }, 1000 * TrackBar.peekDuration);
   }
 
