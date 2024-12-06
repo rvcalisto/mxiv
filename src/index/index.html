@@ -353,16 +353,22 @@
 
       #trackPanel {
         color: azure;
-        margin: 8px;
-        pointer-events: visible;
-        /* start hidden */
-        opacity: 0;
-        transition: all .4s;
-        filter: drop-shadow(black 1px 1px 0px) 
-        drop-shadow(black 0px 0px 15px);
         display: flex;
         flex-direction: column;
+        height: fit-content;
         gap: 2px;
+        margin: 8px;
+        transition: all .4s;
+        pointer-events: visible;
+        filter: drop-shadow(black 1px 1px 0px) 
+        drop-shadow(black 0px 0px 15px);
+        
+        &[hidden] {
+          opacity: 0;
+          visibility: hidden;
+          height: 0px;
+          margin: 0px;
+        }
       }
 
       #vidTrack {

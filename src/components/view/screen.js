@@ -109,9 +109,7 @@ export class ViewScreen {
 
     // set methods
     vid.oncanplay = null // null event as video seek also triggers it
-    vid.onmousemove = () => this.#view.trackBar.peek()
     vid.oncontextmenu = () => this.#view.media.playToggle()
-    vid.ontimeupdate = () => this.#view.trackBar.updateTrack() // not 1:1, lazy but ok
     vid.ondblclick = () => this.#view.events.fire('view:fullscreen')
   
     // enforce AB loop or signal end-of-track behavior

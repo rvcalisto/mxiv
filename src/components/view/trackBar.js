@@ -40,7 +40,7 @@ export class TrackBar {
     this.#panelElement = this.#view.shadowRoot.getElementById('trackPanel')
 
     this.#initEvents()
-    this.hide()
+    this.#panelElement.toggleAttribute('hidden', true)
   }
 
   /**
@@ -48,15 +48,17 @@ export class TrackBar {
    * @param {HTMLVideoElement} videoElement Media element to monitor.
    */
   attach(videoElement) {
-    this.#videoElement = videoElement
-    this.syncState()
-    this.updateTrack()
+    this.#videoElement = videoElement;
+    this.#syncState();
+    this.#updateTrack();
 
-    // keep track panel visible on hover
-    this.#panelElement.onmouseover = () => {
-      this.peek()
-      clearTimeout(this.#peekTimer)
-    }
+    videoElement.ontimeupdate = () => this.#updateTrack();
+    videoElement.onmousemove = () => {
+      if ( this.#panelElement.hasAttribute('hidden') )
+        this.#view.trackBar.peek();
+      else
+        this.#resetHideTimeout();
+    };
   }
 
   /**
@@ -65,44 +67,36 @@ export class TrackBar {
   detach() {
     this.#panelElement.onmouseover = null
     this.#videoElement = null
-    this.hide()
+    this.#panelElement.toggleAttribute('hidden', true)
   }
 
   /**
-   * Sync and show track bar momentarily.
+   * Update state and momentarily show track panel.
    */
   peek() {
-    this.syncState()
-    clearTimeout(this.#peekTimer)
-    this.hide(false)
+    this.#syncState();
+    this.#updateTrack();
+    this.#resetHideTimeout();
+    this.#panelElement.toggleAttribute('hidden', false);
+  }
+  
+  #resetHideTimeout() {
+    clearTimeout(this.#peekTimer);
 
     this.#peekTimer = setTimeout(() => {
-      const vid = this.#videoElement
-      const mouseOver = this.#panelElement.matches(':hover')
-      
-      if (!mouseOver && vid && !vid.paused && vid.videoWidth > 0)
-        this.hide()
-      
-    }, 1000 * TrackBar.peekDuration);
-  }
+      const vid = this.#videoElement;
+      const mouseOver = this.#panelElement.matches(':hover');
 
-  /**
-   * Hide track bar. Show if false.
-   * @param {true} hide 
-   */
-  hide(hide = true) {
-    const trackPanel = this.#panelElement
-    if (trackPanel.style.opacity == 0 && !hide) this.updateTrack()
-    trackPanel.style.opacity = hide ? 0 : 1
-    trackPanel.style.visibility = hide ? 'hidden' : 'visible'
-    trackPanel.style.height = hide ? '0' : 'fit-content'
-    trackPanel.style.margin = hide ? '0px' : ''
+      if (!mouseOver && vid && !vid.paused && vid.videoWidth > 0)
+        this.#panelElement.toggleAttribute('hidden', true);
+
+    }, 1000 * TrackBar.peekDuration);
   }
 
   /**
    * Sync progression track to video element. 
    */
-  updateTrack() {
+  #updateTrack() {
     const vid = this.#videoElement
     if (!vid) return
   
@@ -136,7 +130,7 @@ export class TrackBar {
   /**
    * Sync labels and icons to current video element state.
    */
-  syncState() {
+  #syncState() {
     const vid = this.#videoElement
     if (!vid) return
 
@@ -187,11 +181,10 @@ export class TrackBar {
    * @returns {Number} Video position.
    */
   #seekTo(e) {
-    const trackBar = this.#view.shadowRoot.getElementById('vidTrack')
-    const vid = this.#videoElement
-    const barPosition = e.offsetX / trackBar.clientWidth
-    const vidPosition = vid.duration * barPosition
-    return vidPosition
+    const trackBar = this.#view.shadowRoot.getElementById('vidTrack');
+    const barPosition = e.offsetX / trackBar.clientWidth;
+    
+    return this.#videoElement.duration * barPosition;
   }
   
   /**
@@ -206,7 +199,7 @@ export class TrackBar {
     if (e.buttons == 1) {
       const seekTime = this.#seekTo(e);
       vid.currentTime = seekTime;
-      this.updateTrack(); // for instant response
+      this.#updateTrack(); // for instant response
     }
 
     // ab loop fine-tuning
@@ -220,7 +213,7 @@ export class TrackBar {
       else
         this.#view.bLoop = seekTime;
 
-      this.syncState();
+      this.#syncState();
     }
   }
 

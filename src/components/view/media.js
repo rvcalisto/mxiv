@@ -126,7 +126,7 @@ export class ViewMedia {
     } else {
       vid.currentTime += value
     }
-    this.#view.trackBar.updateTrack()
+
     this.#view.trackBar.peek()
   }
   
