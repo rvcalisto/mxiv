@@ -193,6 +193,36 @@ export class TrackBar {
     const vidPosition = vid.duration * barPosition
     return vidPosition
   }
+  
+  /**
+   * Trackbar mouse events.
+   * @param {MouseEvent} e Mouse event.
+   */
+  #onMouseTrackHandler(e) {
+    const vid = this.#videoElement;
+    if (!vid) return;
+
+    // seek
+    if (e.buttons == 1) {
+      const seekTime = this.#seekTo(e);
+      vid.currentTime = seekTime;
+      this.updateTrack(); // for instant response
+    }
+
+    // ab loop fine-tuning
+    else if (e.buttons == 2 && this.#view.bLoop < Infinity) {
+      const seekTime = this.#seekTo(e);
+      const diffToA = this.#view.aLoop - seekTime;
+      const diffToB = this.#view.bLoop - seekTime;
+      
+      if ( Math.abs(diffToA) < Math.abs(diffToB) )
+        this.#view.aLoop = seekTime;
+      else
+        this.#view.bLoop = seekTime;
+
+      this.syncState();
+    }
+  }
 
   #initEvents() {
     // mute toggle
@@ -235,27 +265,9 @@ export class TrackBar {
     const loopBtn = this.#view.shadowRoot.getElementById('trackLoop')
     loopBtn.onclick = () => this.#view.media.onEndRepeat()
 
+    // seek track events
     const trackBar = this.#view.shadowRoot.getElementById('vidTrack')
-
-    // seek time on track click
-    trackBar.onmousedown = (e) => {
-      const vid = this.#videoElement
-      if (!vid) return
-
-      const seekTime = this.#seekTo(e)
-      if (e.buttons == 1) vid.currentTime = seekTime
-      // vid updates slowly, update bar for visual smoothness
-      this.updateTrack()
-    }
-    // seek time ob track drag
-    trackBar.onmousemove = (e) => {
-      const vid = this.#videoElement
-      if (vid && e.buttons == 1) {
-        const seekTime = this.#seekTo(e)
-        vid.currentTime = seekTime
-        // vid updates slowly, update bar for visual smoothness
-        this.updateTrack()
-      }
-    }
+    trackBar.onmousedown = (e) => this.#onMouseTrackHandler(e);
+    trackBar.onmousemove = (e) => this.#onMouseTrackHandler(e);
   }
 }
