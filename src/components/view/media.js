@@ -200,36 +200,31 @@ export class ViewMedia {
 
     const vid = this.vid
     if (!vid) return
+
     const tgtTime = customTime ?? vid.currentTime
 
     // set A
     if (this.#view.aLoop == Infinity) {
       this.#view.aLoop = tgtTime
-      this.#view.events.fire('view:notify', `A loop on ${this.secToHMS(tgtTime)}`)
-      this.#view.trackBar.peek()
-      return
+      this.#view.events.fire('view:notify', `A loop at ${this.secToHMS(tgtTime)}`, 'abLoop')
     }
-
     // set B
-    if (this.#view.bLoop == Infinity) {
-      // invalid, clear loop
-      if (tgtTime <= this.#view.aLoop) {
+    else if (this.#view.bLoop == Infinity) {
+      if (tgtTime > this.#view.aLoop) {
+        this.#view.bLoop = tgtTime
+        !vid.paused && this.#abLoopInterval()
+        this.#view.events.fire('view:notify', `B loop at ${this.secToHMS(tgtTime)}`, 'abLoop')
+      } else {
         this.abLoop(null)
-        this.#view.events.fire('view:notify', `B loop before A, clear`)
-        this.#view.trackBar.peek()
-        return
+        this.#view.events.fire('view:notify', 'B loop before A, clear', 'abLoop')
       }
-
-      this.#view.bLoop = tgtTime
-      this.#view.events.fire('view:notify', `B loop on ${this.secToHMS(tgtTime)}`)
-      if (!vid.paused) this.#abLoopInterval()
-      this.#view.trackBar.peek()
-      return
+    }
+    // clear loop
+    else {
+      this.abLoop(null)
+      this.#view.events.fire('view:notify', 'AB loop clear', 'abLoop')
     }
 
-    // clear loop
-    this.abLoop(null)
-    this.#view.events.fire('view:notify', 'AB loop clear')
     this.#view.trackBar.peek()
   }
 
