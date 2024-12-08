@@ -243,10 +243,46 @@
         border-radius: .5em;
         background: #242424;
       }
+
+      #optionBar {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        position: absolute;
+        height: 50%;
+        gap: 1em;
+        top: 25%;
+        opacity: 0;
+        transition: .5s;
+
+        &:hover {
+          opacity: 1;
+        }
+
+        & > * {
+          font-family: "font-awesome";
+          color: azure;
+          background: #323232a0;
+          margin: 0;
+          padding: 2em .25em;
+          border-radius: 0 .3em .3em 0;
+
+          &:hover {
+            background: var(--cl-accent);
+            cursor: pointer;
+          }
+        }
+      }
     </style>
     <div id="wrapper">
       <file-explorer id='fileExplorer' tabindex="1"></file-explorer>
-      <view-component id="viewInstance"></view-component>
+      <div style="width: 100%;">
+        <view-component id="viewInstance"></view-component>
+        <div id="optionBar">
+          <p id="explorerBtn" title="toggle explorer panel"></p>
+          <p id="playlistBtn" title="toggle playlist panel"></p>
+        </div>
+      </div>
     </div>
   </template>
 

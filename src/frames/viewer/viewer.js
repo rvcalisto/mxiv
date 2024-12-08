@@ -317,6 +317,19 @@ export class Viewer extends GenericFrame {
    * Setup event listeners.
    */
   #initEvents() {
+    const explorerBtn = /** @type {HTMLElement} */ (this.shadowRoot.querySelector('#explorerBtn'));
+    const playlistBtn = /** @type {HTMLElement} */ (this.shadowRoot.querySelector('#playlistBtn'));
+
+    const togglePanelMode = (/** @type {'explorer'|'playlist'}*/ mode) => {
+      if (this.fileExplorer.mode !== mode)
+        this.fileExplorer.toggleMode(mode);
+      else
+        this.fileExplorer.togglePanel();
+    }
+
+    explorerBtn.onclick = () => togglePanelMode('explorer');
+    playlistBtn.onclick = () => togglePanelMode('playlist');
+  
     const viewComponent = this.viewComponent
 
     // drag'n'drop
