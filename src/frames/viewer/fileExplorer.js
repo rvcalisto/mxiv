@@ -92,7 +92,6 @@ export class FileExplorer extends HTMLElement {
   #createFileElement(file) {
     const element = document.createElement('p');
     element.setAttribute('icon', file.category);
-    element.className = 'itemFont item';
     element.textContent = file.name;
     element.onclick = () => this.select(element);
     
@@ -110,13 +109,13 @@ export class FileExplorer extends HTMLElement {
    * @param {()=>void} [clickFunc] On click function.
    */
   #updateHeader(icon, secondaryLabel, primaryLabel, title, clickFunc) {
-    const parentLabel = this.shadowRoot.getElementById('parDir');
+    const parentLabel = this.shadowRoot.getElementById('parentLabel');
     parentLabel.textContent = secondaryLabel;
     
-    const currentLabel = this.shadowRoot.getElementById('curDir');
+    const currentLabel = this.shadowRoot.getElementById('currentLabel');
     currentLabel.textContent = primaryLabel;
 
-    const header = this.shadowRoot.getElementById('dirBar');
+    const header = this.shadowRoot.getElementById('header');
     header.setAttribute('icon', icon);
     header.title = title;
     header.onclick = () => clickFunc ? clickFunc() : null;

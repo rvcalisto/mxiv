@@ -65,7 +65,6 @@
       #wrapper {
         height: 100%;
         width: 100%;
-        gap: 2px;
         overflow: hidden;
         user-select: none;
         display: flex;
@@ -73,34 +72,34 @@
         border-radius: inherit;
       }
 
-      #dirBar {
-        color: whitesmoke;
-        display: inline-flex;
+      #header {
+        background: linear-gradient(90deg, #2b2b2b, transparent);
+        white-space: nowrap;
+        display: flex;
         align-items: center;
         
         gap: .1em;
         padding: .35em .5em;
-        
+        margin-bottom: 4px;
         border-top: solid thin transparent;
         border-bottom: solid thin #303030;
-        background: linear-gradient(90deg, #2b2b2b, transparent);
+
         box-shadow: 2px 2px 10px #00000060;
-        margin-bottom: 2px;
-        
         z-index: 1;
+        overflow: hidden;
         cursor: pointer;
-        overflow: hidden;
-      }
 
-      #dirBar p {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        width: 100%;
-        max-width: fit-content;
-      }
+        p {
+          color: darkgray;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          width: 100%;
+          max-width: fit-content;
 
-      #dirBar p:not(:nth-child(3)) {
-        color: darkgray;
+          &:last-child {
+            color: whitesmoke;
+          }
+        }
       }
 
       #itemList {
@@ -114,35 +113,31 @@
         background: inherit;
         overflow: hidden auto;
         height: 100%;
-        padding: 0px 4px 4px 4px;
-      }
-      
-      .itemFont {
-        color: darkgray;
-        padding: 1px;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-      }
+        padding: 0 4px 4px 4px;
 
-      .itemFont.selected {
-        background: #363636;
-        color: whitesmoke;
-      }
-      
-      :host(#fileExplorer:focus) .itemFont.selected {
-        background: var(--cl-accent);
-      }
-      
-      .itemFont:hover {
-        color: whitesmoke;
-      }
+        p {
+          color: darkgray;
+          background: inherit;
+          padding: 3px;
+          border-radius: 4px;
+          overflow: hidden;
+          white-space: nowrap;
+          text-overflow: ellipsis;
+          cursor: pointer;
 
-      .item {
-        background: inherit;
-        padding: 3px;
-        border-radius: 4px;
-        cursor: pointer;
+          &:hover {
+            color: whitesmoke;
+          }
+
+          &.selected {
+            color: whitesmoke;
+            background: #363636;
+
+            :host(#fileExplorer:focus) & {
+              background: var(--cl-accent);
+            }
+          }
+        }
       }
 
       .paginator {
@@ -151,24 +146,24 @@
         color: whitesmoke;
         padding: 4px;
         background: black;
-      }
 
-      .paginator * {
-        border: none;
-        border-radius: 4px;
-        padding: 2px 8px;
-        background: #141414;
-        color: silver;
-        transition: .2s;
-      }
+        * {
+          border: none;
+          border-radius: 4px;
+          padding: 2px 8px;
+          background: #141414;
+          color: silver;
+          transition: .2s;
+        }
 
-      .paginator button:hover {
-        transform: scale(1.2);
-        cursor: pointer;
-      }
+        button:hover {
+          transform: scale(1.2);
+          cursor: pointer;
+        }
 
-      .paginator button:active {
-        transform: scale(1);
+        button:active {
+          transform: scale(1);
+        }
       }
 
       #search {
@@ -179,13 +174,13 @@
         border: none;
         border-top: dotted thin gray;
         padding: .3em .8em;
+
+        &:focus  {
+          border-top: solid thin darkgray;
+          color: whitesmoke;
+        }
       }
 
-      #search:focus  {
-        border-top: solid thin darkgray;
-        color: whitesmoke;
-      }
-      
       /* scroll styling */
       ::-webkit-scrollbar {
         width: 8px;
@@ -206,10 +201,10 @@
       }
     </style>
     <div id="wrapper">
-      <div id="dirBar" class="itemFont">
-        <p id="parDir"></p>
+      <div id="header">
+        <p id="parentLabel"></p>
         <p>/</p>
-        <p id="curDir"></p>
+        <p id="currentLabel"></p>
       </div>
       <item-list id="itemList"></item-list>
       <input id="search" type="text" placeholder="search" spellcheck="false">
