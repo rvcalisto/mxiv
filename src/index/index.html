@@ -586,23 +586,23 @@
       }
 
       #cmdOverlay {
-        position: absolute;
-        width: 100%;
-        height: 100%;
         display: flex;
         flex-direction: column;
         justify-content: flex-end;
+        position: absolute;
+        width: 100%;
+        height: 100%;
         pointer-events: bounding-box;
       }
 
       #box {
         display: flex;
-        max-height: 75%;
-        overflow: hidden;
         flex-direction: column;
         background: linear-gradient(0deg, #1b1b1b, #1b1b1bc7);
-        border-radius: 0.5rem;
+        max-height: 75%;
         margin: 0.6rem;
+        border-radius: 0.5rem;
+        overflow: hidden;
         box-shadow: 2px 2px 5px 0px black;
       }
 
@@ -617,28 +617,28 @@
       }
 
       #cmdInput {
-        color: aliceblue;
         font-family: var(--app-font);
-        border: none;
-        width: 100%;
+        color: aliceblue;
         background: inherit;
+        width: 100%;
         padding: 0em .4em;
+        border: none;
       }
 
       item-list {
         display: flex;
-        overflow: auto;
         flex-direction: column-reverse;
         margin: 4px;
+        overflow: auto;
       }
 
       .pageContainer {
         color: silver;
         max-height: 100%;
+        padding-right: 4px;
         overflow-wrap: anywhere;
         overflow: hidden auto;
         pointer-events: auto;
-        padding-right: 4px;
       }
 
       .itemListPage > * {
@@ -646,83 +646,78 @@
         align-items: center;
         column-gap: 1em;
         padding: 3px;
-      }
+        
+        &:not(.selected) > p:first-child {
+          display: flex;
+          gap: 1em;
+          white-space: nowrap;
+          
+          &[desc]:after {
+            font-family: "font-awesome";
+            content: '';
+            align-self: center;
+            padding-top: 1px;
+            opacity: .2;
+          }
+        }
+        
+        &.selected {
+          color: aliceblue;
+          background: var(--cl-accent);
+          border-radius: .2em;
 
-      .itemListPage > *:not(.selected) .itemText {
-        display: flex;
-        gap: 1em;
-        white-space: nowrap;
-      }
-
-      .itemListPage > *.selected .itemText {
-        display: flex;
-        flex-direction: column;
-        gap: 0;
-        white-space: normal;
-      }
-
-      /* signal for description */
-      .itemListPage > *:not(.selected) [desc]:after {
-        content: '';
-        opacity: .2;
-        font-family: "font-awesome";
-        /* font-size: smaller; */
-        padding-top: 1px;
-        align-self: center;
-      }
-
-      /* optional hint description */
-      .itemListPage > *.selected [desc]:after {
-        content: attr(desc);
-        opacity: .7;
-      }
-
-      .itemListPage > .selected {
-        background: var(--cl-accent);
-        color: aliceblue;
-        border-radius: .2em;
-      }
-
-      .itemTag {
-        background: #2b2b2b;
-        font-family: var(--app-font);
-        color: dimgray;
-        border: none;
-        border-radius: .2em;
-        font-size: x-small;
-        padding: 0px .5em;
-        overflow-wrap: break-word;
-        /* border-top: solid thin; */
-        /* box-shadow: 1px 1px 3px 0px black; */
-      }
-
-      button.itemTag:hover {
-        cursor: pointer;
+          > p:first-child {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+            white-space: normal;
+            
+            &[desc]:after {
+              content: attr(desc);
+              opacity: .7;
+            }
+          }
+        }
       }
 
       .accelerators {
+        color: dimgray;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        justify-content: flex-end;
+        gap: .5em;
         margin-right: 2px;
         margin-left: auto;
-        display:flex;
-        gap: .5em;
-        flex-wrap: wrap;
-        justify-content: flex-end;
-        align-items: center;
+      }
+      
+      .itemTag {
+        font-family: var(--app-font);
+        font-size: x-small;
+        color: dimgray;
+        background: #2b2b2b;
+        padding: 0em .5em;
+        border: none;
+        border-radius: .2em;
+        overflow-wrap: break-word;
+
+        button&:hover {
+          cursor: pointer;
+        }
       }
 
       .paginator {
         display: flex;
-        color: whitesmoke;
-        gap: 2rem;
-        pointer-events: auto;
         justify-content: center;
-      }
+        gap: 2em;
+        pointer-events: auto;
 
-      .paginator * {
-        color: whitesmoke;
-        background: inherit;
-        border: none;
-        user-select: auto;
+        * {
+          color: whitesmoke;
+          background: inherit;
+          border: none;
+          user-select: auto;
+        }
       }
 
       /* scroll styling */
@@ -751,19 +746,12 @@
         <div id="inputBox">
           <p icon="run"></p>
           <input id="cmdInput" spellcheck="false" placeholder="ex: open ~/sun.mp4 ..."></input>
-          <div style="display: flex; font-size: small;  
-          color: dimgray; padding: .4em;">
-            <div class="accelerators" style="margin: 0px .4em;">
-              <p class="itemTag">tab</p>
-            </div>
-            <p style="margin-right: auto;">next</p>
-            <div class="accelerators" style="margin: 0px 0.4em;">
-              <p class="itemTag">shift+tab</p>
-            </div>
-            <p style="margin-right: auto;">back</p>
-            <div class="accelerators" style="margin: 0px 0.4em;">
-              <p class="itemTag">shift+space</p>
-            </div>
+          <div class="accelerators" style="padding: .4em; flex-wrap: nowrap;">
+            <p class="itemTag">tab</p>
+            <p>next</p>
+            <p class="itemTag">shift+tab</p>
+            <p>back</p>
+            <p class="itemTag">shift+space</p>
             <p>select</p>
           </div>
         </div>

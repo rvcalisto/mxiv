@@ -68,7 +68,6 @@ export class OptionElement extends HTMLElement {
     this.setAttribute('icon', this.type);
 
     const text = document.createElement('p');
-    text.className = 'itemText';
     text.textContent = this.name;
 
     // description to be applied as atribute for css ::after 
