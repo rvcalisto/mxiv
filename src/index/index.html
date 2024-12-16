@@ -87,17 +87,36 @@
         box-shadow: 2px 2px 10px #00000060;
         z-index: 1;
         overflow: hidden;
-        cursor: pointer;
 
         p {
           color: darkgray;
-          overflow: hidden;
           text-overflow: ellipsis;
           width: 100%;
           max-width: fit-content;
+          overflow: hidden;
+          transition: .2s;
 
           &:last-child {
             color: whitesmoke;
+          }
+        }
+
+        &:not([passive]):hover {
+          cursor: pointer;
+
+          p {
+            &:first-child:not(:empty),
+            &:first-child:empty + p {
+              color: whitesmoke;
+              background: #484848;
+              padding: 0 .25em;
+              margin: 0 .25em;
+              border-radius: .3em;
+            }
+
+            &:last-child {
+              color: darkgray;
+            }
           }
         }
       }

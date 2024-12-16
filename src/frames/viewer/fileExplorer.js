@@ -116,6 +116,7 @@ export class FileExplorer extends HTMLElement {
     currentLabel.textContent = primaryLabel;
 
     const header = this.shadowRoot.getElementById('header');
+    header.toggleAttribute('passive', clickFunc == null);
     header.setAttribute('icon', icon);
     header.title = title;
     header.onclick = () => clickFunc ? clickFunc() : null;
