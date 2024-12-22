@@ -1,14 +1,15 @@
+// @ts-check
 import fs from 'fs';
 import p from 'path';
-import { listFiles, fileObj } from './fileSearch.js'
-import { expandPath, fileType } from './fileTools.js'
-import { TemporaryFolders } from './temporaryFolders.js'
+import { listFiles, fileObj } from './fileSearch.js';
+import { expandPath, fileType } from './fileTools.js';
+import { TemporaryFolders } from './temporaryFolders.js';
 
 
 /**
  * Viewable file structure for path array. Used in `FileBook`.
  * @typedef {Object} BookObject
- * @property {String?} startOn Path substring from file that is supposed to be displayed at start.
+ * @property {string?} startOn Path substring from file that is supposed to be displayed at start.
  * @property {import('./fileSearch').FileObject[]} paths Listed files parent directories.
  * @property {import('./fileSearch').FileObject[]} files All viewable files for given directories.
  */
@@ -16,94 +17,97 @@ import { TemporaryFolders } from './temporaryFolders.js'
 
 /**
  * Open and wrap folders, archives & files in a common object for unprivileged contexts.
- * @param {String[]} paths Paths from files and folders to open.
- * @param {String} ownerID Keeps track of temporary folder (archives) ownership.
+ * @param {string[]} paths Paths from files and folders to open.
+ * @param {string} ownerID Keeps track of temporary folder (archives) ownership.
  * @returns {Promise<BookObject>}
  */
 export async function open(paths, ownerID) {
 
-  /** Archives openned in current call. */
-  const workingArchives = []
+  /** Archives opened in current call. */
+  const workingArchives = [];
 
   /** @type {BookObject} */
-  const bookObj = {
+  const book = {
     'startOn': null,
     'paths': [],
     'files': []
-  }
+  };
 
-  // knowing current files are unshifted to the openArg array, shift & startOn basename of the first 
-  // tmp file (if any) to allow archive page preservation when loading profiles or duplicating tabs.
+  // knowing currently displayed files have their paths unshifted into Viewer's `openArg` array,
+  // preserve page idx for archives on profile load, tab duplication by shifting `paths` and
+  // setting its basename to `startOn` whenever it's a temporary path.
   if (paths.length > 1 && TemporaryFolders.isPathFromTmp(paths[0]) ) {
-    bookObj.startOn = p.basename( /** @type {string} */ (paths.shift()) )
+    book.startOn = p.basename( /** @type {string} */ (paths.shift()) );
   }
 
-  // append valid data to bookObj
+  // append valid data to book
   for (let path of paths) {
-    // skip empty path, turn atomic
-    if (!path) continue
-    path = expandPath(path)
+    if (path === '')
+      continue;
 
-    // filter already processed paths
-    const parentDir = p.dirname(path)
-    const type = fileType(path)
-    const isViewable = type !== 'archive' && type !== 'other'
-    if (bookObj.paths.some(item => {
-      // filter files covered by a previous listFiles scan 
-      if (isViewable && (parentDir === item.path) ) return true
-      // filter already scanned directory/archive
-      if (item.path === path) return true
-    })) continue
+    path = expandPath(path);
+    const parentDirectory = p.dirname(path);
+    const type = fileType(path);
+    const isViewable = type !== 'archive' && type !== 'other';
 
-    // skip if file doesn't exist, else get stat and type
-    const stats = await new Promise(resolve => {
-      fs.stat( path, (err, stat) => resolve(stat) )
-    })
-    if (!stats) continue
+    // filter-out already processed files
+    const relevantPath = isViewable ? parentDirectory : path;
+    if ( book.paths.some(fileObject => fileObject.path === relevantPath) )
+      continue;
 
-    // Directory, build files array from path
+    // skip file if unreachable
+    const stats = /** @type {fs.Stats?} */ (await new Promise(resolve => {
+      fs.stat( path, (_err, stat) => resolve(stat) );
+    }));
+    if (stats == null)
+      continue;
+
+    // Directory, append files from path
     if ( stats.isDirectory() ) {
-      const lsObj = await listFiles(path)
-      if (!lsObj.files.length) continue
+      const lsObj = await listFiles(path);
 
-      bookObj.paths.push(lsObj.target)
-      bookObj.files = bookObj.files.concat(lsObj.files)
+      if (lsObj.files.length > 0) {
+        book.paths.push(lsObj.target);
+        book.files.push(...lsObj.files);
+      }
     }
 
-    // Viewable file, build from parent folder and start on itself
+    // Viewable file, append parent folder files
     else if (isViewable) {
-      // only set startOn file for first path
-      const lsObj = await listFiles(parentDir)
-      if (!bookObj.paths.length) bookObj.startOn = path
+      const lsObj = await listFiles(parentDirectory);
 
-      bookObj.paths.push(lsObj.target)
-      bookObj.files = bookObj.files.concat(lsObj.files)
+      if (book.paths.length < 1)
+        book.startOn = path; // start on self if first file to be processed
+
+      book.paths.push(lsObj.target);
+      book.files.push(...lsObj.files);
     }
 
-    // Archive, extract (and prevent trying to extract directories with archive extentions)
-    else if ( type === 'archive' && !stats.isDirectory() ) {
-      const tmpDir = await TemporaryFolders.leaseArchive(path, ownerID)
-      if (tmpDir) {
-        workingArchives.push(path) // prevent surrendering working archive leases later
-        const lsObj = await listFiles(tmpDir)
-  
-        bookObj.paths.push( fileObj('archive', p.basename(path), path) )
-        bookObj.files = bookObj.files.concat(lsObj.files)
+    // Archive, append extracted files from the temporary directory
+    else if (type === 'archive') {
+      const tmpDir = await TemporaryFolders.leaseArchive(path, ownerID);
+
+      if (tmpDir !== '') {
+        workingArchives.push(path); // preserve current archive
+        const lsObj = await listFiles(tmpDir);
+
+        book.paths.push( fileObj('archive', p.basename(path), path) );
+        book.files.push(...lsObj.files);
       }
     }
   }
 
-  // clear orphan tmp folders on success, if any
-  const success = bookObj.paths.length > 0
-  if (success) TemporaryFolders.surrenderLeases(ownerID, workingArchives)
+  // clear all but `workingArchives` temporary folders (if any) for ownerID on success
+  if (book.paths.length > 0)
+    TemporaryFolders.surrenderLeases(ownerID, workingArchives);
 
-  return bookObj
+  return book;
 }
 
 /**
- * Remove all temporary folders associated with ownerID. For unpriviledged contexts.
- * @param {String} ownerID Tab instance to be cleaned.
+ * Remove all temporary folders associated with ownerID. For unprivileged contexts.
+ * @param {string} ownerID Tab instance to be cleaned.
  */
 export function clearTmp(ownerID) {
-  TemporaryFolders.surrenderLeases(ownerID)
+  TemporaryFolders.surrenderLeases(ownerID);
 }
