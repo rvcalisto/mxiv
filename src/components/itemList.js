@@ -1,57 +1,62 @@
+// @ts-check
+
 /**
  * Paginated item list for elements. Styling not included.
- * - Generate pages as they are requested, for perfomance.
+ * - Generate pages as they are requested, for performance.
  * @template I Item type.
  * @template {HTMLElement} E Element type.
  */
 export class ItemList extends HTMLElement {
 
-  static tagName = 'item-list'
+  static tagName = 'item-list';
 
   /**
    * Keeps track of items yet to be rendered on demand.
-   * @type {Object<number, {unrendered:boolean, items:I[]}>}
+   * @type {{ unrendered:boolean, items:I[] }[]}
    */
-  #virtualPages = {}
+  #virtualPages = [];
 
   /** @type {(item:I)=>E} */
-  #itemGenerator
+  #itemGenerator;
+
+  /** @type {HTMLDivElement}       */ #pageContainerDiv;
+  /** @type {HTMLDivElement}       */ #paginatorDiv;
+  /** @type {HTMLButtonElement}    */ #paginatorBtnL;
+  /** @type {HTMLButtonElement}    */ #paginatorBtnR;
+  /** @type {HTMLParagraphElement} */ #paginatorLabel;
 
   constructor() {
-    super()
-    this.pageContainerDiv
-    this.paginatorDiv
-    this.paginatorBtnL
-    this.paginatorBtnR
-    this.paginatorLabel
-    this.itemsPerPage = 200
-    this.currentPage = 0
-    this.currentPageDiv
+    super();
+    this.itemsPerPage = 200;
+    this.currentPage = 0;
+    this.currentPageDiv;
   }
 
   connectedCallback() {
     // page container
-    this.pageContainerDiv = document.createElement('div')
-    this.pageContainerDiv.className = 'pageContainer'
-    this.appendChild(this.pageContainerDiv)
+    this.#pageContainerDiv = document.createElement('div');
+    this.#pageContainerDiv.className = 'pageContainer';
+    this.appendChild(this.#pageContainerDiv);
 
-    // paginator and hide by default
-    this.paginatorDiv = document.createElement('div')
-    this.paginatorDiv.className = 'paginator'
-    this.paginatorDiv.style.display = 'none'
-    this.appendChild(this.paginatorDiv)
+    // paginator container, hidden by default
+    this.#paginatorDiv = document.createElement('div');
+    this.#paginatorDiv.className = 'paginator';
+    this.#paginatorDiv.style.display = 'none';
+    this.appendChild(this.#paginatorDiv);
 
     // paginator elements
-    this.paginatorBtnL = document.createElement('button')
-    this.paginatorBtnL.style.fontFamily = 'font-awesome'
-    this.paginatorBtnL.textContent = '' // '<' icon
+    this.#paginatorBtnL = document.createElement('button');
+    this.#paginatorBtnL.style.fontFamily = 'font-awesome';
+    this.#paginatorBtnL.textContent = ''; // '<' icon
+    this.#paginatorBtnL.onclick = () => this.#goToPage(this.currentPage - 1);
 
-    this.paginatorBtnR = document.createElement('button')
-    this.paginatorBtnR.style.fontFamily = 'font-awesome'
-    this.paginatorBtnR.textContent = '' // '>' icon
-    
-    this.paginatorLabel = document.createElement('p')
-    this.paginatorDiv.append(this.paginatorBtnL, this.paginatorLabel, this.paginatorBtnR)
+    this.#paginatorBtnR = document.createElement('button');
+    this.#paginatorBtnR.style.fontFamily = 'font-awesome';
+    this.#paginatorBtnR.textContent = ''; // '>' icon
+    this.#paginatorBtnR.onclick = () => this.#goToPage(this.currentPage + 1);
+
+    this.#paginatorLabel = document.createElement('p');
+    this.#paginatorDiv.append(this.#paginatorBtnL, this.#paginatorLabel, this.#paginatorBtnR);
   }
 
   /**
@@ -61,122 +66,110 @@ export class ItemList extends HTMLElement {
    * @param {(item:I)=>Boolean} [filterFunc] Item filter. Optional.
    */
   populate(iterableList, itemGenerator, filterFunc) {
-
     // reset state
-    this.currentPage = 0
-    this.pageContainerDiv.textContent = ''
-    this.#virtualPages = {}
-    this.#itemGenerator = itemGenerator
-    
-    let pageCount = 0, pageItemCount = 0
+    this.currentPage = 0;
+    this.currentPageDiv = null;
+    this.#pageContainerDiv.textContent = '';
+    this.#virtualPages = [];
+    this.#itemGenerator = itemGenerator;
+
+    let pageCount = 0, pageItemCount = 0;
+    const applyFilter = filterFunc != null;
 
     for (const item of iterableList) {
-      // filter item with given function, else, pass
-      const pass = filterFunc ? filterFunc(item) : true
-      if (!pass) continue
+      if ( applyFilter && !filterFunc(item) )
+        continue;
 
-      // new page & item indexes on per-page-item-limit
+      // reset pageItemCount and increment page on threshold
       if (pageItemCount === this.itemsPerPage) {
-        pageCount++
-        pageItemCount = 0
+        pageCount++;
+        pageItemCount = 0;
       }
 
-      // define new virtual page on itemCount zero
-      if (pageItemCount === 0) this.#virtualPages[pageCount] = {
-        unrendered: true,
-        items: []
-      }
+      // create new virtual page on pageItemCount zero
+      if (pageItemCount === 0)
+        this.#virtualPages[pageCount] = {
+          unrendered: true,
+          items: []
+        };
 
       // append item to virtual page and increment itemCounter
-      this.#virtualPages[pageCount].items.push(item)
-      pageItemCount++
+      this.#virtualPages[pageCount].items.push(item);
+      pageItemCount++;
     }
 
     // update paginator and show page (if any)
-    this.#updatePaginator()
-    if ( this.#virtualPages[0] != null ) this.goToPage(0)
+    this.#updatePaginator();
+    if (this.#virtualPages.length > 0)
+      this.#goToPage(0);
   }
 
   #updatePaginator() {
-    const pageCount = Object.keys(this.#virtualPages).length
-    this.paginatorLabel.textContent = `${this.currentPage + 1}/${pageCount}`
-
-    this.paginatorBtnL.onclick = () => this.goToPage(this.currentPage - 1)
-    this.paginatorBtnR.onclick = () => this.goToPage(this.currentPage + 1)
-
-    this.paginatorDiv.style.display = pageCount < 2 ? 'none' : ''
+    const pageCount = this.#virtualPages.length;
+    this.#paginatorLabel.textContent = `${this.currentPage + 1}/${pageCount}`;
+    this.#paginatorDiv.style.display = pageCount < 2 ? 'none' : '';
   }
 
   /**
    * Create and return page and nested item elements.
-   * @param {Number} id
+   * @param {number} id Page index ID.
    * @returns {HTMLElement} Page element reference.
    */
   #renderPage(id) {
-    const pageData = this.#virtualPages[id]
+    const pageData = this.#virtualPages[id];
 
-    const page = document.createElement('div')
-    page.setAttribute('page', id)
-    page.className = 'itemListPage'
-    page.style.display = 'none'
+    const page = document.createElement('div');
+    page.setAttribute('page', `${id}`);
+    page.className = 'itemListPage';
+    page.style.display = 'none';
 
-    for (const item of pageData.items) {
-      page.append( this.#itemGenerator(item) )
-    }
+    for (const item of pageData.items)
+      page.append( this.#itemGenerator(item) );
 
-    this.pageContainerDiv.append(page)
-    pageData.unrendered = false
-    // console.log('rendered page:', id)
-    return page
+    this.#pageContainerDiv.append(page);
+    pageData.unrendered = false;
+
+    return page;
   }
 
   /**
-   * Switch page. Returns page element on success, false otherwise.
-   * @param {Number} nextPage Page index to go to.
+   * Switch to page index and return its element.
+   * @param {number} nextPage Page index to go to.
    * @returns {HTMLElement} New page element.
    */
-  goToPage(nextPage) {
+  #goToPage(nextPage) {
+    // wrap around available pages
+    const pageCount = this.#virtualPages.length;
+    this.currentPage = nextPage < 0 ? pageCount - 1 : nextPage % pageCount;
 
-    // wrap nextPage around avaliable pages
-    const pageCount = Object.keys(this.#virtualPages).length
-    if (nextPage > pageCount - 1) nextPage = 0
-    if (nextPage < 0) nextPage = pageCount - 1
-    this.currentPage = nextPage
+    if (this.#virtualPages[this.currentPage].unrendered)
+      this.#renderPage(this.currentPage);
 
-    // render and show if unrendered
-    if (this.#virtualPages[nextPage].unrendered) this.#renderPage(nextPage)
+    // hide all pages but current
+    this.currentPageDiv = this.#pageContainerDiv.querySelector(`[page='${this.currentPage}']`);
+    for (const page of this.#pageContainerDiv.children)
+      /** @type {HTMLElement} */ (page).style.display = page === this.currentPageDiv ? '' : 'none';
 
-    // hide all pages but next
-    const pageElements = this.pageContainerDiv.children
-    let nextPageElement
-    for (const page of pageElements) {
-      if ( page.getAttribute('page') == nextPage ) nextPageElement = page
-      page.style.display = page === nextPageElement ? '' : 'none'
-    }
-
-    // update paginator display
-    this.paginatorLabel.textContent = `${nextPage + 1}/${pageCount}`
-    this.currentPageDiv = nextPageElement
-
-    // return page element, used in navItems
-    return nextPageElement
+    this.#updatePaginator();
+    return /** @type {HTMLElement} */ (this.currentPageDiv);
   }
 
   /**
    * Total count of items in list.
    */
   get itemCount() {
-    let count = 0
-    for (const pageKey in this.#virtualPages) {
-      const pageData = this.#virtualPages[pageKey]
-      if (pageData.unrendered) count += pageData.items.length
-      else {
-        const element = this.pageContainerDiv.querySelector(`[page='${pageKey}']`)
-        if (element) count += element.childElementCount // in case nodes were removed
-      }
-    }
+    let count = 0;
 
-    return count
+    this.#virtualPages.forEach((pageData, pageKey) => {
+      if (pageData.unrendered) {
+        count += pageData.items.length;
+      } else {
+        const element = this.#pageContainerDiv.querySelector(`[page='${pageKey}']`);
+        count += element && element.childElementCount || 0; // in case nodes were removed
+      }
+    });
+
+    return count;
   }
 
   /**
@@ -184,14 +177,10 @@ export class ItemList extends HTMLElement {
    * @returns {I[]}
    */
   get itemArray() {
-    let items = []
+    const items = [];
+    this.#virtualPages.forEach( pageData => items.push(...pageData.items) );
 
-    for (const key in this.#virtualPages) {
-      const page = this.#virtualPages[key]
-      items = items.concat(page.items)
-    }
-
-    return items
+    return items;
   }
 
   /**
@@ -200,93 +189,77 @@ export class ItemList extends HTMLElement {
    * @returns {E?}
    */
   findItemElement(predicate) {
-    let itemIdx = 0 // relative to itemArray
+    let itemIdx = 0; // relative to itemArray
 
-    for (const pageKey in Object.keys(this.#virtualPages) ) {
-      const pageData = this.#virtualPages[pageKey]
+    for ( const [pageKey, pageData] of this.#virtualPages.entries() ) {
 
       for (let i = 0; i < pageData.items.length; i++) {
-        const item = pageData.items[i]
-        const truthy = predicate(item, itemIdx)
-        
-        if (truthy) {
-          this.goToPage( Number(pageKey) )
-          return this.currentPageDiv.children[i]
-        }
+        const item = pageData.items[i];
 
-        itemIdx++
+        if ( predicate(item, itemIdx++) ) {
+          const pageElement = this.#goToPage(pageKey);
+          return /** @type {E} */ (pageElement.children[i]);
+        }
       }
     }
 
-    return null
+    return null;
   }
 
   /**
    * Navigate ItemList page items. Returns selected Element.
-   * @param {Boolean} forward Navigation direction.
+   * @param {boolean} forward Navigation direction.
    * @returns {E?}
    */
   navItems(forward = true) {
-    if (!this.pageContainerDiv.childElementCount) return
-    
-    const lastSelected = this.pageContainerDiv.querySelector('.selected')
-    let toFocus = lastSelected
+    if (this.currentPageDiv == null)
+      return null;
+
+    let selection = this.#pageContainerDiv.querySelector('.selected');
 
     // no selection, focus first-item:first-page or last-item:last-page 
-    if (!toFocus) {
-      const pages = this.pageContainerDiv.children
-      const nextPage = forward ? 0 : pages.length -1
-      toFocus = forward ? pages[0].firstChild : pages[nextPage].lastChild
-      this.goToPage(nextPage)
-      toFocus.classList.add('selected')
-      return toFocus
+    if (selection == null) {
+      const nextPage = this.#goToPage(forward ? 0 : this.#virtualPages.length - 1);
+      selection = forward ? nextPage.firstElementChild : nextPage.lastElementChild;
+
+      /** @type {E} */ (selection).classList.add('selected');
+      return /** @type {E} */ (selection);
     }
 
-    const toFocusInCurrentPage = this.currentPageDiv.querySelector('.selected')
-    toFocus.classList.remove('selected')
+    // has selection, remove attribute from previous item
+    selection.classList.remove('selected');
 
-    toFocus = forward ? toFocus.nextElementSibling : toFocus.previousElementSibling
-    if (!toFocusInCurrentPage) {
-      toFocus = forward ? this.currentPageDiv.firstChild : this.currentPageDiv.lastChild
+    // focus sibling or focus current page extreme if selected element is in another page
+    if (selection.parentElement === this.currentPageDiv)
+      selection = forward ? selection.nextElementSibling : selection.previousElementSibling;
+    else
+      selection = forward ? this.currentPageDiv.firstElementChild : this.currentPageDiv.lastElementChild;
+
+    // no neighbors at direction, wrap around page(s)
+    if (selection == null) {
+      const nextPage = this.#goToPage( this.currentPage + (forward ? 1 : -1) );
+      selection = forward ? nextPage.firstElementChild : nextPage.lastElementChild;
     }
 
-    if (!toFocus) {
-      // wrap around items on single page
-      if ( Object.keys(this.#virtualPages).length < 2 ) {
-        const page = this.pageContainerDiv.children[0]
-        toFocus = forward ? page.firstChild : page.lastChild
-      } else {
-        // wrap around pages
-        const page = Number( lastSelected.parentElement.getAttribute('page') )
-
-        if (forward) {
-          const nextPage = this.goToPage(page + 1) // return valid adjacent reference
-          toFocus = nextPage.firstChild
-        } else {
-          const previousPage = this.goToPage(page - 1)
-          toFocus = previousPage.lastChild
-        }
-      }
-    }
-    
-    toFocus.classList.add('selected')
-    return toFocus
+    /** @type {E} */ (selection).classList.add('selected');
+    return /** @type {E} */ (selection);
   }
 
   /**
    * Go to respective page and scroll ItemList item element into view. 
    * @param {HTMLElement} itemElement 
-   * @param {(boolean|ScrollIntoViewOptions)} [viewOptions] ScrollIntoView options.
+   * @param {boolean|ScrollIntoViewOptions} [viewOptions] ScrollIntoView options.
    */
   selectIntoFocus(itemElement, viewOptions = { block: "center" }) {
-    const onFocus = this.pageContainerDiv?.querySelector('.selected')
-    if (onFocus) onFocus.classList.remove('selected')
+    const onFocus = this.#pageContainerDiv.querySelector('.selected');
+    if (onFocus)
+      onFocus.classList.remove('selected');
 
-    const page = Number( itemElement.parentElement.getAttribute('page') )
+    const page = /** @type {HTMLElement} */ (itemElement.parentElement).getAttribute('page');
+    this.#goToPage( Number(page) );
 
-    this.goToPage(page)
-    itemElement.classList.add('selected')
-    itemElement.scrollIntoView(viewOptions)
+    itemElement.classList.add('selected');
+    itemElement.scrollIntoView(viewOptions);
   }
 
   /**
@@ -294,8 +267,8 @@ export class ItemList extends HTMLElement {
    * @returns {E?}
    */
   getSelectedElement() {
-    return /** @type {E?} */ (this.pageContainerDiv?.querySelector('.selected'));
+    return /** @type {E?} */ (this.#pageContainerDiv.querySelector('.selected'));
   }
 }
 
-customElements.define(ItemList.tagName, ItemList)
+customElements.define(ItemList.tagName, ItemList);
