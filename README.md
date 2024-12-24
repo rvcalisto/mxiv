@@ -27,7 +27,7 @@ MXIV is a keyboard-oriented media viewer intended to navigate heterogeneous gall
 ## Runtime Dependencies
 
 - [**Electron**][1] - Application framework
-- [**7z**][2] _(provided by [**p7zip**][3] on Linux)_ - To temporarily extract and view archived media files
+- [**7z**][2] - To temporarily extract and view archived media files
 - [**ImageMagick**][4] - To generate thumbnails for media folders & archives in library
 - [**Font Awesome**][5] - Icon Fonts **( included )** 
 
@@ -58,23 +58,20 @@ electron "<path to your extracted mxiv archive>"
 ## Repository Setup
 
 ```bash
-# clone repository into a new "mxiv" folder
-git clone "https://github.com/rvcalisto/mxiv.git" "mxiv"
-
-# fetch and install electron, electron-forge
+# clone repository and install all dependencies
+git clone "https://github.com/rvcalisto/mxiv.git" mxiv
 cd mxiv; npm install
 
 # run mxiv
 npm start
 
-# build platform specific packages
+# build platform specific distributable file
 npm run make
 ```
 
 <!-- links -->
 [1]: https://www.electronjs.org
 [2]: https://www.7-zip.org
-[3]: https://github.com/p7zip-project/p7zip
 [4]: https://imagemagick.org
 [5]: https://fontawesome.com
 [6]: https://en.wikipedia.org/wiki/PATH_(variable)

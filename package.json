@@ -47,7 +47,7 @@
                 "Graphics"
               ],
               "depends" : [
-                "p7zip-full",
+                "7zip",
                 "imagemagick"
               ],
               "mimeType": [
