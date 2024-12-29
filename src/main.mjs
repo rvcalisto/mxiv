@@ -152,7 +152,7 @@ else {
         webContents.reload();
       } else if (!input.shift && key === 'q') {
         e.preventDefault();
-        webContents.close();
+        webContents.close({ waitForBeforeUnload: true });
       } else if (input.shift && key === 'i') {
         e.preventDefault();
         webContents.toggleDevTools();
