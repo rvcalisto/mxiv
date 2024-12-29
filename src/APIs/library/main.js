@@ -78,9 +78,11 @@ export async function removeFromLibrary(path) {
       throw 'rollback';
     }
   
-    const success = await utils.deleteThumbnail(entry.coverPath);
-    if (!success)
-      console.warn(`MXIV::WARN: Failed to delete thumbnail at "${entry.coverPath}". Orphaning.`);
+    if (entry.coverPath != null) {
+      const success = await utils.deleteThumbnail(entry.coverPath);
+      if (!success)
+        console.warn(`MXIV::WARN: Failed to delete thumbnail at "${entry.coverPath}". Orphaning.`);
+    }
   
     db.delete(path);
   })

@@ -7,10 +7,10 @@ import { libraryFile } from '../tool/appPaths.js';
 
 /**
  * @typedef LibraryEntry Properties of a library folder/archive.
- * @property {String} name File/folder basename.
- * @property {String} path Absolute path to book file/folder.
- * @property {String} coverPath Absolute path to cover file.
- * @property {String} coverURL Encoded cover path for html display.
+ * @property {string} name File/folder basename.
+ * @property {string} path Absolute path to book file/folder.
+ * @property {string?} coverPath Absolute path to cover file.
+ * @property {string?} coverURL Encoded cover path for html display.
  */
 
 
@@ -24,15 +24,15 @@ export class LibraryState extends Map {
 
   /**
    * Add library entry by cover path.
-   * @param {String} path Folder/archive path.
-   * @param {String} coverPath Cover thumbnail path.
+   * @param {string} path Folder/archive path.
+   * @param {string?} coverPath Cover thumbnail path.
    */
   setFromCover(path, coverPath) {
     this.set(path, {
       'name': p.basename(path),
       'path': path,
       'coverPath': coverPath,
-      'coverURL': pathToFileURL(coverPath).href,
+      'coverURL': coverPath && pathToFileURL(coverPath).href,
     });
   }
 

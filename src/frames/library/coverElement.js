@@ -26,9 +26,9 @@ export class Cover extends HTMLElement {
   coverPath = '';
 
   /**
-   * Encoded `coverPath` (for HTML `src` attribute).
+   * @type {string?} Encoded `coverPath` (for HTML `src` attribute).
    */
-  coverURL = '';
+  coverURL = null;
 
   /**
    * Set behavior on 'remove' button click.
@@ -51,7 +51,8 @@ export class Cover extends HTMLElement {
     removeBtn.title = 'delist book';
     removeBtn.tabIndex = -1;
 
-    this.style.backgroundImage = `url(${this.coverURL})`;
+    const coverURL = this.coverURL ?? '../icons/libraryIconPlaceholder.jpg';
+    this.style.backgroundImage = `url(${coverURL})`;
 
     removeBtn.onclick = (e) => {
       e.stopImmediatePropagation();

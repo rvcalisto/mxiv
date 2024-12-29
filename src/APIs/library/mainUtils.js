@@ -9,12 +9,6 @@ import { libraryCoverDirectory } from '../tool/appPaths.js';
 
 
 /**
- * Generic icon to use secondarily.
- */
-const PLACEHOLDERICON = p.join(import.meta.dirname,
-  '../../icons/libraryIconPlaceholder.jpg')
-
-/**
  * Extract tool present. I promise we'll know, eventually.
  * @type {boolean|Promise<boolean>}
  */
@@ -96,11 +90,11 @@ export async function deleteThumbnailDirectory() {
  *   when extracting archive files. (ex: 01.jpg)
  * @param {String} path Folder/archive path.
  * @param {number} [id=0] Extraction folder name, used by threads.
- * @returns {Promise<String>} Path to generated thumbnail.
+ * @returns {Promise<string?>} Path to generated thumbnail.
  */
 export async function createThumbnail(path, id = 0) {
   if (!canThumbnail)
-    return await coverPlaceholder()
+    return null
   else if ( fileType(path) === 'archive' )
     return await coverFromArchive(path, id)
   else
@@ -135,7 +129,7 @@ export async function deleteThumbnail(path) {
 /**
  * Asynchronously creates cover from directory.
  * @param {String} path Folder Path.
- * @returns {Promise<String>} Cover Path.
+ * @returns {Promise<string?>} Cover Path.
  */
 async function coverFromDirectory(path) {
   /** Directory files, only basenames. @type {string[]} */
@@ -149,7 +143,7 @@ async function coverFromDirectory(path) {
   })
   
   if (coverBasename == null)
-    return await coverPlaceholder()
+    return null
 
   // generate cover as UUID.jpg
   const coverSource = p.join(path, coverBasename)
@@ -165,7 +159,7 @@ async function coverFromDirectory(path) {
  *   when extracting archive files. (ex: 01.jpg)
  * @param {String} path Folder Path.
  * @param {number} [id=0] Extraction folder name, used by threads.
- * @returns {Promise<String>} Cover Path.
+ * @returns {Promise<string?>} Cover Path.
  */
 async function coverFromArchive(path, id = 0) {
   // find cover file from archive
@@ -176,7 +170,7 @@ async function coverFromArchive(path, id = 0) {
   })
 
   if (coverBasename == null)
-    return await coverPlaceholder()
+    return null
 
   // extract file and generate cover as UUID.jpg, remove extracted file after
   const extractionFolder = p.join( libraryCoverDirectory, String(id) )
@@ -186,17 +180,4 @@ async function coverFromArchive(path, id = 0) {
   fs.rmSync(coverSource)
   
   return coverTarget
-}
-
-/**
- * Generate a cover placeholder and return its path.
- * @returns {Promise<String>} Placeholder thumbnail path.
- */
-async function coverPlaceholder() {
-  // TODO: custom placeholders by filetype (?)
-  const coverTarget = p.join(libraryCoverDirectory, `${randomUUID()}.jpg`)
-
-  return await new Promise(resolve => {
-    fs.copyFile( PLACEHOLDERICON, coverTarget, () => resolve(coverTarget) )
-  })
 }

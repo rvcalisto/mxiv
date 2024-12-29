@@ -9,8 +9,8 @@ if (!isMainThread)
 /**
  * Thumbnail worker thread message on successful iteration.
  * @typedef ThumbnailWorkerMessage
- * @property {String} path Source folder/archive filepath.
- * @property {String} thumbnail Generated thumbnail filepath.
+ * @property {string} path Source folder/archive filepath.
+ * @property {string?} thumbnail Generated thumbnail filepath.
  */
 
 /**
