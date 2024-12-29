@@ -46,7 +46,7 @@
                 "Video",
                 "Graphics"
               ],
-              "depends" : [
+              "recommends" : [
                 "7zip",
                 "imagemagick"
               ],

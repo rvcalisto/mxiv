@@ -2,6 +2,7 @@
 import fs from 'fs';
 import p from 'path';
 import { expandPath, fileType } from './fileTools.js';
+import { tools } from '../tool/toolCapabilities.js';
 
 
 /** 
@@ -102,8 +103,10 @@ export async function listFiles(path) {
 
     if ( !file.isFile() ) // assume is a directory
       lsObj.directories.push( fileObj('folder', file.name, filepath) );
-    else if (category === 'archive')
-      lsObj.archives.push( fileObj(category, file.name, filepath) );
+    else if (category === 'archive') {
+      if (tools.canExtract)
+        lsObj.archives.push( fileObj(category, file.name, filepath) );
+    }
     else if (category !== 'other')
       lsObj.files.push( fileObj(category, file.name, filepath) );
   }

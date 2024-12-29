@@ -4,6 +4,7 @@ import p from 'path';
 import { listFiles, fileObj } from './fileSearch.js';
 import { expandPath, fileType } from './fileTools.js';
 import { TemporaryFolders } from './temporaryFolders.js';
+import { tools } from '../tool/toolCapabilities.js';
 
 
 /**
@@ -84,7 +85,7 @@ export async function open(paths, ownerID) {
     }
 
     // Archive, append extracted files from the temporary directory
-    else if (type === 'archive') {
+    else if (type === 'archive' && tools.canExtract) {
       const tmpDir = await TemporaryFolders.leaseArchive(path, ownerID);
 
       if (tmpDir !== '') {

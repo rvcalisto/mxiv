@@ -27,8 +27,8 @@ MXIV is a keyboard-oriented media viewer intended to navigate heterogeneous gall
 ## Runtime Dependencies
 
 - [**Electron**][1] - Application framework
-- [**7z**][2] - To temporarily extract and view archived media files
-- [**ImageMagick**][4] - To generate thumbnails for media folders & archives in library
+- [**7z**][2] - To temporarily extract and view archived media files *( optional )*
+- [**ImageMagick**][4] - To generate thumbnails for media folders & archives in library *( optional )*
 - [**Font Awesome**][5] - Icon Fonts **( included )** 
 
 ## Usage
@@ -53,7 +53,7 @@ However, if you **already** have [**Electron**][1] installed **or want to packag
 electron "<path to your extracted mxiv archive>" 
 ```
  -->
-> Regardless of method, make sure [7z][2] and [magick][4] binaries are **available from your [PATH][6]** to use their features, as they're not redistributed within the packages.
+> Regardless of method, make sure [7z][2] and [magick][4] binaries are **available from your [PATH][6]** **if** you want to use their features, as they're not redistributed within the packages.
 
 ## Repository Setup
 
