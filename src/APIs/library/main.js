@@ -1,7 +1,9 @@
 // @ts-check
-import * as utils from './mainUtils.js';
+import * as utils from './thumbnailService.js';
 import { libraryStorage } from './libraryStorage.js';
 import { createThumbnailMultiThreaded } from './thumbnailWorker.js';
+import { listFiles } from '../file/fileSearch.js';
+import { fileType } from '../file/fileTools.js';
 import { tools } from '../tool/toolCapabilities.js';
 
 
@@ -10,6 +12,10 @@ import { tools } from '../tool/toolCapabilities.js';
  * @property {number} total Items to process.
  * @property {number} current Current item count.
  * @property {string} newPath Latest path added.
+ */
+
+/**
+ * @typedef {import('../tool/toolCapabilities.js').ToolCapabilities} ToolCapabilities
  */
 
 
@@ -30,7 +36,7 @@ export async function addToLibrary(senderWin, folderPath, recursively = true) {
   
   // map folder and filter-out ineligible paths
   const depth = recursively ? Infinity : 1;
-  const candidates = await utils.getCandidates(folderPath, tools, depth);
+  const candidates = await getCandidates(folderPath, tools, depth);
   let entriesAdded = 0;
   
   await libraryStorage.write(async db => {
@@ -102,4 +108,36 @@ export async function clearLibrary() {
     libraryStorage.write(state => state.clear() )
 
   return success
+}
+
+/**
+ * Return library folder/archive candidates.
+ * @param {String} folderPath Path to folder to be mapped recursively.
+ * @param {ToolCapabilities} tools Tool capabilities.
+ * @param {Number} depth How many levels to recurse. Defaults to `Infinity`.
+ * @param {String[]} mappedPaths Used internally on recursive calls.
+ * @returns {Promise<String[]>} Mapped paths.
+ */
+async function getCandidates(folderPath, tools, depth = Infinity, mappedPaths = []) {
+  const ls = await listFiles(folderPath);
+  
+  // add archives
+  if (tools.canExtract) {
+    if ( fileType(folderPath) === 'archive' )
+      mappedPaths.push(folderPath);
+    
+    for (const archive of ls.archives)
+      mappedPaths.push(archive.path);
+  }
+  
+  // path has viewable files, add absolute path
+  if (ls.files.length)
+    mappedPaths.push(ls.target.path);
+  
+  // process subfolders recursively
+  if (depth-- > 0)
+    for (const dir of ls.directories)
+      await getCandidates(dir.path, tools, depth, mappedPaths);
+  
+  return mappedPaths;
 }

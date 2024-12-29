@@ -1,5 +1,5 @@
 import { Worker, workerData, parentPort, isMainThread } from 'worker_threads'
-import { createThumbnail } from './mainUtils.js'
+import { createThumbnail } from './thumbnailService.js'
 
 
 /**
@@ -10,7 +10,7 @@ import { createThumbnail } from './mainUtils.js'
  */
 
 /**
- * @typedef {import('./mainUtils.js').ToolCapabilities} ToolCapabilities
+ * @typedef {import('../tool/toolCapabilities.js').ToolCapabilities} ToolCapabilities
  */
 
 
