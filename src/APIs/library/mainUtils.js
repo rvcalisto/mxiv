@@ -1,3 +1,4 @@
+// @ts-check
 import fs from 'fs';
 import p from 'path';
 import { listFiles } from '../file/fileSearch.js'
@@ -9,30 +10,23 @@ import { libraryCoverDirectory } from '../tool/appPaths.js';
 
 
 /**
- * Extract tool present. I promise we'll know, eventually.
- * @type {boolean|Promise<boolean>}
+ * @typedef {import('../tool/toolCapabilities.js').ToolCapabilities} ToolCapabilities
  */
-let canExtract = archiveTool.hasTool().then(value => canExtract = value)
-
-/**
- * Thumbnail tool present. I promise we'll know, eventually.
- * @type {boolean|Promise<boolean>}
- */
-let canThumbnail = thumbnailTool.hasTool().then(value => canThumbnail = value)
 
 
 /**
  * Return library folder/archive candidates.
  * @param {String} folderPath Path to folder to be mapped recursively.
+ * @param {ToolCapabilities} tools Tool capabilities.
  * @param {Number} depth How many levels to recurse. Defaults to `Infinity`.
  * @param {String[]} mappedPaths Used internally on recursive calls.
  * @returns {Promise<String[]>} Mapped paths.
  */
-export async function getCandidates(folderPath, depth = Infinity, mappedPaths = []) {
+export async function getCandidates(folderPath, tools, depth = Infinity, mappedPaths = []) {
   const ls = await listFiles(folderPath)
 
   // add archives
-  if (canExtract) {
+  if (tools.canExtract) {
     if ( fileType(folderPath) === 'archive' )
       mappedPaths.push(folderPath)
 
@@ -47,7 +41,7 @@ export async function getCandidates(folderPath, depth = Infinity, mappedPaths = 
   // process subfolders recursively
   if (depth-- > 0)
     for (const dir of ls.directories) 
-      await getCandidates(dir.path, depth, mappedPaths)
+      await getCandidates(dir.path, tools, depth, mappedPaths)
   
   return mappedPaths
 }
@@ -88,12 +82,13 @@ export async function deleteThumbnailDirectory() {
  * Create thumbnail from file. Returns thumbnail path.
  * - Use `id` on concurrent threads to prevent overwrites
  *   when extracting archive files. (ex: 01.jpg)
- * @param {String} path Folder/archive path.
+ * @param {string} path Folder/archive path.
+ * @param {ToolCapabilities} tools Tool capabilities.
  * @param {number} [id=0] Extraction folder name, used by threads.
  * @returns {Promise<string?>} Path to generated thumbnail.
  */
-export async function createThumbnail(path, id = 0) {
-  if (!canThumbnail)
+export async function createThumbnail(path, tools, id = 0) {
+  if (!tools.canThumbnail)
     return null
   else if ( fileType(path) === 'archive' )
     return await coverFromArchive(path, id)

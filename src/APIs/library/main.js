@@ -1,6 +1,8 @@
+// @ts-check
 import * as utils from './mainUtils.js';
 import { libraryStorage } from './libraryStorage.js';
 import { createThumbnailMultiThreaded } from './thumbnailWorker.js';
+import { tools } from '../tool/toolCapabilities.js';
 
 
 /**
@@ -28,14 +30,14 @@ export async function addToLibrary(senderWin, folderPath, recursively = true) {
   
   // map folder and filter-out ineligible paths
   const depth = recursively ? Infinity : 1;
-  const candidates = await utils.getCandidates(folderPath, depth);
+  const candidates = await utils.getCandidates(folderPath, tools, depth);
   let entriesAdded = 0;
   
   await libraryStorage.write(async db => {
     // filter out already cataloged paths
     const newCandidates = candidates.filter( path => !db.has(path) );
 
-    await createThumbnailMultiThreaded(newCandidates, (value) => {
+    await createThumbnailMultiThreaded(newCandidates, tools, (value) => {
       db.setFromCover(value.path, value.thumbnail);
     
       /** @type {LibraryProgress} */
@@ -101,6 +103,3 @@ export async function clearLibrary() {
 
   return success
 }
-
-
-// TODO: procedure to clean orphaned entries on sync (end of addToLibrary)

@@ -2,10 +2,6 @@ import { Worker, workerData, parentPort, isMainThread } from 'worker_threads'
 import { createThumbnail } from './mainUtils.js'
 
 
-if (!isMainThread)
-  processThumbnails()
-
-
 /**
  * Thumbnail worker thread message on successful iteration.
  * @typedef ThumbnailWorkerMessage
@@ -14,12 +10,22 @@ if (!isMainThread)
  */
 
 /**
+ * @typedef {import('./mainUtils.js').ToolCapabilities} ToolCapabilities
+ */
+
+
+if (!isMainThread)
+  processThumbnails()
+
+
+/**
  * Create thumbnails with worker threads.
  * @param {String[]} files Path array to thumbnail, split between threads.
- * @param {((value:ThumbnailWorkerMessage)=>void)} callback Callback to run on thread message.
+ * @param {ToolCapabilities} tools Tool capabilities.
+ * @param {(value:ThumbnailWorkerMessage)=>void} callback Callback to run on thread message.
  * @param {Number} [threads=2] Threads to use. 2 by default. 
  */
-export async function createThumbnailMultiThreaded(files, callback, threads = 2) {
+export async function createThumbnailMultiThreaded(files, tools, callback, threads = 2) {
   const part = Math.ceil(files.length / threads)
   const taskPromises = []
 
@@ -28,9 +34,9 @@ export async function createThumbnailMultiThreaded(files, callback, threads = 2)
     if (slice.length < 1) continue
 
     taskPromises.push(new Promise(resolve => {
-      new Worker(import.meta.filename, { workerData: { id: i, files: slice } })
+      new Worker(import.meta.filename, { workerData: { id: i, files: slice, tools: tools } })
         .on('message', callback)
-        .on('exit', () => { resolve() })
+        .on('exit', () => { resolve(undefined) })
     }))
   }
 
@@ -42,10 +48,10 @@ export async function createThumbnailMultiThreaded(files, callback, threads = 2)
  * - Extract to exclusive sub-folder, avoid mistaking other thread resources under same name.
  */
 async function processThumbnails() {
-  const { id, files } = workerData
+  const { id, files, tools } = workerData
 
   for (const filepath of files) {
-    const thumbnail = await createThumbnail(filepath, id)
+    const thumbnail = await createThumbnail(filepath, tools, id)
 
     parentPort.postMessage({
       path: filepath,
