@@ -985,7 +985,7 @@
           align-items: center;
           padding: 0.5em 1.5em;
           color: silver;
-          justify-content: space-between;
+          gap: .5em;
           border-radius: .4em .4em 0 0;
         }
         
@@ -1017,6 +1017,10 @@
               margin-left: auto;
               width: fit-content;
               overflow-wrap: break-word;
+              
+              &:hover, :hover {
+                cursor: pointer;
+              }
             }
             
             input[type="checkbox"] {
@@ -1055,8 +1059,9 @@
       <div class="overlay" style="display: none; opacity: 0;">
         <div id="watchListPanel">
           <div id="folderListHeader">
-            <p>Watchlist</p>
+            <p style="margin-right: auto;">Watchlist</p>
             <button id="addToWatch" icon="addfolder" title="add folder"></button>
+            <button id="closeWatchlist" icon="close" title="close watchlist"></button>
           </div>
           <div id="folderList"></div>
         </div>

@@ -34,13 +34,13 @@ export class WatchlistPanel {
    */
   constructor(library) {
     this.#componentRoot = /** @type {ShadowRoot} */ (library.shadowRoot);
-    this.#overlay = library.shadowRoot.getElementById('wrapper')?.querySelector('.overlay');
+    this.#overlay = library.shadowRoot.querySelector('#wrapper .overlay');
     this.#initEvents();
   }
 
   /**
    * Returns either watch list panel is visibile.
-   * @type {Boolean}
+   * @type {boolean}
    */
   get isVisible() {
     return this.#overlay.style.display == '';
@@ -56,7 +56,7 @@ export class WatchlistPanel {
 
   /**
    * Add a new watchlist item.
-   * @param {String} path Watchlist item path.
+   * @param {string} path Watchlist item path.
    * @param {boolean} [recursive=true] Also sync child directories.
    */
   addItem(path, recursive = true) {
@@ -65,13 +65,13 @@ export class WatchlistPanel {
       'recursive': recursive
     });
     
-    console.log(`added ${path} to watchlist`);
+    console.log(`added "${path}" to watchlist`);
   }
 
   /**
    * Update recursion option for watchlist item.
-   * @param {String} path Watchlist item path.
-   * @param {Boolean} recursive New recursive value.
+   * @param {string} path Watchlist item path.
+   * @param {boolean} recursive New recursive value.
    */
   setRecursion(path, recursive) {
     const watchItem = this.#storage.get(path);
@@ -84,15 +84,15 @@ export class WatchlistPanel {
 
   /**
    * Remove watchlist item from watchlist.
-   * @param {String} path Watchlist item path.
+   * @param {string} path Watchlist item path.
    */
   removeItem(path) {
     const watchItem = this.#storage.get(path);
     if (!watchItem)
-      return AppNotifier.notify(`no ${path} in watchlist to remove`);
+      return AppNotifier.notify(`no "${path}" in watchlist to remove`);
 
     this.#storage.delete(path);
-    console.log(`removed ${path} from watchlist`);
+    console.log(`removed "${path}" from watchlist`);
   }
 
   /**
@@ -131,11 +131,12 @@ export class WatchlistPanel {
 
   /**
    * Toggle watch list visibilty.
-   * @param {Boolean} show Either to force visibilit on or off.
-   * @param {Number} duration Animation duration in ms.
+   * @param {boolean} show Either to force visibilit on or off.
+   * @param {number} duration Animation duration in ms.
    */
   toggleVisibility(show = !this.isVisible, duration = 150) {
-    if (show) this.#drawList();
+    if (show)
+      this.#drawList();
 
     this.#overlay.style.display = '';
     this.#overlay.animate([
@@ -152,8 +153,8 @@ export class WatchlistPanel {
   #initEvents() {
     // exit folder management
     this.#overlay.onclick = (e) => {
-      if (e.target != this.#overlay) return;
-      this.toggleVisibility(false);
+      if (e.target == this.#overlay)
+        this.toggleVisibility(false);
     };
 
     // add new folder to watchlist, open dialog
@@ -171,5 +172,8 @@ export class WatchlistPanel {
         this.#drawList();
       }
     };
+
+    const closeBtn = this.#componentRoot.getElementById('closeWatchlist');
+    closeBtn.onclick = () => this.toggleVisibility(false);
   }
 }
