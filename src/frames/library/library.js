@@ -9,6 +9,11 @@ import "./libraryAccelerators.js"
 
 
 /**
+ * @typedef {import('../../APIs/library/main.js').LibraryUpdate} LibraryUpdate
+ */
+
+
+/**
  * Composed book and archive library.
  */
 export class Library extends GenericFrame {
@@ -23,6 +28,11 @@ export class Library extends GenericFrame {
    * @type {ProgressNotifier}
    */
   #progressNotifier;
+  
+  /**
+   * Task status descriptor.
+   */
+  #taskStatus = '';
 
   /**
    * @type {WatchlistPanel}
@@ -36,15 +46,32 @@ export class Library extends GenericFrame {
 
   // setup library progress listener
   static {
-    elecAPI.onLibraryNew(function onNewBook(e, infoObj) {
+    elecAPI.onLibraryNew(async function handleUpdate(_e, /** @type {LibraryUpdate} */ msg) {
       const library = Library.#singleInstanceRef;
     
-      if (library != null) {
-        const { current, total, newPath } = infoObj;
-        library.#progressNotifier.updateLabel(newPath);
+      if (library == null)
+        return;
+
+      const { current, total, value } = msg;
+
+      if (msg.task === 'scan') {
+        library.#progressNotifier.updateLabel(value);
         library.#progressNotifier.updateBar(current, total);
+      } else {
+        library.coverGrid.updateCover(value.key, value.entry);
+        library.#taskStatus = `Generating thumbnails [${current}/${total}]`;
+        library.refreshStatus();
+        
+        if (current === total) {
+          console.timeEnd('generateThumbnails');
+          library.#taskStatus = '';
+          library.refreshStatus();
+
+          library.hold(false);
+          await elecAPI.releaseLock('library');
+        }
       }
-    })
+    });
   }
 
   connectedCallback() {
@@ -86,7 +113,7 @@ export class Library extends GenericFrame {
     
     return {
       title: 'Library',
-      infoLeft: 'Library',
+      infoLeft: this.#taskStatus || 'Library',
       infoRight: `${itemsPerPage} @ ${coverSize} [${itemCount}]`,
       infoLeftFunc: null
     }
@@ -96,68 +123,71 @@ export class Library extends GenericFrame {
    * Sync library to watchlist, update covers.
    */
   async syncToWatchlist() {
-    const watchItems = this.watchlistPanel.getItems()
-    if (watchItems.length < 1) return
+    const watchItems = this.watchlistPanel.getItems();
 
-    if ( !await elecAPI.requestLock('library') ) return
-    
+    if ( watchItems.length > 0 && !await elecAPI.requestLock('library') )
+      return;
+
     // prevent closing window while async population happens
-    this.hold(true)
-    this.#progressNotifier.toggleVisibility(true)
+    this.hold(true);
+    this.#progressNotifier.toggleVisibility(true);
 
-    console.time(`syncToWatchlist`)
-    
-    let addedPaths = 0
-    for (const item of watchItems) {
-      console.log('sync ' + item.path)
-      addedPaths += await elecAPI.addToLibrary(item.path, item.recursive)
+    console.time(`syncToWatchlist`);
+    let addedPaths = await elecAPI.addToLibrary(watchItems);
+    console.timeEnd(`syncToWatchlist`);
+
+    AppNotifier.notify(`${addedPaths} new book(s) added`, 'syncToWatchlist');
+    this.#progressNotifier.toggleVisibility(false);
+
+    // reload entries & keep locked for thumbnails, leave otherwise
+    if (addedPaths > 0) {
+      this.coverGrid.reloadCovers();
+      console.time('generateThumbnails');
+    } else {
+      this.hold(false);
+      await elecAPI.releaseLock('library');
     }
-
-    console.timeEnd(`syncToWatchlist`)
-    
-    // hide ProgressNotifier, allow to close window again
-    AppNotifier.notify(`${addedPaths} new book(s) added`, 'syncToWatchlist')
-    this.#progressNotifier.toggleVisibility(false)
-    this.coverGrid.reloadCovers()
-    this.hold(false)
-
-    await elecAPI.releaseLock('library')
   }
 
   /**
-   * Add files to library, skip watchlist. 
+   * Add files to library. Not recursive. 
    * - Spawns file-dialog window if no files are given.
-   * @param {String[]} [files] Filepaths to add to library
+   * @param {string[]} [files] Filepaths to add to library
    */
   async addToLibrary(...files) {
-    if ( !await elecAPI.requestLock('library') ) return
+    if ( !await elecAPI.requestLock('library') )
+      return;
 
     if (files.length < 1) {
       files = await elecAPI.dialog({
         title: "Add Folder to Library",
         properties: ['openDirectory'],
         buttonLabel: "Add Selected"
-      })
+      });
     }
 
     if (files != null && files.length > 0) {
       // prevent closing window while async population happens
-      this.hold(true)
-      this.#progressNotifier.toggleVisibility(true)
+      this.hold(true);
+      this.#progressNotifier.toggleVisibility(true);
 
-      let addedPaths = 0
-      for (const file of files) {
-        console.log(`adding ${file} to library`)
-        addedPaths += await elecAPI.addToLibrary(file, false) // non-recursive
+      console.time(`addToLibrary`);
+      const items = files.map(file => ({ path: file, recursive: false }));
+      let addedPaths = await elecAPI.addToLibrary(items);
+      console.timeEnd(`addToLibrary`);
+
+      this.#progressNotifier.toggleVisibility(false);
+      AppNotifier.notify(`${addedPaths} new book(s) added`, 'addToLibrary');
+      
+      // reload entries & keep locked for thumbnails, leave otherwise
+      if (addedPaths > 0) {
+        this.coverGrid.reloadCovers();
+        console.time('generateThumbnails');
+      } else {
+        this.hold(false);
+        await elecAPI.releaseLock('library');
       }
-
-      AppNotifier.notify(`${addedPaths} new book(s) added`, 'addToLibrary')
-      this.#progressNotifier.toggleVisibility(false)
-      this.coverGrid.reloadCovers()
-      this.hold(false)
     }
-
-    await elecAPI.releaseLock('library')
   }
 
   #initEvents() {

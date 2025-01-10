@@ -31,6 +31,12 @@ export class CoverGrid {
    * Either library entry cache needs to be rebuilt on next draw.
    */
   static #dirtyCache = true
+  
+  /**
+   * Tracks rendered elements for live thumbnail updates.
+   * @type {Map<string, Cover>}
+   */
+  static #drawnCovers = new Map();
 
   /**
    * Last known cover selection.
@@ -68,6 +74,25 @@ export class CoverGrid {
   }
   
   /**
+   * Update cover entry in place.
+   * @param {string} key
+   * @param {LibraryEntry} entry
+   */
+  updateCover(key, entry) {
+    const cacheItem = CoverGrid.#libraryCache
+      .find(item => item.path === key);
+
+    if (cacheItem != null) {
+      cacheItem.coverPath = entry.coverPath;
+      cacheItem.coverURL = entry.coverURL;
+      
+      const element = CoverGrid.#drawnCovers.get(key);
+      if (element != null)
+        element.style.backgroundImage = `url(${entry.coverURL})`;
+    }
+  }
+  
+  /**
    * Set how many items to display per page. Reload covers.
    * @param {number} count
    */
@@ -92,36 +117,40 @@ export class CoverGrid {
 
   /**
    * Draw covers whose path or tags includes query. Draws all if not given.
-   * @param {String[]} [queries] Filter covers.
+   * @param {string[]} [queries] Filter covers.
    */
   async drawCovers(queries) {
-    if (CoverGrid.#dirtyCache) await this.#buildCache()
+    if (CoverGrid.#dirtyCache)
+      await this.#buildCache();
 
     // all queries must match either path or a tag. Exclusive.
     const filterFunc = !queries ? undefined : (file) => matchNameOrTags(file, queries);
 
-    // console.time('populate library')
+    CoverGrid.#drawnCovers.clear();
+    
     this.#list.populate(CoverGrid.#libraryCache, (entry) => {
-      const cover = Cover.from(entry)
-      
-      cover.onclick = () => this.selectCover(cover)
-      cover.onauxclick = () => this.selectCover(cover, true)
-      cover.onClickRemove = () => this.removeCover(cover)
+      const cover = Cover.from(entry);
 
-      return cover
-    }, filterFunc)
-    // console.timeEnd('populate library')
+      cover.onclick = () => this.selectCover(cover);
+      cover.onauxclick = () => this.selectCover(cover, true);
+      cover.onClickRemove = () => this.removeCover(cover);
+
+      CoverGrid.#drawnCovers.set(entry.path, cover);
+
+      return cover;
+    }, filterFunc);
 
     // recover last selection
     const lastPath = GeneralState.librarySelection;
-    if (lastPath) {
+    if (lastPath !== '') {
       const cover = this.#list
-        .findItemElement(item => item.path === lastPath)
+        .findItemElement(item => item.path === lastPath);
       
-      if (cover) this.selectCover(cover)
+      if (cover != null)
+        this.selectCover(cover);
     }
 
-    this.events.fire('grid:coverUpdate')
+    this.events.fire('grid:coverUpdate');
   }
 
   /**
@@ -228,7 +257,7 @@ export class CoverGrid {
    */
   randomCover() {
     const rndIdx = Math.floor( Math.random() * this.#list.itemCount )
-    const cover = this.#list.findItemElement( (item, idx) => idx === rndIdx )
+    const cover = this.#list.findItemElement( (_item, idx) => idx === rndIdx )
 
     if (cover != null)
       this.selectCover(cover)

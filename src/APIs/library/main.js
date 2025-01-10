@@ -8,59 +8,64 @@ import { tools } from '../tool/toolCapabilities.js';
 
 
 /**
- * @typedef LibraryProgress
- * @property {number} total Items to process.
- * @property {number} current Current item count.
- * @property {string} newPath Latest path added.
+ * @typedef {import('../tool/toolCapabilities.js').ToolCapabilities} ToolCapabilities
  */
 
 /**
- * @typedef {import('../tool/toolCapabilities.js').ToolCapabilities} ToolCapabilities
+ * @typedef {import('./libraryStorage.js').LibraryEntry} LibraryEntry
+ */
+
+/**
+ * @typedef LibraryUpdate
+ * @property {'scan'|'thumbnail'} task Current task in process.
+ * @property {number} total Items to process.
+ * @property {number} current Current item count.
+ * @property {string|{key: string, entry: LibraryEntry}} value Latest path added.
  */
 
 
 /**
  * Store archive or folder recursively.
  * @param {Electron.WebContents} senderWin Electron sender window.
- * @param {String} folderPath Folder/archive path to add.
- * @param {true} recursively Either to evaluate subfolders recursively.
- * @returns {Promise<Number>} New paths added.
+ * @param {{path: string, recursive: boolean}[]} folderItems Folder/archive path to add.
+ * @returns {Promise<number>} New paths added.
  */
-export async function addToLibrary(senderWin, folderPath, recursively = true) {
+export async function addToLibrary(senderWin, folderItems) {
+  let candidates = [];
 
-  // check cover directory, try creating if not found
-  if ( !await utils.createThumbnailDirectory() ) {
-    console.error('MXIV::ERROR: Couldn\'t create thumbnail directory')
-    return 0
+  for (const folder of folderItems) {
+    const folders = await getCandidates(folder.path, tools, folder.recursive ? Infinity : 1);
+    candidates.push(...folders);
   }
   
-  // map folder and filter-out ineligible paths
-  const depth = recursively ? Infinity : 1;
-  const candidates = await getCandidates(folderPath, tools, depth);
-  let entriesAdded = 0;
+  const addedEntries = /** @type {string[]} */ ([]);
+  let total = candidates.length;
   
   await libraryStorage.write(async db => {
-    // filter out already cataloged paths
-    const newCandidates = candidates.filter( path => !db.has(path) );
+    candidates.forEach(path => {
+      if ( db.has(path) )
+        total--;
+      else {
+        db.setFromCover(path, null);
+        addedEntries.push(path);
 
-    await createThumbnailMultiThreaded(newCandidates, tools, (value) => {
-      db.setFromCover(value.path, value.thumbnail);
-    
-      /** @type {LibraryProgress} */
-      const progress = {
-        total: newCandidates.length,
-        current: ++entriesAdded,
-        newPath: value.path
-      };
-  
-      senderWin.send('library:new', progress);
-    }, 2);
+        senderWin.send('library:new', /** @type {LibraryUpdate} */ ({
+          task: 'scan',
+          total: total,
+          current: addedEntries.length,
+          value: path
+        }));
+      }
+    });
 
-    if (entriesAdded < 1)
+    if (addedEntries.length < 1)
       throw 'rollback';
   });
 
-  return entriesAdded;
+  if (addedEntries.length > 0)
+    updateThumbnails(senderWin, addedEntries);
+
+  return addedEntries.length;
 }
 
 /**
@@ -74,7 +79,7 @@ export async function getLibraryEntries() {
 
 /**
  * Remove a library entry and delete cover thumbnail from cache.
- * @param {String} path Library object key. Path to stored book.
+ * @param {string} path Library object key. Path to stored book.
  * @returns {Promise<boolean>} Success.
  */
 export async function removeFromLibrary(path) {
@@ -112,10 +117,10 @@ export async function clearLibrary() {
 
 /**
  * Return library folder/archive candidates.
- * @param {String} folderPath Path to folder to be mapped recursively.
+ * @param {string} folderPath Path to folder to be mapped recursively.
  * @param {ToolCapabilities} tools Tool capabilities.
- * @param {Number} depth How many levels to recurse. Defaults to `Infinity`.
- * @param {String[]} mappedPaths Used internally on recursive calls.
+ * @param {number} depth How many levels to recurse. Defaults to `Infinity`.
+ * @param {string[]} mappedPaths Used internally on recursive calls.
  * @returns {Promise<String[]>} Mapped paths.
  */
 async function getCandidates(folderPath, tools, depth = Infinity, mappedPaths = []) {
@@ -140,4 +145,35 @@ async function getCandidates(folderPath, tools, depth = Infinity, mappedPaths = 
       await getCandidates(dir.path, tools, depth, mappedPaths);
   
   return mappedPaths;
+}
+
+/**
+ * Generate and update entry thumbnails in the background.
+ * @param {Electron.WebContents} senderWin Electron sender window.
+ * @param {string[]} paths
+ */
+async function updateThumbnails(senderWin, paths) {
+  let generatedThumbnails = 0;
+  
+  // check cover directory, try creating if not found
+  if ( !await utils.createThumbnailDirectory() ) {
+    console.error('MXIV::ERROR: Couldn\'t create thumbnail directory');
+    return;
+  }
+
+  await libraryStorage.write(async db => {
+    await createThumbnailMultiThreaded(paths, tools, (value) => {
+      db.setFromCover(value.path, value.thumbnail);
+      
+      senderWin.send('library:new', /** @type {LibraryUpdate} */ ({
+        task: 'thumbnail',
+        current: ++generatedThumbnails,
+        total: paths.length,
+        value: {
+          key: value.path,
+          entry: db.get(value.path)
+        }
+      }));
+    }, 2);
+  });
 }
