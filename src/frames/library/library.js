@@ -1,7 +1,6 @@
 import { GenericFrame } from "../genericFrame.js"
 import { CoverGrid } from "./coverGrid.js"
 import { WatchlistPanel } from "./watchlistPanel.js"
-import { ProgressNotifier } from "./progressNotifier.js"
 import { AppNotifier } from "../../components/notifier.js"
 
 import "./libraryActions.js"
@@ -23,11 +22,6 @@ export class Library extends GenericFrame {
    * @type {Library?}
    */
   static #singleInstanceRef = null;
-
-  /**
-   * @type {ProgressNotifier}
-   */
-  #progressNotifier;
   
   /**
    * Task status descriptor.
@@ -55,8 +49,13 @@ export class Library extends GenericFrame {
       const { current, total, value } = msg;
 
       if (msg.task === 'scan') {
-        library.#progressNotifier.updateLabel(value);
-        library.#progressNotifier.updateBar(current, total);
+        library.#taskStatus = `Sync watchlist [${current}/${total}]`;
+        library.refreshStatus();
+        
+        if (current === total) {
+          library.#taskStatus = '';
+          library.refreshStatus();
+        }
       } else {
         library.coverGrid.updateCover(value.key, value.entry);
         library.#taskStatus = `Generating thumbnails [${current}/${total}]`;
@@ -79,9 +78,7 @@ export class Library extends GenericFrame {
     this.attachShadow({ mode: 'open' })
     this.shadowRoot.append( fragment.cloneNode(true) )
 
-    const wrapper = this.shadowRoot.getElementById('wrapper')
     const list = this.shadowRoot.getElementById('library')
-    this.#progressNotifier = new ProgressNotifier(wrapper)
     this.watchlistPanel = new WatchlistPanel(this)
     this.coverGrid = new CoverGrid(list)
 
@@ -130,14 +127,12 @@ export class Library extends GenericFrame {
 
     // prevent closing window while async population happens
     this.hold(true);
-    this.#progressNotifier.toggleVisibility(true);
 
     console.time(`syncToWatchlist`);
     let addedPaths = await elecAPI.addToLibrary(watchItems);
     console.timeEnd(`syncToWatchlist`);
 
     AppNotifier.notify(`${addedPaths} new book(s) added`, 'syncToWatchlist');
-    this.#progressNotifier.toggleVisibility(false);
 
     // reload entries & keep locked for thumbnails, leave otherwise
     if (addedPaths > 0) {
@@ -169,14 +164,12 @@ export class Library extends GenericFrame {
     if (files != null && files.length > 0) {
       // prevent closing window while async population happens
       this.hold(true);
-      this.#progressNotifier.toggleVisibility(true);
 
       console.time(`addToLibrary`);
       const items = files.map(file => ({ path: file, recursive: false }));
       let addedPaths = await elecAPI.addToLibrary(items);
       console.timeEnd(`addToLibrary`);
 
-      this.#progressNotifier.toggleVisibility(false);
       AppNotifier.notify(`${addedPaths} new book(s) added`, 'addToLibrary');
       
       // reload entries & keep locked for thumbnails, leave otherwise
