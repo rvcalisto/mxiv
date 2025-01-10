@@ -4,7 +4,7 @@ import p from 'path';
 import { fileType } from '../file/fileTools.js';
 import * as archiveTool from '../tool/archive.js';
 import * as thumbnailTool from '../tool/thumbnail.js';
-import { randomUUID } from 'crypto';
+import { hash } from 'crypto';
 import { libraryCoverDirectory } from '../tool/appPaths.js';
 
 
@@ -115,9 +115,9 @@ async function coverFromDirectory(path) {
   if (coverBasename == null)
     return null;
 
-  // generate cover as UUID.jpg
+  // generate cover as md5(filepath).jpg
   const coverSource = p.join(path, coverBasename);
-  const coverTarget = p.join(libraryCoverDirectory, `${randomUUID()}.jpg`);
+  const coverTarget = p.join(libraryCoverDirectory, `${hash('md5', path)}.jpg`);
   const thumbnailOK = await thumbnailTool.generateThumbnail(coverSource, coverTarget);
 
   return coverTarget;
@@ -142,10 +142,10 @@ async function coverFromArchive(path, id = 0) {
   if (coverBasename == null)
     return null;
 
-  // extract file and generate cover as UUID.jpg, remove extracted file after
+  // extract file and generate cover as md5(filepath).jpg, remove extracted file after
   const extractionFolder = p.join( libraryCoverDirectory, String(id) );
   const coverSource = await archiveTool.extractOnly(coverBasename, path, extractionFolder);
-  const coverTarget = p.join(libraryCoverDirectory, `${randomUUID()}.jpg`);
+  const coverTarget = p.join(libraryCoverDirectory, `${hash('md5', path)}.jpg`);
   const thumbnailOK = await thumbnailTool.generateThumbnail(coverSource, coverTarget);
   fs.rmSync(coverSource);
   
