@@ -5,6 +5,7 @@ import { createThumbnailMultiThreaded } from './thumbnailWorker.js';
 import { listFiles } from '../file/fileSearch.js';
 import { fileType } from '../file/fileTools.js';
 import { tools } from '../tool/toolCapabilities.js';
+import { availableParallelism } from 'os';
 
 
 /**
@@ -174,6 +175,6 @@ async function updateThumbnails(senderWin, paths) {
           entry: db.get(value.path)
         }
       }));
-    }, 2);
+    }, Math.ceil( availableParallelism() / 2 ) ); // match cores
   });
 }
