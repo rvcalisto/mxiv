@@ -21,7 +21,7 @@ import { availableParallelism } from 'os';
  * @property {'scan'|'thumbnail'} task Current task in process.
  * @property {number} total Items to process.
  * @property {number} current Current item count.
- * @property {string|{key: string, entry: LibraryEntry}} value Latest path added.
+ * @property {{key: string, entry: LibraryEntry}[]} [entries] Last updated entries.
  */
 
 
@@ -48,6 +48,15 @@ export async function addToLibrary(senderWin, folderItems) {
   
   const addedEntries = [];
   let total = candidates.length;
+
+  const sendUpdate = () => senderWin.send('library:new', /** @type {LibraryUpdate} */ ({
+    task: 'scan',
+    total: total,
+    current: addedEntries.length
+  }));
+
+  const interval = setInterval(sendUpdate, 250);
+  sendUpdate();
   
   await libraryStorage.write(async db => {
     candidates.forEach(path => {
@@ -56,13 +65,6 @@ export async function addToLibrary(senderWin, folderItems) {
       else {
         db.setFromCover(path, null);
         addedEntries.push(path);
-
-        senderWin.send('library:new', /** @type {LibraryUpdate} */ ({
-          task: 'scan',
-          total: total,
-          current: addedEntries.length,
-          value: path
-        }));
       }
     });
 
@@ -71,6 +73,9 @@ export async function addToLibrary(senderWin, folderItems) {
     else
       throw 'rollback';
   });
+
+  clearInterval(interval);
+  sendUpdate();
 
   return addedEntries.length;
 }
@@ -166,22 +171,31 @@ export async function updateThumbnails(senderWin) {
     console.error('MXIV::ERROR: Couldn\'t create thumbnail directory');
     return;
   }
-  
+
+  const pool = /** @type {{key: string, entry: LibraryEntry}[]} */ ([]);
+  const sendUpdate = () => senderWin.send('library:new', /** @type {LibraryUpdate} */ ({
+    task: 'thumbnail',
+    total: pendingThumbnails.length,
+    current: generatedThumbnails,
+    entries: pool.slice(0, pool.length) // consume pool
+  }));
+
+  const interval = setInterval(sendUpdate, 250);
+  sendUpdate();
+
   await libraryStorage.write(async db => {
     await createThumbnailMultiThreaded(pendingThumbnails, tools, (value) => {
       db.setFromCover(value.path, value.thumbnail);
+      generatedThumbnails++;
       
-      senderWin.send('library:new', /** @type {LibraryUpdate} */ ({
-        task: 'thumbnail',
-        total: pendingThumbnails.length,
-        current: ++generatedThumbnails,
-        value: {
-          key: value.path,
-          entry: db.get(value.path)
-        }
-      }));
+      pool.push({
+        key: value.path,
+        entry: /** @type {LibraryEntry} */ (db.get(value.path))
+      });
     }, Math.ceil( availableParallelism() / 2 ) ); // match cores
   });
 
+  clearInterval(interval);
+  sendUpdate();
   pendingThumbnails = [];
 }

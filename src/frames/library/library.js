@@ -46,12 +46,12 @@ export class Library extends GenericFrame {
       if (library == null)
         return;
 
-      const { current, total, value } = msg;
+      const { current, total, entries } = msg;
 
       if (msg.task === 'scan')
         library.#taskStatus = `Sync watchlist [${current}/${total}]`;
       else {
-        library.coverGrid.updateCover(value.key, value.entry);
+        library.coverGrid.updateCovers(entries);
         library.#taskStatus = `Generating thumbnails [${current}/${total}]`;
       }
 

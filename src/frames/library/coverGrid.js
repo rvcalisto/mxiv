@@ -75,21 +75,22 @@ export class CoverGrid {
   
   /**
    * Update cover entry in place.
-   * @param {string} key
-   * @param {LibraryEntry} entry
+   * @param {{key: string, entry: LibraryEntry}[]} entries
    */
-  updateCover(key, entry) {
-    const cacheItem = CoverGrid.#libraryCache
-      .find(item => item.path === key);
+  updateCovers(entries) {
+    entries.forEach(({ key, entry }) => {
+      const cacheItem = CoverGrid.#libraryCache
+        .find(cacheItem => cacheItem.path === key);
 
-    if (cacheItem != null) {
-      cacheItem.coverPath = entry.coverPath;
-      cacheItem.coverURL = entry.coverURL;
-      
-      const element = CoverGrid.#drawnCovers.get(key);
-      if (element != null)
-        element.style.backgroundImage = `url(${entry.coverURL})`;
-    }
+      if (cacheItem != null) {
+        cacheItem.coverPath = entry.coverPath;
+        cacheItem.coverURL = entry.coverURL;
+
+        const element = CoverGrid.#drawnCovers.get(key);
+        if (element != null)
+          element.style.backgroundImage = `url(${entry.coverURL})`;
+      }
+    });
   }
   
   /**
