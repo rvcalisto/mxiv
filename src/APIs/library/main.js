@@ -26,6 +26,13 @@ import { availableParallelism } from 'os';
 
 
 /**
+ * Paths recently added to library, thumbnail pending.
+ * @type {string[]}
+ */
+let pendingThumbnails = [];
+
+
+/**
  * Store archive or folder recursively.
  * @param {Electron.WebContents} senderWin Electron sender window.
  * @param {{path: string, recursive: boolean}[]} folderItems Folder/archive path to add.
@@ -39,7 +46,7 @@ export async function addToLibrary(senderWin, folderItems) {
     candidates.push(...folders);
   }
   
-  const addedEntries = /** @type {string[]} */ ([]);
+  const addedEntries = [];
   let total = candidates.length;
   
   await libraryStorage.write(async db => {
@@ -59,12 +66,11 @@ export async function addToLibrary(senderWin, folderItems) {
       }
     });
 
-    if (addedEntries.length < 1)
+    if (addedEntries.length > 0)
+      pendingThumbnails.push(...addedEntries);
+    else
       throw 'rollback';
   });
-
-  if (addedEntries.length > 0)
-    updateThumbnails(senderWin, addedEntries);
 
   return addedEntries.length;
 }
@@ -151,9 +157,8 @@ async function getCandidates(folderPath, tools, depth = Infinity, mappedPaths = 
 /**
  * Generate and update entry thumbnails in the background.
  * @param {Electron.WebContents} senderWin Electron sender window.
- * @param {string[]} paths
  */
-async function updateThumbnails(senderWin, paths) {
+export async function updateThumbnails(senderWin) {
   let generatedThumbnails = 0;
   
   // check cover directory, try creating if not found
@@ -161,15 +166,15 @@ async function updateThumbnails(senderWin, paths) {
     console.error('MXIV::ERROR: Couldn\'t create thumbnail directory');
     return;
   }
-
+  
   await libraryStorage.write(async db => {
-    await createThumbnailMultiThreaded(paths, tools, (value) => {
+    await createThumbnailMultiThreaded(pendingThumbnails, tools, (value) => {
       db.setFromCover(value.path, value.thumbnail);
       
       senderWin.send('library:new', /** @type {LibraryUpdate} */ ({
         task: 'thumbnail',
+        total: pendingThumbnails.length,
         current: ++generatedThumbnails,
-        total: paths.length,
         value: {
           key: value.path,
           entry: db.get(value.path)
@@ -177,4 +182,6 @@ async function updateThumbnails(senderWin, paths) {
       }));
     }, Math.ceil( availableParallelism() / 2 ) ); // match cores
   });
+
+  pendingThumbnails = [];
 }

@@ -48,28 +48,17 @@ export class Library extends GenericFrame {
 
       const { current, total, value } = msg;
 
-      if (msg.task === 'scan') {
+      if (msg.task === 'scan')
         library.#taskStatus = `Sync watchlist [${current}/${total}]`;
-        library.refreshStatus();
-        
-        if (current === total) {
-          library.#taskStatus = '';
-          library.refreshStatus();
-        }
-      } else {
+      else {
         library.coverGrid.updateCover(value.key, value.entry);
         library.#taskStatus = `Generating thumbnails [${current}/${total}]`;
-        library.refreshStatus();
-        
-        if (current === total) {
-          console.timeEnd('generateThumbnails');
-          library.#taskStatus = '';
-          library.refreshStatus();
-
-          library.hold(false);
-          await elecAPI.releaseLock('library');
-        }
       }
+
+      if (current === total)
+        library.#taskStatus = '';
+
+      library.refreshStatus();
     });
   }
 
@@ -134,14 +123,17 @@ export class Library extends GenericFrame {
 
     AppNotifier.notify(`${addedPaths} new book(s) added`, 'syncToWatchlist');
 
-    // reload entries & keep locked for thumbnails, leave otherwise
+    // reload entries & generate thumbnails
     if (addedPaths > 0) {
-      this.coverGrid.reloadCovers();
+      await this.coverGrid.reloadCovers();
+
       console.time('generateThumbnails');
-    } else {
-      this.hold(false);
-      await elecAPI.releaseLock('library');
+      await elecAPI.updateLibraryThumbnails();
+      console.timeEnd('generateThumbnails'); 
     }
+
+    this.hold(false);
+    await elecAPI.releaseLock('library');
   }
 
   /**
@@ -172,14 +164,17 @@ export class Library extends GenericFrame {
 
       AppNotifier.notify(`${addedPaths} new book(s) added`, 'addToLibrary');
       
-      // reload entries & keep locked for thumbnails, leave otherwise
+      // reload entries & generate thumbnails
       if (addedPaths > 0) {
-        this.coverGrid.reloadCovers();
+        await this.coverGrid.reloadCovers();
+
         console.time('generateThumbnails');
-      } else {
-        this.hold(false);
-        await elecAPI.releaseLock('library');
+        await elecAPI.updateLibraryThumbnails();
+        console.timeEnd('generateThumbnails'); 
       }
+
+      this.hold(false);
+      await elecAPI.releaseLock('library');
     }
   }
 

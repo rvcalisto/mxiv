@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('elecAPI', {
 
   // library
   addToLibrary: async (path, recursively) => ipcRenderer.invoke('library:add', path, recursively),
+  updateLibraryThumbnails: async () => ipcRenderer.invoke('library:thumbnails'),
   getLibraryEntries: () => ipcRenderer.invoke('library:get'),
   removeFromLibrary: async (path) => ipcRenderer.invoke('library:remove', path),
   clearLibrary: async () => ipcRenderer.invoke('library:clear'),

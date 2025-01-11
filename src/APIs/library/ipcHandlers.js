@@ -6,6 +6,10 @@ ipcMain.handle('library:add', async (e, path, recursively) => {
   return await libraryMain.addToLibrary(e.sender, path, recursively)
 })
 
+ipcMain.handle('library:thumbnails', async (e) => {
+  return await libraryMain.updateThumbnails(e.sender)
+})
+
 ipcMain.handle('library:get', async (e) => {
   return await libraryMain.getLibraryEntries()
 })
