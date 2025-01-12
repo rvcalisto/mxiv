@@ -1,3 +1,4 @@
+// @ts-check
 import { ItemList } from "../../components/itemList.js"
 import { Cover } from "./coverElement.js";
 import { Tab } from "../../tabs/tab.js";
@@ -26,6 +27,12 @@ export class CoverGrid {
    * @type {LibraryEntry[]}
    */
   static #libraryCache = []
+
+  /**
+   * Cached library entry Map, for direct lookup.
+   * @type {Map<string, LibraryEntry>}
+   */
+  static #libraryCacheMap = new Map();
 
   /**
    * Either library entry cache needs to be rebuilt on next draw.
@@ -67,9 +74,14 @@ export class CoverGrid {
   /**
    * Cache sorted library entry collection.
    */
-  async #buildCache() {
-    CoverGrid.#libraryCache = await elecAPI.getLibraryEntries()
-    CoverGrid.#dirtyCache = false
+  static async #buildCache() {
+    this.#libraryCache = await elecAPI.getLibraryEntries()
+
+    this.#libraryCacheMap.clear();
+    this.#libraryCache
+      .forEach( entry => this.#libraryCacheMap.set(entry.path, entry) );
+
+    this.#dirtyCache = false
     console.log('Library cache (re)built.');
   }
   
@@ -79,8 +91,7 @@ export class CoverGrid {
    */
   updateCovers(entries) {
     entries.forEach(({ key, entry }) => {
-      const cacheItem = CoverGrid.#libraryCache
-        .find(cacheItem => cacheItem.path === key);
+      const cacheItem = CoverGrid.#libraryCacheMap.get(key);
 
       if (cacheItem != null) {
         cacheItem.coverPath = entry.coverPath;
@@ -122,10 +133,11 @@ export class CoverGrid {
    */
   async drawCovers(queries) {
     if (CoverGrid.#dirtyCache)
-      await this.#buildCache();
+      await CoverGrid.#buildCache();
 
     // all queries must match either path or a tag. Exclusive.
-    const filterFunc = !queries ? undefined : (file) => matchNameOrTags(file, queries);
+    const filterFunc = !queries ? undefined :
+      (/** @type {LibraryEntry} */ file) => matchNameOrTags(file, queries);
 
     CoverGrid.#drawnCovers.clear();
     
