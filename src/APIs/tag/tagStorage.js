@@ -122,7 +122,7 @@ export class TagState extends Map {
       let tagID = this.#tagName2Id.get(name);
 
       if (tagID == null) {
-        tagID = this.#control.orphanIDs.pop() || this.#control.nextID++;
+        tagID = this.#control.orphanIDs.pop() ?? this.#control.nextID++;
         this.#tagId2Name[tagID] = name;
         this.#tagName2Id.set(name, tagID);
       }
@@ -220,11 +220,7 @@ export class TagState extends Map {
    * @returns {string[]}
    */
   uniqueTags() {
-    console.time('computeUniqueTags');
-    const tagNames = Object.values(this.#tagId2Name);
-    console.timeEnd('computeUniqueTags');
-    
-    return tagNames;
+    return Object.values(this.#tagId2Name);
   }
 
   /**
