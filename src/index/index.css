@@ -156,6 +156,11 @@ main {
   height: 100%;
   min-height: 0px;
   display: flex;
+
+  /* remove explorer top margin when tabs are visible for and even gap */
+  #tabs:not([style="display: none;"]) + & viewer-component::part(explorer) {
+    margin-top: 0;
+  }
 }
 
 #contents {

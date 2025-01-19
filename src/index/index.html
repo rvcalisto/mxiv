@@ -252,7 +252,7 @@
       file-explorer {
         min-width: 23em;
         max-width: 23em;
-        transition: .2s;
+        transition: .2s, margin-top 0s;
         margin: .2em;
         border-radius: .5em;
         background: #242424;
@@ -293,7 +293,7 @@
       }
     </style>
     <div id="wrapper">
-      <file-explorer id='fileExplorer' tabindex="1"></file-explorer>
+      <file-explorer id='fileExplorer' tabindex="1" part="explorer"></file-explorer>
       <view-component id="viewInstance"></view-component>
       <div id="optionBar">
         <p id="explorerBtn" title="toggle explorer panel"></p>
