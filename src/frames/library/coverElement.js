@@ -63,6 +63,16 @@ export class Cover extends HTMLElement {
   }
 
   /**
+   * Update cover thumbnail.
+   * @param {string?} thumbnail
+   */
+  updateCover(thumbnail) {
+    this.style.backgroundImage = `url(${
+      thumbnail != null ? thumbnail : '../icons/libraryIconPlaceholder.jpg'
+    })`;
+  }
+
+  /**
    * Create and return a new cover element with defined properties.
    * @param {LibraryEntry} entry
    * @return {Cover}

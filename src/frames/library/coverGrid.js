@@ -98,8 +98,7 @@ export class CoverGrid {
         cacheItem.coverURL = entry.coverURL;
 
         const element = CoverGrid.#drawnCovers.get(key);
-        if (element != null)
-          element.style.backgroundImage = `url(${entry.coverURL})`;
+        element?.updateCover(entry.coverURL);
       }
     });
   }
