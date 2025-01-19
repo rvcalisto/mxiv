@@ -4,6 +4,7 @@
   --cover-height: 200px;
   --cl-accent: royalblue;
   --app-font: system-ui;
+  --small-gap: round(up, .25em, 1px);
 }
 
 @font-face {
@@ -55,8 +56,8 @@ body {
 
 #tabs {
   display: flex;
-  padding: .25em;
-  gap: .25em;
+  padding: var(--small-gap);
+  gap: var(--small-gap);
   --px-slide-offset: 0px;
 }
 
@@ -158,7 +159,7 @@ main {
   display: flex;
 
   /* remove explorer top margin when tabs are visible for and even gap */
-  #tabs:not([style="display: none;"]) + & viewer-component::part(explorer) {
+  #tabs:not([style*="display: none;"]) + & viewer-component::part(explorer) {
     margin-top: 0;
   }
 }
