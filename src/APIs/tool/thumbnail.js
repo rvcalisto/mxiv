@@ -1,32 +1,33 @@
-import child_process from 'child_process';
-const cmd = 'magick' // ImageMagick
+// @ts-check
+import { execFile } from 'child_process';
+const cmd = 'magick'; // ImageMagick
 
 
 /**
  * Thumbnail largest dimension in pixels.
  */
-const MAXSIZE = 200
+const MAXSIZE = 200;
 
 
 /**
  * Check if Tool is accessible.
- * @returns {Promise<Boolean>} Either if tool is acessible.
+ * @returns {Promise<boolean>} Either if tool is accessible.
  */
 export async function hasTool() {
   return await new Promise(resolve => {
-    child_process.exec(`${cmd} -version`, (err) => resolve(!err))
-  })
+    execFile(cmd, ['-version'], (err) => resolve(!err) );
+  });
 }
 
 /**
  * Generate thumbnail from source to destination.
- * @param {String} origin Source path.
- * @param {String} destination Thumbnail path.
- * @returns {Promise<Boolean>} `Success` Boolean.
+ * @param {string} origin Source path.
+ * @param {string} destination Thumbnail path.
+ * @returns {Promise<boolean>} Success.
  */
 export async function generateThumbnail(origin, destination) {
   return await new Promise(resolve => {
-    child_process.exec(`${cmd} "${origin}[0]" -thumbnail ${MAXSIZE} "${destination}"`, 
-    (err, stdout, stderr) => resolve(!err) )
-  })
+    execFile(cmd, [`${origin}[0]`, '-thumbnail', `${MAXSIZE}`, destination], 
+             err => resolve(!err) );
+  });
 }
