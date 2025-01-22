@@ -179,5 +179,24 @@ ActionService.setBaseActions({
       },
     }
   },
+  
+  'toggleTheme': {
+    'desc': 'set color theme',
+    'run': (theme, ..._args) => {
+      toggleDarkTheme(theme === 'dark' ? true : theme === 'light' ? false : undefined);
+    },
+    'options': (_, args) => args.length < 2 ? ['light', 'dark'] : []
+  }
+});
 
-})
+/**
+ * Toggle or force dark theme.
+ * TODO: persist changes to user preferences when ready.
+ * @param {boolean} [toDark]
+ */
+export function toggleDarkTheme(toDark) {
+  if (toDark == null)
+    toDark = 'light' === document.documentElement.getAttribute('theme');
+
+  document.documentElement.setAttribute('theme', toDark ? 'dark' : 'light');
+}

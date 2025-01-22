@@ -2,7 +2,6 @@
 
 :root {
   --cover-height: 200px;
-  --cl-accent: royalblue;
   --app-font: system-ui;
   --small-gap: round(up, .25em, 1px);
 }
@@ -51,7 +50,7 @@ html {
 }
 
 body {
-  background: radial-gradient(#1a1a1a, #101010)
+  background: var(--theme-main-bg)
 }
 
 #tabs {
@@ -69,20 +68,20 @@ body {
   overflow: hidden;
   background: inherit;
   
-  color: gray;
+  color: var(--theme-tab-secondary-fg);
   max-width: 14em;
   width: 100%;
   display: flex;
   
   &:not(.selected):hover,
   &:not(.selected):active {
-    background: #232323;
+    background: var(--theme-tab-secondary-bg);
   }
   
   &.selected {
-    color: whitesmoke;
-    background: linear-gradient(135deg, #fdfdfd08 66%, transparent 0),
-    linear-gradient(135deg, #fdfdfd08 33%, transparent 0), #2d2d2d;
+    color: var(--theme-tab-primary-fg);
+    background: var(--theme-tab-primary-bg);
+    box-shadow: var(--theme-tab-shadow);
   }
   
   p {
@@ -116,7 +115,7 @@ body {
   text-align: center;
   
   &:hover {
-    color: whitesmoke;
+    color: var(--theme-tab-primary-fg);
     cursor: pointer;
   }
 }
@@ -126,7 +125,7 @@ body {
   transition: .2s;
   opacity: .3;
   
-  color: whitesmoke;
+  color: var(--theme-tab-primary-fg);
   background: transparent;
   
   width: 2em;
@@ -136,7 +135,7 @@ body {
   border-radius: .3em;
   
   &:hover {
-    background: #4b4b4b;
+    background: var(--theme-tab-button-bg);
     cursor: pointer;
     opacity: 1;
   }
@@ -183,42 +182,38 @@ action-palette {
   height: 100%;
   z-index: 3;
   overflow: hidden;
-}
 
-.notification {
-  margin: .4em auto;
-  padding: .5em 1em; 
-  background: #282828; 
-  color: whitesmoke;
-  border-radius: 1em;
-  width: fit-content;
-  box-shadow: 2px 2px 5px black;
+  .notification {
+    margin: .4em auto;
+    padding: .5em 1em; 
+    border-radius: 1em;
+    width: fit-content;
+    box-shadow: var(--theme-notification-shadow);
 
-  background: whitesmoke;
-  color: #1b1b1b;
+    background: var(--theme-notification-bg);
+    color: var(--theme-notification-fg);
+  }
 }
 
 #bar {
-  /* background: linear-gradient(90deg, #1b1b1b, transparent); */
-  background: #1b1b1b;
-  color: silver;
+  background: var(--theme-status-bg);
+  color: var(--theme-status-fr);
   
   display: flex;
   justify-content: space-between;
   transition: .1s;
   padding: 0em .2em;
   gap: 2em;
-}
 
-#barName, 
-#barInfo {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  width: fit-content;
-  font-size: inherit;
-} 
+  & > * {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: fit-content;
+    font-size: inherit;
 
-#barInfo {
-  min-width: fit-content;
+    &#barInfo {
+      min-width: fit-content;
+    }
+  } 
 }
