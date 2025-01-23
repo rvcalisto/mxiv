@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, dialog, Menu } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, Menu, nativeTheme } from 'electron';
 import { join } from 'path';
 import { initializeBase } from './APIs/tool/appPaths.js';
 
@@ -30,7 +30,7 @@ async function newWindow(options = {}) {
     width: 1100, height: 600,
     modal: false,
     autoHideMenuBar: true,
-    backgroundColor: 'black',
+    backgroundColor: nativeTheme.shouldUseDarkColors ? 'black' : 'white',
 
     webPreferences: {
       sandbox: false, // electron 20 enables by default
@@ -100,6 +100,8 @@ else {
     await initializeBase();
     ipcHandlers();
   
+    // TODO: apply user preferred theme before first window, avoid flashing the wrong
+    // background on system theme override. Migrate UserPreferences to JsonStorage.
     newWindow().then(win => {
       const pathArgs = pathsFromArgv();
       

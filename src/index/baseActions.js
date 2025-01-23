@@ -191,9 +191,9 @@ ActionService.setBaseActions({
 /**
  * Set theme for entire application.
  * @param {'dark'|'light'|'system'} theme Theme name to apply.
- * @param {boolean} [notify=true] Either to notify changes.
+ * @param {boolean} [save=true] Save theme changes.
  */
-export function setAppTheme(theme, notify = true) {
+export function setAppTheme(theme, save = true) {
   if ( !['dark', 'light', 'system'].includes(theme) ) {
     const currentTheme = document.documentElement.getAttribute('theme');
     theme = currentTheme === 'dark' ? 'light' : 'dark'; // toggle theme
@@ -206,8 +206,8 @@ export function setAppTheme(theme, notify = true) {
     document.documentElement.setAttribute('theme', theme);
   }
 
-  if (notify)
+  if (save) {
     AppNotifier.notify(`set theme to "${theme}"`, 'toggleTheme');
-
-  UserPreferences.preferredTheme = theme;
+    UserPreferences.preferredTheme = theme;
+  }
 }
