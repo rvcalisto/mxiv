@@ -77,6 +77,10 @@ function ipcHandlers() {
     win.webContents.send('window:onFullscreen', newState);
     return newState;
   });
+
+  ipcMain.handle('window:theme', (_e, theme) => {
+    nativeTheme.themeSource = theme;
+  });
 }
 
 
@@ -100,13 +104,19 @@ else {
     await initializeBase();
     ipcHandlers();
   
-    // TODO: apply user preferred theme before first window, avoid flashing the wrong
-    // background on system theme override. Migrate UserPreferences to JsonStorage.
     newWindow().then(win => {
       const pathArgs = pathsFromArgv();
       
       if (pathArgs.length > 0)
         win.webContents.send('window:open', { paths: pathArgs, newTab: true });
+      
+      // apply theme override on first new window, if any.
+      // TODO: apply before window creation to avoid flashing the wrong background
+      win.webContents.executeJavaScript(`localStorage.getItem('themeOverride')`)
+        .then((/** @type {'light'|'dark'|'system'?} */ theme) => {
+          if (theme != null)
+            nativeTheme.themeSource = theme;
+        }); 
     });
   });
   

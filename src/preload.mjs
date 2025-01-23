@@ -46,4 +46,5 @@ contextBridge.exposeInMainWorld('elecAPI', {
   onOpen: (details) => ipcRenderer.on('window:open', details),
   toggleFullscreen: async () => ipcRenderer.invoke('window:fullscreen'),
   onFullscreen: (isFullscreen) => ipcRenderer.on('window:onFullscreen', isFullscreen),
+  setTheme: async (theme) => ipcRenderer.invoke('window:theme', theme)
 });

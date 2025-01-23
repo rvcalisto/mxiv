@@ -17,7 +17,7 @@
   /**
    * Dark theme (default).
    */
-  &[theme="dark"] {
+  @media (prefers-color-scheme: dark) {
     --theme-main-bg: radial-gradient(#1a1a1a, #101010);
     --theme-scrollbar-fg: #5f5f5f;
     --theme-scrollbar-bg: #484848;
@@ -109,7 +109,7 @@
   /**
    * Light theme overrides.
    */
-  &[theme="light"] {
+  @media (prefers-color-scheme: light) {
     --theme-main-bg: linear-gradient(-90deg, white, silver);
     --theme-scrollbar-fg: gray;
     --theme-scrollbar-bg: darkgray;

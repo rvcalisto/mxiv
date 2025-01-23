@@ -183,31 +183,20 @@ ActionService.setBaseActions({
   
   'setTheme': {
     'desc': 'set application theme',
-    'run': (theme, ..._args) => setAppTheme(theme),
+    'run': (theme, ..._args) => {
+      if ( !['light', 'dark', 'system'].includes(theme) ) {
+        const isLightTheme = matchMedia('(prefers-color-scheme: light)').matches;
+        theme = isLightTheme ? 'dark' : 'light'; // toggle theme
+      }
+      
+      elecAPI.setTheme(theme);
+      AppNotifier.notify(`set theme to "${theme}"`, 'setTheme');
+      
+      if (theme === 'system')
+        localStorage.removeItem('themeOverride');
+      else
+        localStorage.setItem('themeOverride', theme);
+    },
     'options': (_, args) => args.length < 2 ? ['light', 'dark', 'system'] : []
   }
 });
-
-/**
- * Set theme for entire application.
- * @param {'dark'|'light'|'system'} theme Theme name to apply.
- * @param {boolean} [save=true] Save theme changes.
- */
-export function setAppTheme(theme, save = true) {
-  if ( !['dark', 'light', 'system'].includes(theme) ) {
-    const currentTheme = document.documentElement.getAttribute('theme');
-    theme = currentTheme === 'dark' ? 'light' : 'dark'; // toggle theme
-  }
-
-  if (theme === 'system') {
-    const isLightTheme = matchMedia('(prefers-color-scheme: light)').matches;
-    document.documentElement.setAttribute('theme', isLightTheme ? 'light' : 'dark');
-  } else {
-    document.documentElement.setAttribute('theme', theme);
-  }
-
-  if (save) {
-    AppNotifier.notify(`set theme to "${theme}"`, 'toggleTheme');
-    UserPreferences.preferredTheme = theme;
-  }
-}
