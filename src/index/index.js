@@ -1,9 +1,10 @@
 import { Tab, FRAME } from "../tabs/tab.js";
 import "./mediaSession.js";
-import "./baseActions.js";
+import { setAppTheme } from "./baseActions.js";
 import "./baseAccelerators.js";
 import "./keyEventController.js";
 import { UserAccelerators } from "../actions/userAccelerators.js";
+import { UserPreferences } from "../components/userPreferences.js";
 
 
 /**
@@ -31,10 +32,7 @@ onbeforeunload = function onClose() {
  * Load user accelerators and create first tab.
  */
 onload = function StartApp() {
-  // TODO: set matching environment theme when ready
-  // const sysThemeIsDark = matchMedia('(prefers-color-scheme: dark)').matches;
-  // toggleDarkTheme(sysThemeIsDark);
-
+  setAppTheme(UserPreferences.preferredTheme, false);
   UserAccelerators.reload();
   Tab.newTab();
 };

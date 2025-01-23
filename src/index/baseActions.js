@@ -2,10 +2,11 @@ import { ActionService } from "../actions/actionService.js"
 import { Tab } from "../tabs/tab.js"
 import { StatusBar } from "../components/statusBar.js"
 import { SessionProfiles } from "../tabs/profiles.js"
-import { actionPalette, option, standardFilter } from "../components/actionPalette/actionPalette.js"
+import { actionPalette, option } from "../components/actionPalette/actionPalette.js"
 import { UserAccelerators } from "../actions/userAccelerators.js"
 import { AppNotifier } from "../components/notifier.js"
 import { FrameRegistry } from "../frames/frameRegistry.js"
+import { UserPreferences } from "../components/userPreferences.js"
 
 
 ActionService.setBaseActions({
@@ -180,23 +181,33 @@ ActionService.setBaseActions({
     }
   },
   
-  'toggleTheme': {
-    'desc': 'set color theme',
-    'run': (theme, ..._args) => {
-      toggleDarkTheme(theme === 'dark' ? true : theme === 'light' ? false : undefined);
-    },
-    'options': (_, args) => args.length < 2 ? ['light', 'dark'] : []
+  'setTheme': {
+    'desc': 'set application theme',
+    'run': (theme, ..._args) => setAppTheme(theme),
+    'options': (_, args) => args.length < 2 ? ['light', 'dark', 'system'] : []
   }
 });
 
 /**
- * Toggle or force dark theme.
- * TODO: persist changes to user preferences when ready.
- * @param {boolean} [toDark]
+ * Set theme for entire application.
+ * @param {'dark'|'light'|'system'} theme Theme name to apply.
+ * @param {boolean} [notify=true] Either to notify changes.
  */
-export function toggleDarkTheme(toDark) {
-  if (toDark == null)
-    toDark = 'light' === document.documentElement.getAttribute('theme');
+export function setAppTheme(theme, notify = true) {
+  if ( !['dark', 'light', 'system'].includes(theme) ) {
+    const currentTheme = document.documentElement.getAttribute('theme');
+    theme = currentTheme === 'dark' ? 'light' : 'dark'; // toggle theme
+  }
 
-  document.documentElement.setAttribute('theme', toDark ? 'dark' : 'light');
+  if (theme === 'system') {
+    const isLightTheme = matchMedia('(prefers-color-scheme: light)').matches;
+    document.documentElement.setAttribute('theme', isLightTheme ? 'light' : 'dark');
+  } else {
+    document.documentElement.setAttribute('theme', theme);
+  }
+
+  if (notify)
+    AppNotifier.notify(`set theme to "${theme}"`, 'toggleTheme');
+
+  UserPreferences.preferredTheme = theme;
 }

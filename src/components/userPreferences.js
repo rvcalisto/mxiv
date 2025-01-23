@@ -35,4 +35,18 @@ export const UserPreferences = new class {
   get libraryCoverSize() {
     return this.#storage.get('libraryCoverSize') || 200;
   }
+  
+  /**
+   * @param {'dark'|'light'|'system'} value
+   */
+  set preferredTheme(value) {
+    return this.#storage.set('preferredTheme', value);
+  }
+  
+  /**
+   * @returns {'dark'|'light'|'system'} value
+   */
+  get preferredTheme() {
+    return this.#storage.get('preferredTheme') || 'system';
+  }
 }
