@@ -33,37 +33,37 @@
 
       [icon=folder]::before {
         content: "";
-        color: #ffe46c;
+        color: var(--theme-icon-folder);
       }
 
       [icon=image]::before {
         content: "";
-        color: lightskyblue;
+        color: var(--theme-icon-image);
       }
 
       [icon=audio]::before {
         content: "🎵";
-        color: yellowgreen;
+        color: var(--theme-icon-audio);
       }
 
       [icon=video]::before {
         content: "";
-        color: gray;
+        color: var(--theme-icon-video);
       }
 
       [icon=archive]::before {
         content: "";
-        color: #b48350;
+        color: var(--theme-icon-archive);
       }
 
       [icon=playlist]::before {
         content: "";
-        color: white;
+        color: var(--theme-icon-playlist);
       }
 
       [icon=explorer]::before {
         content: "";
-        color: #ffe46c;
+        color: var(--theme-icon-explorer);
       }
 
       #wrapper {
@@ -167,7 +167,6 @@
       .paginator {
         display: flex;
         justify-content: space-around;
-        color: var(--theme-explorer-primary-fg);
         padding: 4px;
         background: var(--theme-explorer-paginator-bg);
 
@@ -175,8 +174,8 @@
           border: none;
           border-radius: 4px;
           padding: 2px 8px;
-          background: var(--theme-explorer-paginator-fg);
-          color: var(--theme-explorer-secondary-fg);
+          background: var(--theme-explorer-paginator-item-bg);
+          color: var(--theme-explorer-paginator-item-fg);
           transition: .2s;
         }
 
@@ -284,14 +283,15 @@
 
         & > * {
           font-family: "font-awesome";
-          color: var(--theme-explorer-primary-fg);
+          color: var(--theme-explorer-option-fg);
           background: var(--theme-explorer-option-bg);
           margin: 0;
           padding: 2em .25em;
           border-radius: 0 .3em .3em 0;
 
           &:hover {
-            background: var(--cl-accent);
+            color: var(--theme-explorer-primary-fg);
+            background: var(--theme-explorer-primary-bg);
             cursor: pointer;
           }
         }
@@ -597,21 +597,22 @@
 
       [icon=history]::before {
         content: "";
+        color: var(--theme-icon-history);
       }
 
       [icon=action]::before {
         content: "";
-        color: #7db440;
+        color: var(--theme-icon-action);
       }
 
       [icon=generic]::before {
         content: "";
-        color: #ff9900;
+        color: var(--theme-icon-generic);
       }
 
       [icon=run]::before {
         content: "";
-        color: limegreen;
+        color: var(--theme-icon-run);
       }
 
       #cmdOverlay {
@@ -632,7 +633,7 @@
         margin: 0.6rem;
         border-radius: 0.5rem;
         overflow: hidden;
-        box-shadow: 2px 2px 5px 0px black;
+        box-shadow: 0px 2px 5px 0px #000000ba;
       }
 
       #inputBox {
@@ -833,21 +834,23 @@
 
       .paginator {
         display: flex;
+        position: absolute;
         justify-content: center;
         align-items: center;
-        color: var(--theme-library-primary-fg);
-        gap: 4rem;
-
-        position: absolute;
-        margin: .25em;
-        bottom: 0;
+        gap: .5rem;
+        margin: .5em;
+        width: fit-content;
         left: 50%;
-        right: 50%;
+        bottom: 0;
+        border-radius: .3em;
+        transform: translateX(-50%) translateX(-.5em);
+        color: var(--theme-library-primary-fg);
+        background: var(--theme-library-paginator-bg);
+        box-shadow: var(--theme-library-paginator-shadow);
 
         & > * {
-          background: var(--theme-library-button-bg);
-          color: var(--theme-library-button-fg);
-          box-shadow: var(--theme-library-paginator-shadow);
+          color: var(--theme-library-paginator-item-fg);
+          background: var(--theme-library-paginator-item-bg);
           
           &:is(p) {
             padding: .1em .5em;
