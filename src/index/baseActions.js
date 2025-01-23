@@ -192,10 +192,7 @@ ActionService.setBaseActions({
       elecAPI.setTheme(theme);
       AppNotifier.notify(`set theme to "${theme}"`, 'setTheme');
       
-      if (theme === 'system')
-        localStorage.removeItem('themeOverride');
-      else
-        localStorage.setItem('themeOverride', theme);
+      UserPreferences.themeOverride = theme;
     },
     'options': (_, args) => args.length < 2 ? ['light', 'dark', 'system'] : []
   }

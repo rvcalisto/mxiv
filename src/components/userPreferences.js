@@ -1,4 +1,10 @@
+// @ts-check
 import { GenericStorage } from "./genericStorage.js";
+
+
+/**
+ * @typedef {'dark'|'light'|'system'} ThemeOverride
+ */
 
 
 /**
@@ -37,16 +43,21 @@ export const UserPreferences = new class {
   }
   
   /**
-   * @param {'dark'|'light'|'system'} value
+   * @param {ThemeOverride} value
    */
-  set preferredTheme(value) {
-    return this.#storage.set('preferredTheme', value);
+  set themeOverride(value) {
+    // directly stored to ease main process access
+    if (value === 'system')
+      localStorage.removeItem('themeOverride');
+    else
+      localStorage.setItem('themeOverride', value);
   }
   
   /**
-   * @returns {'dark'|'light'|'system'} value
+   * @returns {ThemeOverride} value
    */
-  get preferredTheme() {
-    return this.#storage.get('preferredTheme') || 'system';
+  get themeOverride() {
+    // directly stored to ease main process access
+    return /** @type {ThemeOverride?} */ (localStorage.getItem('themeOverride')) || 'system';
   }
 }
