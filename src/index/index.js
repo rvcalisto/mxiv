@@ -1,4 +1,4 @@
-import { Tab, FRAME } from "../tabs/tab.js";
+import { Tab } from "../tabs/tab.js";
 import "./mediaSession.js";
 import "./baseActions.js";
 import "./baseAccelerators.js";
@@ -9,13 +9,9 @@ import { UserAccelerators } from "../actions/userAccelerators.js";
 /**
  * Open paths passed as arguments.
  */
-elecAPI.onOpen(function openInViewer(_e, details) {
-  const { paths, newTab } = details;
-
-  if (newTab)
+elecAPI.onOpen(function openInViewer(_e, /** @type {string[][]} */ tabs) {
+  for (const paths of tabs)
     new Tab( 'viewer', (viewer) => viewer.open(...paths) );
-  else
-    FRAME.open(...paths);
 });
 
 /**

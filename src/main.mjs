@@ -1,16 +1,27 @@
 import { app, BrowserWindow, ipcMain, dialog, Menu, nativeTheme } from 'electron';
-import { join } from 'path';
+import { join, isAbsolute } from 'path';
 import { initializeBase } from './APIs/tool/appPaths.js';
 
 
 /**
- * Get user path arguments from vector, if any.
- * @param {String[]} [customArgv] Custom argument array.
- * @returns {String[]}
+ * Create tabs from `--tab`, `-t` command line arguments.
+ * @param {string[]} [args] Custom argument array.
+ * @returns {string[][]}
  */
-function pathsFromArgv(customArgv = process.argv) {
-  // filter away process, file and chromiun args (--some-chromium-flag)
-  return customArgv.slice(2).filter(arg => arg[0] !== '-');
+function tabArguments(args = process.argv) {
+  const tabs = /** @type {string[][]} */ ([]);
+  let idx = -1;
+
+  // create non-empty tab path arrays
+  for (const arg of args) {
+    if (arg === '--tab' || arg === '-t')
+      idx++;
+    else if (idx > -1 && arg[0] !== '-') { 
+      tabs[idx] == null ? tabs[idx] = [arg] : tabs[idx].push(arg);
+    }
+  }
+
+  return tabs;
 }
 
 
@@ -90,8 +101,8 @@ if ( process.platform === 'win32' && (await import('electron-squirrel-startup'))
 }
 
 // quit on duplicated instance, avoid localStorage lock and resource duplication
-else if ( !app.requestSingleInstanceLock() ) {
-  console.log('MXIV: Another instance is already running. Closing.');
+else if ( !app.requestSingleInstanceLock(process.argv) ) {
+  console.log('MXIV: Opening in existing instance.');
   app.quit();
 }
 
@@ -105,10 +116,10 @@ else {
     ipcHandlers();
   
     newWindow().then(win => {
-      const pathArgs = pathsFromArgv();
-      
-      if (pathArgs.length > 0)
-        win.webContents.send('window:open', { paths: pathArgs, newTab: true });
+      const tabs = tabArguments();
+
+      if (tabs.length > 0)
+        win.webContents.send('window:open', tabs);
       
       // apply theme override on first new window, if any.
       // TODO: apply before window creation to avoid flashing the wrong background
@@ -122,13 +133,21 @@ else {
   
   
   // set listener for new instances. Spawn new window and open paths if any
-  app.on('second-instance', (_, argv) => {
+  app.on('second-instance', (_, _argv, workingDirectory, userArgv) => {
     newWindow().then(win => {
-      // NOTE: relative paths will still use main process CWD...
-      const pathArgs = pathsFromArgv(argv);
-      
-      if (pathArgs.length > 0)
-        win.webContents.send('window:open', { paths: pathArgs, newTab: true });
+      const tabs = tabArguments(userArgv);
+
+      // relative paths still use main process working directory,
+      // so solve relative paths to current process working directory.
+      for (const tab of tabs) {
+        for (let i = 0; i < tab.length; i++) {
+          if ( !isAbsolute(tab[i]) )
+            tab[i] = join(workingDirectory, tab[i]);
+        }
+      }
+
+      if (tabs.length > 0)
+        win.webContents.send('window:open', tabs);
     });
   });
   
