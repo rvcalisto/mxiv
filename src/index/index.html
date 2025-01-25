@@ -504,7 +504,6 @@
 
       .trackButtons {
         display: flex;
-        align-items: baseline;
         gap: .5em;
 
         & > div {
@@ -547,6 +546,7 @@
           content: attr(info);
           position: absolute;
           transform: translateY(120%);
+          pointer-events: none;
 
           padding: 0 .25em;
           font-weight: bold;
@@ -560,6 +560,10 @@
         .abLoop {
           font-size: smaller;
           font-weight: bold;
+
+          p {
+            text-rendering:geometricPrecision;
+          }
 
           &[state=a] :nth-child(1) {
             color: var(--cl-accent);
