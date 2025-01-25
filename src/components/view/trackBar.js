@@ -211,6 +211,22 @@ export class TrackBar {
 
       this.#syncState();
     }
+
+    // show cursor position timestamp, don't go out-bounds
+    const timestamp = this.#panelElement.querySelector('.timestamp');
+    const time = this.#view.media.secToHMS( this.#seekTo(e) );
+    timestamp.textContent = time.startsWith('00') ? time.slice(3) : time;
+
+    timestamp.style.transform = `translateX(-50%) translateX(${e.offsetX}px)`;
+
+    const track = this.#panelElement.querySelector('#vidTrack');
+    const stampRect = timestamp.getBoundingClientRect();
+    const trackRect = track.getBoundingClientRect();
+
+    if (stampRect.left < trackRect.left)
+      timestamp.style.transform += ` translateX(${trackRect.left - stampRect.left}px)`;
+    else if (stampRect.right > trackRect.right)
+      timestamp.style.transform += ` translateX(${trackRect.right - stampRect.right}px)`;
   }
 
   #initEvents() {

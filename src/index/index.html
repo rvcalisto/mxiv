@@ -477,6 +477,29 @@
             left: anchor(right);
           }
         }
+
+        .timestamp {
+          position: absolute;
+          z-index: 1;
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity .15s;
+
+          margin: .5em;
+          margin-top: 2em;
+          padding: .25em .5em;
+          border-radius: .3em;
+
+          color: var(--theme-view-track-button-fg);
+          background: var(--theme-view-track-button-bg);
+          box-shadow: var(--theme-view-track-shadow);
+        }
+
+        &:hover {
+          .timestamp {
+            opacity: 1;
+          }
+        }
       }
 
       .trackButtons {
@@ -590,6 +613,7 @@
               <div id="vidLoop"></div>
               <div class="trackHandle"></div>
             </div>
+            <p class="timestamp"></p>
           </div>
           <div class="trackButtons">
             <div class="square" title="previous track">
