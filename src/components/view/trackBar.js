@@ -240,23 +240,23 @@ export class TrackBar {
     const abLoopBtn = this.#view.shadowRoot.querySelector('.abLoop')
     abLoopBtn.onclick = () => this.#view.media.abLoop()
 
-    // ⏸⯈
+    // play/pause
     const pauseBtn = this.#view.shadowRoot.getElementById('trackPause')
-    pauseBtn.onclick = () => this.#view.media.playToggle()
+    pauseBtn.parentElement.onclick = () => this.#view.media.playToggle()
 
-    // ⮞
+    // skip next
     const skipRBtn = this.#view.shadowRoot.getElementById('trackSkipR')
-    skipRBtn.onclick = () => this.#view.events.fire('view:skip', true)
+    skipRBtn.parentElement.onclick = () => this.#view.events.fire('view:skip', true)
     skipRBtn.setAttribute('icon', 'skip-right')
 
-    // ⮜
+    // skip previous
     const skipLBtn = this.#view.shadowRoot.getElementById('trackSkipL')
-    skipLBtn.onclick = () => this.#view.events.fire('view:skip', false)
+    skipLBtn.parentElement.onclick = () => this.#view.events.fire('view:skip', false)
     skipLBtn.setAttribute('icon', 'skip-left')
 
     // loop [⟳], skip [🠖], stop [⇥] at the end of vid
     const loopBtn = this.#view.shadowRoot.getElementById('trackLoop')
-    loopBtn.onclick = () => this.#view.media.onEndRepeat()
+    loopBtn.parentElement.onclick = () => this.#view.media.onEndRepeat()
 
     // seek track events
     const trackBar = this.#view.shadowRoot.getElementById('vidTrack')

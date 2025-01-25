@@ -421,8 +421,6 @@
         margin: 8px;
         transition: all .4s;
         pointer-events: visible;
-        filter: drop-shadow(black 1px 1px 0px) 
-        drop-shadow(black 0px 0px 15px);
         
         &[hidden] {
           opacity: 0;
@@ -436,72 +434,94 @@
         cursor: pointer;
         padding: .5em 0px;
 
-        #vidTime {
-          height: inherit;
-          background: var(--cl-accent);
-          cursor: pointer;
-        }
+        .container {
+          height: .4em;
+          background: #ffffff52;
+          display: flex;
+          align-items: center;
+          border-radius: .3em;
+          box-shadow: var(--theme-view-track-shadow);
 
-        #vidLoop {
-          height: inherit;
-          background: var(--cl-secondary);
-          position: absolute;
-          cursor: pointer;
-          pointer-events: none;
-        }
+          /* mysteriously fixes increasing #vidLoop misalignment as track progresses */
+          filter: drop-shadow(0 0 0 transparent);
 
-        #vidHandle {
-          background: var(--theme-view-primary-fg);
-          width: 2px;
-          height: inherit;
-          pointer-events: none;
-          border-top: solid;
-          border-bottom: solid;
-          border-width: thin;
-          z-index: 2;
+          #vidTime {
+            height: inherit;
+            background: var(--cl-accent);
+            border-radius: inherit;
+            cursor: pointer;
+            anchor-name: --track-handle;
+          }
+
+          #vidLoop {
+            height: inherit;
+            background: var(--cl-secondary);
+            position: absolute;
+            cursor: pointer;
+            pointer-events: none;
+          }
+
+          .trackHandle {
+            position: fixed;
+            background: var(--theme-view-primary-fg);
+            width: 2px;
+            height: inherit;
+            pointer-events: none;
+            border-top: solid;
+            border-bottom: solid;
+            border-width: thin;
+            z-index: 1;
+
+            transform: translateX(-50%);
+            position-anchor: --track-handle;
+            left: anchor(right);
+          }
         }
       }
 
       .trackButtons {
         display: flex;
         align-items: baseline;
-        gap: .6em;
+        gap: .5em;
 
-        button {
-          width: 1em;
-        }
-
-        div {
+        & > div {
           display: flex;
-          align-items: baseline;
+          align-items: center;
+          justify-content: center;
+          min-width: fit-content;
+          padding: 0 .5em;
           gap: .3em;
-          margin: 0 .25em;
-        }
 
-        & > *:not(.passive) {
-          color: var(--theme-view-primary-fg);
-          background: inherit;
-          border: none;
-          transition: .1s;
-          cursor: pointer;
+          border-radius: .3em;
+          color: var(--theme-view-track-button-fg);
+          background: var(--theme-view-track-button-bg);
+          box-shadow: var(--theme-view-track-shadow);
 
-          &:hover {
-            transform: scale(1.5);
+          &.square {
+            --size: round(up, 1.5em, 1px);
+            width: var(--size);
+            height: var(--size);
+            padding: 0;
           }
 
-          &:active {
-            transform: scale(1.15);
-            filter: brightness(.5);
+          &:not(.passive) {
+            transition: .1s;
+            cursor: pointer;
+
+            &:hover {
+              transform: scale(1.5);
+            }
+
+            &:active {
+              transform: scale(1.15);
+              filter: brightness(.5);
+            }
           }
         }
 
         .abLoop {
           font-size: smaller;
           font-weight: bold;
-          color: var(--theme-view-primary-bg);
-          background: var(--theme-view-primary-fg);
-          padding: 0 .3em;
-          border-radius: .3em;
 
           &[state=a] :nth-child(1) {
             color: var(--cl-accent);
@@ -550,17 +570,25 @@
       <div id="screenOverlay">
         <div id="trackPanel">
           <div id="vidTrack">
-            <div style="height: .4em; background: #ffffff52; display: flex; align-items: center;">
+            <div class="container">
               <div id="vidTime"></div>
               <div id="vidLoop"></div>
-              <div id="vidHandle"></div>
+              <div class="trackHandle"></div>
             </div>
           </div>
           <div class="trackButtons">
-            <button id="trackSkipL" title="previous track"></button>
-            <button id="trackPause" title="play/pause"></button>
-            <button id="trackSkipR" title="next track"></button>
-            <p id="trackText" class="passive"></p>
+            <div class="square" title="previous track">
+              <p id="trackSkipL"></p>
+            </div>
+            <div class="square" title="play/pause">
+              <p id="trackPause"></p>
+            </div>
+            <div class="square" title="next track">
+              <p id="trackSkipR"></p>
+            </div>
+            <div class="passive">
+              <p id="trackText"></p>
+            </div>
             <div style="transform-origin: left;" title="volume">
               <p id="trackMute"></p>
               <p id="volumeText">100%</p>
@@ -573,7 +601,9 @@
               <p>A</p>
               <p>B</p>
             </div>
-            <button id="trackLoop" title="on track end"></button>
+            <div class="square" title="on track end">
+              <p id="trackLoop"></p>
+            </div>
           </div>
         </div>
       </div>
