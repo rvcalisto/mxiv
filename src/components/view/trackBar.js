@@ -134,24 +134,20 @@ export class TrackBar {
     const vid = this.#videoElement
     if (!vid) return
 
-    // sync mute
+    // sync mute status and volume
     const muteBtn = this.#view.shadowRoot.getElementById('trackMute')
     muteBtn.setAttribute('icon', vid.muted ? 'vol-mute' : 'vol')
+    muteBtn.parentElement.setAttribute('info', `${(vid.volume*100).toFixed(0)}%`)
     // sync pause
     const pauseBtn = this.#view.shadowRoot.getElementById('trackPause')
     pauseBtn.setAttribute('icon', vid.paused ? 'play' : 'pause')
-    // sync vol
-    const volLabel = this.#view.shadowRoot.getElementById('volumeText')
-    volLabel.textContent = `${(vid.volume*100).toFixed(0)}%`
     // sync loop
     const loopBtn = this.#view.shadowRoot.getElementById('trackLoop')
     loopBtn.setAttribute('icon', this.#view.onEnd)
-    // sync pitch
+    // sync pitch and speed
     const pitchBtn = this.#view.shadowRoot.getElementById('trackPitch')
     pitchBtn.setAttribute('icon', vid.preservesPitch ? 'speed' : 'speed-pitch')
-    // sync speed
-    const speedLabel = this.#view.shadowRoot.getElementById('speedText')
-    speedLabel.textContent = `x${vid.playbackRate.toFixed(2)}`
+    pitchBtn.parentElement.setAttribute('info', `x${vid.playbackRate.toFixed(2)}`)
     // sync ab loop button
     const abLoopBtn = this.#view.shadowRoot.querySelector('.abLoop')
     abLoopBtn.setAttribute('state', 
@@ -228,7 +224,7 @@ export class TrackBar {
     }, { passive: true })
 
     // pitch toggle
-    const speedBtn = this.#view.shadowRoot.getElementById('speedText')
+    const speedBtn = this.#view.shadowRoot.getElementById('trackPitch')
     speedBtn.parentElement.onclick = () => this.#view.media.preservePitch()
 
     // speed wheel

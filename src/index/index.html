@@ -519,6 +519,21 @@
           }
         }
 
+        [info]::after {
+          opacity: .5;
+          content: attr(info);
+          position: absolute;
+          transform: translateY(120%);
+
+          padding: 0 .25em;
+          font-weight: bold;
+          font-size: smaller;
+          border-radius: .3em;
+
+          color: var(--theme-view-track-button-fg);
+          background: var(--theme-view-track-button-bg);
+        }
+
         .abLoop {
           font-size: smaller;
           font-weight: bold;
@@ -591,11 +606,9 @@
             </div>
             <div style="transform-origin: left;" title="volume">
               <p id="trackMute"></p>
-              <p id="volumeText">100%</p>
             </div>
             <div style="transform-origin: right; margin-left: auto;" title="playback rate">
               <p id="trackPitch" icon="speed"></p>
-              <p id="speedText">x1.0</p>
             </div>
             <div class="abLoop" style="gap: 0" title="A/B loop">
               <p>A</p>
