@@ -190,18 +190,22 @@ export class CoverGrid {
    * @param {boolean} [keepOpen=false] Keep Library open after openning book.
    */
   selectCover(cover, keepOpen = false) {
-    if (CoverGrid.selection !== cover ) {
-      this.#list.selectIntoFocus(cover)
-      CoverGrid.selection = cover
+    if (CoverGrid.selection !== cover) {
+      this.#list.selectIntoFocus(cover);
+
+      CoverGrid.selection = cover;
       generalState.librarySelection = cover.bookPath;
-      return
+      return;
     }
 
-    if (!keepOpen) Tab.selected?.close()
+    const libraryTab = keepOpen ? null : Tab.selected;
+
     new Tab('viewer', viewer => {
       /** @type {import('../viewer/viewer.js').Viewer} */ 
       (viewer).open(cover.bookPath)
-    })
+    });
+
+    libraryTab?.close();
   }
 
   /**
