@@ -1,15 +1,15 @@
-import { ActionService } from "../actions/actionService.js"
+import { actionService } from "../actions/actionService.js"
 import { Tab } from "../tabs/tab.js"
-import { StatusBar } from "../components/statusBar.js"
-import { SessionProfiles } from "../tabs/profiles.js"
+import { statusBar } from "../components/statusBar.js"
+import { sessionProfiles } from "../tabs/profiles.js"
 import { actionPalette, option } from "../components/actionPalette/actionPalette.js"
-import { UserAccelerators } from "../actions/userAccelerators.js"
-import { AppNotifier } from "../components/notifier.js"
-import { FrameRegistry } from "../frames/frameRegistry.js"
-import { UserPreferences } from "../components/userPreferences.js"
+import { userAccelerators } from "../actions/userAccelerators.js"
+import { appNotifier } from "../components/notifier.js"
+import { frameRegistry } from "../frames/frameRegistry.js"
+import { userPreferences } from "../components/userPreferences.js"
 
 
-ActionService.setBaseActions({
+actionService.setBaseActions({
   
   'palette': {
     'desc': 'action palette methods',
@@ -40,10 +40,10 @@ ActionService.setBaseActions({
         'run'  : (type = 'viewer') => {
           const success = Tab.newTab(type)
           if (!success)
-            AppNotifier.notify(`tab "${type}" does not exist`, 'newTab')
+            appNotifier.notify(`tab "${type}" does not exist`, 'newTab')
         },
         'options': (lastArg, allArgs) => {
-          const frameDescs = FrameRegistry.getDescriptors()
+          const frameDescs = frameRegistry.getDescriptors()
           return allArgs.length < 2 ?
             frameDescs.map( ([frame, desc]) => option(frame, desc) ) : []
         }
@@ -95,9 +95,9 @@ ActionService.setBaseActions({
       'load': {
         'desc': 'load session profile',
         'run': (name, clearSession = 'default') =>
-          SessionProfiles.load(name, clearSession !== 'keepSession'),
+          sessionProfiles.load(name, clearSession !== 'keepSession'),
         'options': (query, args) => {
-          if (args.length === 1) return SessionProfiles.list()
+          if (args.length === 1) return sessionProfiles.list()
           if (args.length === 2) return [
             option('default', 'close current tabs on profile load'),
             option('keepSession', 'keep current tabs on profile load')
@@ -107,16 +107,16 @@ ActionService.setBaseActions({
       },
       'store': {
         'desc': 'store current session as profile',
-        'run': (name) => SessionProfiles.store(name),
+        'run': (name) => sessionProfiles.store(name),
         'options': (lastArg, allArgs) => {
-          return allArgs.length === 1 ? SessionProfiles.list() : []
+          return allArgs.length === 1 ? sessionProfiles.list() : []
         }
       },
       'erase': {
         'desc': 'erase a session profile',
-        'run': (name) => SessionProfiles.erase(name),
+        'run': (name) => sessionProfiles.erase(name),
         'options': (lastArg, allArgs) => {
-          return allArgs.length === 1 ? SessionProfiles.list() : []
+          return allArgs.length === 1 ? sessionProfiles.list() : []
         }
       }
     }
@@ -124,7 +124,7 @@ ActionService.setBaseActions({
 
   'statusVisibility': {
     'desc' : 'toggle status bar visibility',
-    'run'  : () => StatusBar.toggle()
+    'run'  : () => statusBar.toggle()
   },
 
   'newWindow': {
@@ -145,8 +145,8 @@ ActionService.setBaseActions({
         'desc': 'accelerate action with a hotkey : <component> <key/combo> <action...>',
         'run': (component, keycombo, ...args) => {
           if (!component || !keycombo) return
-          UserAccelerators.set(component, { [keycombo]: args })
-          AppNotifier.notify(`user accelerator updated`)
+          userAccelerators.set(component, { [keycombo]: args })
+          appNotifier.notify(`user accelerator updated`)
         },
         'options': (lastArg, allArgs) => {
           if (allArgs.length > 3) return []
@@ -160,12 +160,12 @@ ActionService.setBaseActions({
           // hint available components
           if (allArgs.length < 2) return [
             option('base', 'on all components, but overruled on concurrency'),
-            ...FrameRegistry.getDescriptors()
+            ...frameRegistry.getDescriptors()
               .map(([name, desc]) => option(name, `set/overwrite ${name} accelerators`)),
           ]
 
           // hint stored user accelerators for component
-          const accelObject = UserAccelerators.getAcceleratorSet(allArgs[0])
+          const accelObject = userAccelerators.getAcceleratorSet(allArgs[0])
           const options = []
 
           for (const [keycombo, actionArg] of Object.entries(accelObject) ) {
@@ -190,9 +190,9 @@ ActionService.setBaseActions({
       }
       
       elecAPI.setTheme(theme);
-      AppNotifier.notify(`set theme to "${theme}"`, 'setTheme');
+      appNotifier.notify(`set theme to "${theme}"`, 'setTheme');
       
-      UserPreferences.themeOverride = theme;
+      userPreferences.themeOverride = theme;
     },
     'options': (_, args) => args.length < 2 ? ['light', 'dark', 'system'] : []
   }

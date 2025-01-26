@@ -1,8 +1,7 @@
-import { AcceleratorService } from "../actions/acceleratorService.js";
+import { acceleratorService } from "../actions/acceleratorService.js";
 
 
-AcceleratorService.setBaseDefaults({
-
+acceleratorService.setBaseDefaults({
   // cmds
   'x': ['palette', 'show'],
   'r+Shift': ['palette', 'repeatLast'],
@@ -24,6 +23,5 @@ AcceleratorService.setBaseDefaults({
   't+Shift': ['tab', 'duplicate'],
   't': ['tab', 'visibility'],
   'w+Shift': ['tab', 'move'],
-  's+Shift': ['tab', 'move', 'left'],
-  
+  's+Shift': ['tab', 'move', 'left']
 });

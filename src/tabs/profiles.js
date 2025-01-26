@@ -1,6 +1,6 @@
 import { GenericStorage } from "../components/genericStorage.js";
-import { AppNotifier } from "../components/notifier.js"
-import { FrameRegistry } from "../frames/frameRegistry.js";
+import { appNotifier } from "../components/notifier.js"
+import { frameRegistry } from "../frames/frameRegistry.js";
 import { Tab } from "./tab.js"
 
 
@@ -16,10 +16,12 @@ import { Tab } from "./tab.js"
  * @property {GeneralState} general General session state.
  */
 
+
 /**
- * General session state.
+ * Profile session general state.
+ * @typedef {generalState} GeneralState
  */
-export let GeneralState = {
+export let generalState = {
   librarySelection: ''
 }
 
@@ -27,7 +29,7 @@ export let GeneralState = {
 /**
  * Manage tab session profiles.
  */
-export const SessionProfiles = new class {
+export const sessionProfiles = new class {
 
   #collator = new Intl.Collator();
 
@@ -44,13 +46,13 @@ export const SessionProfiles = new class {
     /** @type {SessionProfileType} */
     const session = {
       tabs: [],
-      general: GeneralState
+      general: generalState
     }
   
     // store tab data in order of presentation, if allowed and implemented
     for (const tab of Tab.allTabs) {
       const type = tab.frame.type;
-      const allowProfiling = FrameRegistry.getPolicy(type)?.allowProfiling;
+      const allowProfiling = frameRegistry.getPolicy(type)?.allowProfiling;
       
       if (!allowProfiling) continue;
 
@@ -63,7 +65,7 @@ export const SessionProfiles = new class {
     // update or insert session entry
     this.#storage.set(name, session);
   
-    AppNotifier.notify(`stored ${name} profile`);
+    appNotifier.notify(`stored ${name} profile`);
   }
   
   /**
@@ -75,13 +77,13 @@ export const SessionProfiles = new class {
     const session = this.#storage.get(name);
   
     if (!session) {
-      AppNotifier.notify(`profile ${name} does not exist`);
+      appNotifier.notify(`profile ${name} does not exist`);
       return;
     }
   
     if (clearSession) {
       Tab.allTabs.forEach( tab => tab.close(false) );
-      Object.assign(GeneralState, session.general);
+      Object.assign(generalState, session.general);
     }
   
     // recover state and re-create session
@@ -89,7 +91,7 @@ export const SessionProfiles = new class {
       const { type, state } = tabStateObj;
 
       // enforce single instance
-      const policy = FrameRegistry.getPolicy(type);
+      const policy = frameRegistry.getPolicy(type);
       if (!policy?.allowDuplicate) {
         const hasDuplicate = Tab.allTabs.some(tab => tab.frame.type === type);
         if (hasDuplicate) continue;
@@ -109,12 +111,12 @@ export const SessionProfiles = new class {
     const session = this.#storage.get(name);
   
     if (!session) {
-      AppNotifier.notify(`profile ${name} does not exist`);
+      appNotifier.notify(`profile ${name} does not exist`);
       return;
     }
   
     this.#storage.delete(name);
-    AppNotifier.notify(`erased ${name} profile`);
+    appNotifier.notify(`erased ${name} profile`);
   }
   
   /**

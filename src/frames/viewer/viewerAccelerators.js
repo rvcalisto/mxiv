@@ -1,7 +1,7 @@
-import { AcceleratorService } from "../../actions/acceleratorService.js"
+import { acceleratorService } from "../../actions/acceleratorService.js";
 
 
-AcceleratorService.setComponentDefaults('viewer', {
+acceleratorService.setComponentDefaults('viewer', {
 	// navigation
 	'w' : ['navigate', 'up'],
 	's' : ['navigate', 'down'],
@@ -40,12 +40,12 @@ AcceleratorService.setComponentDefaults('viewer', {
   'j' : ['fileExplorer', 'mode', 'playlist'],
   'o' : ['fileExplorer', 'mode', 'explorer'],
   'Tab' : ['fileExplorer', 'toggleFocus'],
-  'Delete' : ['delete'],
-  
-})
+  'Delete' : ['delete']
+});
+
 
 // to be managed by local controller
-AcceleratorService.setComponentDefaults('fileExplorer', {
+acceleratorService.setComponentDefaults('fileExplorer', {
   'w' : ['navItems', 'up'],
   'ArrowUp' : ['navItems', 'up'],
 
@@ -58,5 +58,5 @@ AcceleratorService.setComponentDefaults('fileExplorer', {
   'd' : ['select'],
   'ArrowRight' : ['select'],
 
-  'f' : ['toggleSearch'],
-})
+  'f' : ['toggleSearch']
+});

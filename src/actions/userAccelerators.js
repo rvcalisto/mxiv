@@ -1,5 +1,5 @@
 import { GenericStorage } from '../components/genericStorage.js';
-import { AcceleratorService } from './acceleratorService.js';
+import { acceleratorService } from './acceleratorService.js';
 import { ComponentAccelerators } from "./componentAccelerators.js";
 
 
@@ -11,7 +11,7 @@ import { ComponentAccelerators } from "./componentAccelerators.js";
 /**
  * Persist, apply and update user-defined accelerators.
  */
-export const UserAccelerators = new class {
+export const userAccelerators = new class {
 
   /**
    * @type {GenericStorage<AcceleratorSet>}
@@ -22,7 +22,7 @@ export const UserAccelerators = new class {
     elecAPI.onBroadcast( (e, message, ...args) => {
       if (message === 'accel:sync') {
         console.log('MXIV::broadcast: accel:sync');
-        UserAccelerators.reload();
+        userAccelerators.reload();
       }
     });
   }
@@ -60,9 +60,9 @@ export const UserAccelerators = new class {
     }
 
     if (component === 'base')
-      AcceleratorService.setBaseCustoms(accelerators);
+      acceleratorService.setBaseCustoms(accelerators);
     else
-      AcceleratorService.setComponentCustoms(component, accelerators);
+      acceleratorService.setComponentCustoms(component, accelerators);
 
     if (store) {
       this.#storage.set(component, accelerators);
@@ -94,7 +94,7 @@ export const UserAccelerators = new class {
    * - Elements using CSS variables in their style get updated automatically on change.
    */
   #updateActionPaletteAcceleratorCSSvar() {
-    const baseAccelSet = AcceleratorService.getAccelerators('base');
+    const baseAccelSet = acceleratorService.getAccelerators('base');
     if (baseAccelSet == null) return;
     
     // get keycombo for the first intersecting action

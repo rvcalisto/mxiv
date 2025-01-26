@@ -2,9 +2,9 @@ import { ItemList } from "../itemList.js";
 import { InputPrompt } from "./inputPrompt.js";
 import { PriorityStack } from "./priorityStack.js";
 import { OptionElement } from "./optionElement.js";
-import { ActionService } from "../../actions/actionService.js";
-import { AcceleratorService } from "../../actions/acceleratorService.js";
-import { AppNotifier } from "../notifier.js";
+import { actionService } from "../../actions/actionService.js";
+import { acceleratorService } from "../../actions/acceleratorService.js";
+import { appNotifier } from "../notifier.js";
 import { GenericStorage } from "../genericStorage.js";
 
 
@@ -117,13 +117,13 @@ class ActionPalette extends HTMLElement {
     if (action.length < 1)
       return; 
 
-    const success = ActionService.currentFrameActions.run(action);
+    const success = actionService.currentFrameActions.run(action);
     if (success) {
       const textItem = actionText.trim();
       if (textItem !== 'palette repeatLast')
         this.#actionStack.insert(textItem);
     } else {
-      AppNotifier.notify(`"${action[0]}" is not an action in current context`, 'actionPalette');
+      appNotifier.notify(`"${action[0]}" is not an action in current context`, 'actionPalette');
     }
   }
 
@@ -134,10 +134,10 @@ class ActionPalette extends HTMLElement {
   clearActionHistory(historyItem) {
     if (historyItem == null) {
       this.#actionStack.clearAll();
-      AppNotifier.notify('history cleared', 'actionPalette:clear');
+      appNotifier.notify('history cleared', 'actionPalette:clear');
     } else {
       this.#actionStack.remove(historyItem);
-      AppNotifier.notify('history item removed', 'actionPalette:forget');
+      appNotifier.notify('history item removed', 'actionPalette:forget');
       this.toggle(true); // recapture focus from 'forget' button click
     }
   }
@@ -162,7 +162,7 @@ class ActionPalette extends HTMLElement {
     const element = OptionElement.createElement(itemOption);
 
     // tag accelerators keys, if any
-    const frameAccelerators = AcceleratorService.currentFrameAccelerators;
+    const frameAccelerators = acceleratorService.currentFrameAccelerators;
     element.tags = frameAccelerators.byAction([...leadingAction, itemOption.name]);
     
     if (itemOption.type === 'history') {
@@ -191,7 +191,7 @@ class ActionPalette extends HTMLElement {
    * Genereate hint list based on current this.#prompt text.
    */
   async #displayHints() {
-    const currentActions = ActionService.currentFrameActions.asObject();
+    const currentActions = actionService.currentFrameActions.asObject();
     const inputTextArray = this.#prompt.getTextArray();
     let [cmd, ...args] = inputTextArray;
     let action = currentActions[cmd];

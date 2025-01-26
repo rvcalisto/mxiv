@@ -1,7 +1,7 @@
 import { TabHeader } from "./tabHeader.js";
-import { StatusBar } from "../components/statusBar.js";
+import { statusBar } from "../components/statusBar.js";
 import { GenericFrame } from "../frames/genericFrame.js";
-import { FrameRegistry } from "../frames/frameRegistry.js";
+import { frameRegistry } from "../frames/frameRegistry.js";
 
 
 /**
@@ -42,7 +42,7 @@ export class Tab {
    * @returns {GenericFrame}
    */
   #createFrame(type) {
-    const tagName = FrameRegistry.getTagName(type);
+    const tagName = frameRegistry.getTagName(type);
     const frame = /** @type {GenericFrame} */ (document.createElement(tagName));
     frame.tabName = this.header.name;
     frame.style.display = 'none'; // starts hidden
@@ -56,7 +56,7 @@ export class Tab {
     })
 
     frame.events.observe('frame:statusChange', () => {
-      if (frame === FRAME) StatusBar.updateStatus( frame.status() );
+      if (frame === FRAME) statusBar.updateStatus( frame.status() );
     })
 
     document.getElementById('contents').appendChild(frame);
@@ -80,7 +80,7 @@ export class Tab {
     FRAME = this.frame;
     this.frame.focus();
 
-    StatusBar.updateStatus( this.frame.status() );
+    statusBar.updateStatus( this.frame.status() );
     this.frame.onSelected();
   }
 
@@ -107,7 +107,7 @@ export class Tab {
    */
   duplicate() {
     const type = this.frame.type;
-    const framePolicy = FrameRegistry.getPolicy(type);
+    const framePolicy = frameRegistry.getPolicy(type);
     const frameState = framePolicy.allowDuplicate ? this.frame.getState() : null;
 
     if (!frameState) {
@@ -151,7 +151,7 @@ export class Tab {
    * @returns {boolean} Success.
    */
   static newTab(type = 'viewer') {
-    const framePolicy = FrameRegistry.getPolicy(type);
+    const framePolicy = frameRegistry.getPolicy(type);
     if (framePolicy == null) return false;
     
     if (!framePolicy.allowDuplicate) {

@@ -1,4 +1,4 @@
-import { AcceleratorService } from "../../actions/acceleratorService.js";
+import { acceleratorService } from "../../actions/acceleratorService.js";
 import { FRAME } from "../../tabs/tab.js";
 
 
@@ -8,7 +8,7 @@ import { FRAME } from "../../tabs/tab.js";
 addEventListener('fileExplorerKeyEvent', function handleFileExplorer(e) {
   const keyEvent = e.detail;
 
-  const action = AcceleratorService
+  const action = acceleratorService
     .getAccelerators('fileExplorer', 'default')
     .byEvent(keyEvent);
 
@@ -26,9 +26,10 @@ addEventListener('fileExplorerKeyEvent', function handleFileExplorer(e) {
  * [Workaround] Release slide interval for Viewer's View component.
  */
 addEventListener('keyup', function releaseViewSlide(e) {
-  if (FRAME == null || FRAME.type !== 'viewer') return;
+  if (FRAME == null || FRAME.type !== 'viewer')
+    return;
 
-  const action = AcceleratorService
+  const action = acceleratorService
     .getAccelerators('viewer')
     .byEvent(e);
   
@@ -36,7 +37,9 @@ addEventListener('keyup', function releaseViewSlide(e) {
     e.preventDefault();
 
     const axis = action[1];
-    if (['left', 'right'].includes(axis)) FRAME.viewComponent.navigate('x', 0);
-    else if (['up', 'down'].includes(axis)) FRAME.viewComponent.navigate('y', 0);
+    if (['left', 'right'].includes(axis))
+      FRAME.viewComponent.navigate('x', 0);
+    else if (['up', 'down'].includes(axis))
+      FRAME.viewComponent.navigate('y', 0);
   }
 });

@@ -68,7 +68,7 @@ export class GenericFrame extends HTMLElement {
   }
 
   /**
-   * Request a StatusBar status refresh.
+   * Request a statusBar status refresh.
    */
   refreshStatus() {
     this.events.fire('frame:statusChange');

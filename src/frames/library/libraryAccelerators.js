@@ -1,8 +1,7 @@
-import { AcceleratorService } from "../../actions/acceleratorService.js"
+import { acceleratorService } from "../../actions/acceleratorService.js"
 
 
-AcceleratorService.setComponentDefaults('library', {
-  
+acceleratorService.setComponentDefaults('library', {
   'o'   : ['addToLibrary'],
   'r'   : ['random'],
   'F5'  : ['watchlist', 'sync'],
@@ -27,6 +26,5 @@ AcceleratorService.setComponentDefaults('library', {
   'ArrowUp'   : ['moveSelection', 'vertically', 'back'],
   'w'         : ['moveSelection', 'vertically', 'back'],
   'ArrowDown' : ['moveSelection', 'vertically', 'next'],
-  's'         : ['moveSelection', 'vertically', 'next'],
-  
+  's'         : ['moveSelection', 'vertically', 'next']
 });

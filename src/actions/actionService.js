@@ -10,7 +10,7 @@ import { ComponentActions } from "./componentActions.js";
 /**
  * Manages actions for multiple components.
  */
-export const ActionService = new class {
+export const actionService = new class {
 
   /**
    * Collection of component actions.

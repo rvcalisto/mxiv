@@ -3,7 +3,7 @@ import "./mediaSession.js";
 import "./baseActions.js";
 import "./baseAccelerators.js";
 import "./keyEventController.js";
-import { UserAccelerators } from "../actions/userAccelerators.js";
+import { userAccelerators } from "../actions/userAccelerators.js";
 
 
 /**
@@ -27,6 +27,6 @@ onbeforeunload = function onClose() {
  * Load user accelerators and create first tab.
  */
 onload = function startApp() {
-  UserAccelerators.reload();
+  userAccelerators.reload();
   Tab.newTab();
 };

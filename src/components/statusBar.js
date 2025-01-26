@@ -10,17 +10,15 @@
 /**
  * Display contextual information and update window title.
  */
-export const StatusBar = new class {
+export const statusBar = new class {
 
   /**
    * Application name.
    */
   #titleSuffix = 'MXIV';
 
-  #barElement = /** @type {HTMLDivElement} */ (document.getElementById('bar'));
-
+  #barElement  = /** @type {HTMLDivElement}   */ (document.getElementById('bar'));
   #nameElement = /** @type {HTMLLabelElement} */ (document.getElementById('barName'));
-
   #infoElement = /** @type {HTMLLabelElement} */ (document.getElementById('barInfo'));
 
   /**
@@ -32,8 +30,8 @@ export const StatusBar = new class {
   // toggle visibility on fullscreen
   static {
     elecAPI.onFullscreen( function onFullscreenChange(e, isFullscreen) {
-      if (isFullscreen) StatusBar.#wasVisible = StatusBar.isVisible();
-      StatusBar.toggle(isFullscreen ? false : StatusBar.#wasVisible);
+      if (isFullscreen) statusBar.#wasVisible = statusBar.isVisible();
+      statusBar.toggle(isFullscreen ? false : statusBar.#wasVisible);
     });
   }
 

@@ -10,7 +10,7 @@ import { GenericStorage } from "./genericStorage.js";
 /**
  * Persistent user preferences, defaults.
  */
-export const UserPreferences = new class {
+export const userPreferences = new class {
 
   #storage = new GenericStorage('userPreferences');
 

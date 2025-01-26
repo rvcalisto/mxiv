@@ -1,12 +1,12 @@
-import { ActionService } from "../../actions/actionService.js"
+import { actionService } from "../../actions/actionService.js"
 import { CoverGrid } from "./coverGrid.js"
 import { option, standardFilter } from "../../components/actionPalette/actionPalette.js"
 import { FRAME as Library }  from "../../tabs/tab.js"
-import { AppNotifier } from "../../components/notifier.js"
+import { appNotifier } from "../../components/notifier.js"
 import { runScript, tag } from "../../components/fileMethods.js"
 
 
-ActionService.setComponentActions('library', {
+actionService.setComponentActions('library', {
 
   'filter' : {
     'desc' : 'filter books by name or tags, list tags with ?, prepend - to exclude it',
@@ -19,8 +19,8 @@ ActionService.setComponentActions('library', {
       const queries = allArgs.map(str => str.toLowerCase().trim()).filter(str => str)
 
       // display 'clear filter' on single empty arg, show filter otherwise
-      if (allArgs.length == 1 && !query) AppNotifier.notify('clear filter', 'filter')
-      else if (query) AppNotifier.notify(`filter: ${query}`, 'filter')
+      if (allArgs.length == 1 && !query) appNotifier.notify('clear filter', 'filter')
+      else if (query) appNotifier.notify(`filter: ${query}`, 'filter')
       
       Library.coverGrid.drawCovers(queries)
       return []
@@ -74,7 +74,7 @@ ActionService.setComponentActions('library', {
           if (!validPath) return
 
           Library.watchlistPanel.addItem(path)
-          AppNotifier.notify(`added ${path} to Watchlist`)
+          appNotifier.notify(`added ${path} to Watchlist`)
         },
         'options': async (query) => await elecAPI.queryPath(query)
       },
@@ -85,7 +85,7 @@ ActionService.setComponentActions('library', {
           if (!validPath) return
 
           Library.watchlistPanel.removeItem(path)
-          AppNotifier.notify(`removed ${path} from Watchlist`)
+          appNotifier.notify(`removed ${path} from Watchlist`)
         },
         'options': () => Library.watchlistPanel.getItems().map(i => i.path)
       },
@@ -122,10 +122,10 @@ ActionService.setComponentActions('library', {
         'run': async () => {
           const cover = CoverGrid.selection
           if (!cover) 
-            return AppNotifier.notify('no book selected ', 'bookDelist')
+            return appNotifier.notify('no book selected ', 'bookDelist')
 
           const success = await Library.coverGrid.removeCover(cover)
-          if (success) AppNotifier.notify('book delisted', 'bookDelist')
+          if (success) appNotifier.notify('book delisted', 'bookDelist')
         }
       }
     }
@@ -163,7 +163,7 @@ ActionService.setComponentActions('library', {
         value = 200;
       
       Library.coverGrid.setCoverSize(value);
-      AppNotifier.notify(`cover height sized to ${value}px`, 'coverSize');
+      appNotifier.notify(`cover height sized to ${value}px`, 'coverSize');
     }
   },
   
@@ -175,7 +175,7 @@ ActionService.setComponentActions('library', {
         value = 100;
       
       Library.coverGrid.setItemsPerPage(value);
-      AppNotifier.notify(`showing ${value} items per page`, 'itemsPerPage');
+      appNotifier.notify(`showing ${value} items per page`, 'itemsPerPage');
     }
   },
 
@@ -185,7 +185,7 @@ ActionService.setComponentActions('library', {
       const success = await elecAPI.clearLibrary()
       if (!success) return
 
-      AppNotifier.notify('library book entries cleared')
+      appNotifier.notify('library book entries cleared')
       Library.coverGrid.reloadCovers()
     }
   },
@@ -196,6 +196,5 @@ ActionService.setComponentActions('library', {
     'run'  : async (script, msg) => {
       await runScript(script, CoverGrid.selection?.bookPath, msg);
     }
-  },
-
-})
+  }
+});

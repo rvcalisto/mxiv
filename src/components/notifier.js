@@ -1,7 +1,7 @@
 /**
  * In-app notification methods.
  */
-export const AppNotifier = new class {
+export const appNotifier = new class {
 
   #rootElement = /** @type {HTMLElement} */ (document.getElementById('appNotifier'));
 

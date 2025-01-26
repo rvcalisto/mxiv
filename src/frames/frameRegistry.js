@@ -19,7 +19,7 @@ import { Library } from "./library/library.js";
 /**
  * Frame component registry,
  */
-export const FrameRegistry = new class {
+export const frameRegistry = new class {
 
   #tagSuffix = 'component';
 

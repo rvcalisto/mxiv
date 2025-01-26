@@ -1,5 +1,5 @@
 import { ItemList } from "../../components/itemList.js";
-import { AppNotifier } from "../../components/notifier.js";
+import { appNotifier } from "../../components/notifier.js";
 
 
 /**
@@ -137,7 +137,7 @@ export class FileExplorer extends HTMLElement {
     
     const directoryFiles = lsObj.directories.concat(lsObj.archives, lsObj.files);
     if (directoryFiles.length < 1) {
-      AppNotifier.notify(`${lsObj.target.name}: no supported files to list`, 'chdir');
+      appNotifier.notify(`${lsObj.target.name}: no supported files to list`, 'chdir');
       return false;
     }
     

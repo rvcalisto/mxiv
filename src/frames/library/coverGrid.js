@@ -3,9 +3,9 @@ import { ItemList } from "../../components/itemList.js"
 import { Cover } from "./coverElement.js";
 import { Tab } from "../../tabs/tab.js";
 import { ObservableEvents } from "../../components/observableEvents.js";
-import { GeneralState } from "../../tabs/profiles.js";
+import { generalState } from "../../tabs/profiles.js";
 import { matchNameOrTags } from '../../components/fileMethods.js';
-import { UserPreferences } from "../../components/userPreferences.js";
+import { userPreferences } from "../../components/userPreferences.js";
 
 
 /**
@@ -67,8 +67,8 @@ export class CoverGrid {
    */
   constructor(hostList) {
     this.#list = hostList
-    this.#list.itemsPerPage = UserPreferences.libraryItemsPerPage;
-    document.body.style.setProperty('--cover-height', `${UserPreferences.libraryCoverSize}px`);
+    this.#list.itemsPerPage = userPreferences.libraryItemsPerPage;
+    document.body.style.setProperty('--cover-height', `${userPreferences.libraryCoverSize}px`);
   }
 
   /**
@@ -108,7 +108,7 @@ export class CoverGrid {
    * @param {number} count
    */
   setItemsPerPage(count) {
-    UserPreferences.libraryItemsPerPage = count;
+    userPreferences.libraryItemsPerPage = count;
     this.#list.itemsPerPage = count;
     this.drawCovers();
   }
@@ -118,7 +118,7 @@ export class CoverGrid {
    * @param {number} size
    */
   setCoverSize(size) {
-    UserPreferences.libraryCoverSize = size;
+    userPreferences.libraryCoverSize = size;
     document.body.style.setProperty('--cover-height', `${size}px`);
     this.events.fire('grid:coverUpdate');
     
@@ -153,7 +153,7 @@ export class CoverGrid {
     }, filterFunc);
 
     // recover last selection
-    const lastPath = GeneralState.librarySelection;
+    const lastPath = generalState.librarySelection;
     if (lastPath !== '') {
       const cover = this.#list
         .findItemElement(item => item.path === lastPath);
@@ -193,7 +193,7 @@ export class CoverGrid {
     if (CoverGrid.selection !== cover ) {
       this.#list.selectIntoFocus(cover)
       CoverGrid.selection = cover
-      GeneralState.librarySelection = cover.bookPath;
+      generalState.librarySelection = cover.bookPath;
       return
     }
 

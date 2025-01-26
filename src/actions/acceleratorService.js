@@ -10,7 +10,7 @@ import { FRAME } from "../tabs/tab.js";
 /**
  * Manages accelerators for multiple components.
  */
-export const AcceleratorService = new class {
+export const acceleratorService = new class {
 
   /**
    * Collection of component accelerators.

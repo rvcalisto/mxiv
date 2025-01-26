@@ -6,7 +6,7 @@ import { View } from "../../components/view/view.js"
 import "./viewerActions.js"
 import "./viewerAccelerators.js"
 import "./keyEventController.js"
-import { AppNotifier } from "../../components/notifier.js"
+import { appNotifier } from "../../components/notifier.js"
 
 
 /**
@@ -123,7 +123,7 @@ export class Viewer extends GenericFrame {
     this.#openArgs = paths
 
     if ( !await this.fileBook.load(...paths) ) {
-      AppNotifier.notify('no files to open', 'viewer:open')
+      appNotifier.notify('no files to open', 'viewer:open')
       return
     }
 
@@ -151,7 +151,7 @@ export class Viewer extends GenericFrame {
       return queries.every( query => name.includes(query) )
     })
 
-    idx < 0 ? AppNotifier.notify('no matches') : this.gotoPage(idx)
+    idx < 0 ? appNotifier.notify('no matches') : this.gotoPage(idx)
   }
 
   /**
@@ -165,19 +165,19 @@ export class Viewer extends GenericFrame {
     if (queries.length < 1) {
       this.fileBook.clearFilter()
       this.#filterQuery = []
-      AppNotifier.notify('clear filter')
+      appNotifier.notify('clear filter')
     } else {
       const currentFilePath = this.fileBook.currentFile?.path
   
       const matches = this.fileBook.filterStringAndTags(...queries)
-      if (matches === 0) return AppNotifier.notify('no matches')
+      if (matches === 0) return appNotifier.notify('no matches')
       else this.#filterQuery = queries
   
       // new filter exclude currentFile, refresh
       if (currentFilePath !== this.fileBook.currentFile?.path) 
         this.gotoPage();
 
-      AppNotifier.notify(`${matches} files matched`)
+      appNotifier.notify(`${matches} files matched`)
     }
 
     // update status bar and reload fileExplorer
@@ -241,7 +241,7 @@ export class Viewer extends GenericFrame {
     const currentFile = this.fileBook.currentFile
     if (!currentFile) {
       this.fileExplorer.reload()
-      AppNotifier.notify('reloaded fileExplorer', 'fileReload')
+      appNotifier.notify('reloaded fileExplorer', 'fileReload')
       return
     }
 
@@ -250,13 +250,13 @@ export class Viewer extends GenericFrame {
     const tabName = this.tabName
 
     // re-open current paths, starting by current-file
-    AppNotifier.notify('reloading files...', 'fileReload')
+    appNotifier.notify('reloading files...', 'fileReload')
     await this.open(currentFile.path, ...paths)
 
     // restore tab name and re-apply filter
     this.tabName = tabName
     if (filterQuery.length > 0) this.filter(...filterQuery)
-    AppNotifier.notify('files reloaded', 'fileReload')
+    appNotifier.notify('files reloaded', 'fileReload')
   }
   
   /**
@@ -264,7 +264,7 @@ export class Viewer extends GenericFrame {
    */
   async deletePage() {
     const targetFile = this.fileBook.currentFile
-    if (!targetFile) return AppNotifier.notify('no loaded file to delete', 'pageDel')
+    if (!targetFile) return appNotifier.notify('no loaded file to delete', 'pageDel')
     
     const forReal = confirm(`Permanently delete current file:\n${targetFile.name}?`)
     if (!forReal) return
@@ -286,7 +286,7 @@ export class Viewer extends GenericFrame {
 
     const message = `${success ? 'deleted' : 'failed to delete'} ${targetFile.path}`
     console.log(message)
-    AppNotifier.notify(message)
+    appNotifier.notify(message)
   }
 
   /**
@@ -365,7 +365,7 @@ export class Viewer extends GenericFrame {
     })
 
     // view events
-    viewComponent.events.observe('view:notify', (msg, type) => AppNotifier.notify(msg, type))
+    viewComponent.events.observe('view:notify', (msg, type) => appNotifier.notify(msg, type))
     viewComponent.events.observe('view:playing', (playing) => this.setFrameIsPlaying(playing))
     viewComponent.events.observe('view:skip', (forward) => this.flipPage(forward))
     viewComponent.events.observe('view:random', () => this.gotoRandom())
@@ -402,7 +402,7 @@ export class Viewer extends GenericFrame {
       status.infoRight = `${filterInfo} fit-${mode}:${zoom.toFixed(0)}% ${pager}`
       status.infoLeftFunc = () => {
         navigator.clipboard.writeText(currentFile.path)
-        AppNotifier.notify('filepath copied to clipboard')
+        appNotifier.notify('filepath copied to clipboard')
       }
     }
 
