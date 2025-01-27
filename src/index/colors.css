@@ -38,6 +38,8 @@
 
     --theme-explorer-paginator-item-fg: whitesmoke;
     --theme-explorer-paginator-item-bg: #141414;
+    --theme-explorer-paginator-item-hover-bg: #242424;
+    --theme-explorer-paginator-item-active-bg: #323232;
     --theme-explorer-paginator-bg: black;
     
     --theme-explorer-option-fg: whitesmoke;
@@ -74,22 +76,24 @@
     --theme-library-primary-fg: whitesmoke;
     --theme-library-primary-bg: var(--cl-accent);
 
-    --theme-library-button-fg: whitesmoke;
-    --theme-library-button-bg: #282828;
-    --theme-library-button-hover-bg: #484848;
-    --theme-library-button-press-bg: black;
-
     --theme-library-watchlist-header-fg: whitesmoke;
     --theme-library-watchlist-header-bg: var(--cl-accent);
     --theme-library-watchlist-body-bg: #2b2b2b;
     --theme-library-watchlist-item-fg: whitesmoke;
     --theme-library-watchlist-item-bg: #424242;
 
+    --theme-library-watchlist-button-fg: whitesmoke;
+    --theme-library-watchlist-button-bg: #303030;
+    --theme-library-watchlist-button-hover-bg: #202020;
+    --theme-library-watchlist-button-press-bg: black;
+
     --theme-library-cover-shadow: 4px 4px 5px 0px black;
 
     --theme-library-paginator-bg: black;
     --theme-library-paginator-item-fg: whitesmoke;
     --theme-library-paginator-item-bg: #282828;
+    --theme-library-paginator-item-hover-bg: #383838;
+    --theme-library-paginator-item-active-bg: #484848;
     --theme-library-paginator-shadow: 0px 0px 4px 0px #000000a0;
 
     /* status */
@@ -138,6 +142,8 @@
 
     --theme-explorer-paginator-item-fg: #242424;
     --theme-explorer-paginator-item-bg: whitesmoke;
+    --theme-explorer-paginator-item-hover-bg: lightgray;
+    --theme-explorer-paginator-item-active-bg: silver;
     --theme-explorer-paginator-bg: slategray;
 
     --theme-explorer-option-fg: dimgray;
@@ -174,22 +180,24 @@
     --theme-library-primary-fg: whitesmoke;
     --theme-library-primary-bg: var(--cl-accent);
 
-    --theme-library-button-fg: #383838;
-    --theme-library-button-bg: whitesmoke;
-    --theme-library-button-hover-bg: silver;
-    --theme-library-button-press-bg: gray;
-
     --theme-library-watchlist-header-fg: whitesmoke;
     --theme-library-watchlist-header-bg: var(--cl-accent);
     --theme-library-watchlist-body-bg: silver;
     --theme-library-watchlist-item-fg: #242424;
     --theme-library-watchlist-item-bg: white;
     
+    --theme-library-watchlist-button-fg: #242424;
+    --theme-library-watchlist-button-bg: #dadada;
+    --theme-library-watchlist-button-hover-bg: #a0a0a0;
+    --theme-library-watchlist-button-press-bg: gray;
+
     --theme-library-cover-shadow: 4px 4px 5px 0px silver;
     
     --theme-library-paginator-bg: slategray;
     --theme-library-paginator-item-fg: #242424;
     --theme-library-paginator-item-bg: whitesmoke;
+    --theme-library-paginator-item-hover-bg: lightgray;
+    --theme-library-paginator-item-active-bg: silver;
     --theme-library-paginator-shadow: 0px 0px 4px 0px #000000a0;
 
     /* status */

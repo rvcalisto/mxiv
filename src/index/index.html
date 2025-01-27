@@ -176,16 +176,15 @@
           padding: 2px 8px;
           background: var(--theme-explorer-paginator-item-bg);
           color: var(--theme-explorer-paginator-item-fg);
-          transition: .2s;
         }
 
         button:hover {
-          transform: scale(1.2);
+          background: var(--theme-explorer-paginator-item-hover-bg);
           cursor: pointer;
         }
 
         button:active {
-          transform: scale(1);
+          background: var(--theme-explorer-paginator-item-active-bg);
         }
       }
 
@@ -927,6 +926,16 @@
             padding: .1em .5em;
             border-radius: .25em;
           }
+
+          &:is(button) {
+            &:hover {
+              background: var(--theme-library-paginator-item-hover-bg);
+            }
+            
+            &:active {
+              background: var(--theme-library-paginator-item-active-bg);
+            }
+          }
         }
       }
 
@@ -1011,36 +1020,29 @@
           color: var(--theme-library-primary-fg);
           background: var(--theme-library-primary-bg);
           box-shadow: 2px 2px #00000090;
+          transition: transform .1s;
 
           &:hover {
             color: var(--theme-library-primary-bg);
             background: var(--theme-library-primary-fg);
+          }
+
+          &:active {
+            transform: scale(.8);
           }
         }
       }
 
       button {
         font-family: var(--app-font);
-        color: var(--theme-library-button-fg);
-        background: var(--theme-library-button-bg);
         border-radius: .25em;
         border: none;
         padding: 0px 6px;
-        transition: .2s;
         outline: none;
         min-width: 1.5em;
         aspect-ratio: 1;
         margin: 2px;
         cursor: pointer;
-
-        &:hover, 
-        &:focus {
-          background: var(--theme-library-button-hover-bg);
-        }
-
-        &:active {
-          background: var(--theme-library-button-press-bg);
-        }
       }
 
       .overlay {
@@ -1065,6 +1067,16 @@
         button {
           height: 2em;
           width: 2em;
+          color: var(--theme-library-watchlist-button-fg);
+          background: var(--theme-library-watchlist-button-bg);
+
+          &:hover {
+            background: var(--theme-library-watchlist-button-hover-bg);
+          }
+
+          &:active {
+            background: var(--theme-library-watchlist-button-press-bg);
+          }
         }
         
         #folderListHeader {

@@ -122,7 +122,6 @@ body {
 
 .tab button {
   font-size: x-small;
-  transition: .2s;
   opacity: .3;
   
   color: var(--theme-tab-primary-fg);
