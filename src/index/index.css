@@ -40,6 +40,16 @@
   font-size: large;
 }
 
+[icon=left]::before {
+  content: "";
+  font-size: large;
+}
+
+[icon=right]::before {
+  content: "";
+  font-size: large;
+}
+
 body,
 html {
   width: 100%;
@@ -53,16 +63,52 @@ body {
   background: var(--theme-main-bg)
 }
 
-#tabs {
+header {
   display: flex;
   padding: var(--small-gap);
   gap: var(--small-gap);
-  --px-slide-offset: 0px;
+
+  #tabs {
+    --px-slide-offset: 0px;
+    display: flex;
+    width: 100%;
+    gap: var(--small-gap);
+    overflow-x: auto;
+
+    &::-webkit-scrollbar {
+      height: 0;
+    }
+  }
+
+  .scrollBtn {
+    display: none;
+    color: var(--theme-tab-secondary-fg);
+    align-self: center;
+    justify-self: center;
+
+    padding: .2em .3em;
+    border-radius: .3em;
+
+    &:hover {
+      cursor: pointer;
+      color: var(--theme-tab-primary-fg);
+    }
+
+    &[disabled] {
+      opacity: .25;
+    }
+  }
+
+  &[overflow] {
+    .scrollBtn {
+      display: block;
+    }
+  }
 }
 
 .tab,
 #newTab {
-  padding: .2em .3em;
+  padding: .2em round(up, .3em, 1px);
   border-radius: .3em;
   white-space: nowrap;
   overflow: hidden;
@@ -70,6 +116,7 @@ body {
   
   color: var(--theme-tab-secondary-fg);
   max-width: 14em;
+  min-width: 5em;
   width: 100%;
   display: flex;
   
@@ -110,9 +157,11 @@ body {
 }
 
 #newTab {
+  --size: 1.5em;
   display: block;
-  max-width: 1.5em;
   text-align: center;
+  max-width: var(--size);
+  min-width: var(--size);
   
   &:hover {
     color: var(--theme-tab-primary-fg);
@@ -157,7 +206,7 @@ main {
   display: flex;
 
   /* remove explorer top margin when tabs are visible for and even gap */
-  #tabs:not([style*="display: none;"]) + & viewer-component::part(explorer) {
+  header:not([style*="display: none;"]) + & viewer-component::part(explorer) {
     margin-top: 0;
   }
 }

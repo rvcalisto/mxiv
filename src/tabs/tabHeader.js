@@ -11,35 +11,85 @@ export class TabHeader {
    * @type {WeakMap<Element, TabHeader>} 
    */
   static #classMap = new WeakMap()
-  
-  static #tabsContainer = /** @type {HTMLElement} */ (document.querySelector('header'))
-  
-  static #tabsContainerHeight = getComputedStyle(this.#tabsContainer).height
 
-  #nameCount = 1
+  static #headerPanel   = /** @type {HTMLElement} */ (document.querySelector('header'))
+  static #tabsContainer = /** @type {HTMLElement} */ (document.querySelector('#tabs'))
+  static #newTabButton  = /** @type {HTMLElement} */ (document.querySelector('#newTab'))
+  static #scrollHeaderL = /** @type {HTMLElement} */ (document.querySelector('#tabScrollL'))
+  static #scrollHeaderR = /** @type {HTMLElement} */ (document.querySelector('#tabScrollR'))
 
-  #element
+  static #headerPanelHeight = getComputedStyle(this.#headerPanel).height
+  static #overflowMode = false
 
-  /** @type {HTMLButtonElement} */
-  #playButton
-
-  /** @type {HTMLParagraphElement} */
-  #nameLabel
-  
-  /** @type {HTMLButtonElement} */
-  #closeButton
+  static #wheelVelocity = 0;
+  static #wheelInterval = /** @type {NodeJS.Timeout|undefined} */ (undefined);
 
   /**
    * Old bar visibility value before fullscreen.
    */
   static #barWasVisible = this.isBarVisible()
-  
-  // toggle tab bar visibility on fullscreen
+
+  #nameCount = 1
+
+  /** @type {HTMLElement}          */ #element
+  /** @type {HTMLButtonElement}    */ #playButton
+  /** @type {HTMLParagraphElement} */ #nameLabel
+  /** @type {HTMLButtonElement}    */ #closeButton
+
   static {
-    elecAPI.onFullscreen( function onFullscreenChange(e, isFullscreen) {
-      if (isFullscreen) TabHeader.#barWasVisible = TabHeader.isBarVisible()
-      TabHeader.toggleHeaderBar(isFullscreen ? false : TabHeader.#barWasVisible)
-    })
+    // toggle tab bar visibility on fullscreen
+    elecAPI.onFullscreen((_e, /** @type {boolean} */ isFullscreen) => {
+      if (isFullscreen)
+        this.#barWasVisible = this.isBarVisible();
+
+      this.toggleHeaderBar(isFullscreen ? false : this.#barWasVisible);
+    });
+
+    // treat overflow also on resize
+    addEventListener( 'resize', () => this.#treatOverflow() );
+
+    // disable scroll buttons when hitting start/end positions
+    this.#tabsContainer.onscroll = () => {
+      this.#scrollHeaderL.toggleAttribute('disabled', this.#tabsContainer.scrollLeft === 0);
+
+      const scrollPosition = this.#tabsContainer.scrollLeft + this.#tabsContainer.offsetWidth;
+      const scrollEnd = this.#tabsContainer.scrollWidth;
+      this.#scrollHeaderR.toggleAttribute('disabled', scrollPosition === scrollEnd);
+    }
+
+    // smooth scroll tab overflow on wheel
+    this.#headerPanel.onwheel = (e) => {
+      const speed = Math.max( 5, Math.min(10, Math.abs(this.#wheelVelocity) + 1) );
+      this.#wheelVelocity = speed * Math.sign(e.deltaY);
+
+      if (this.#wheelInterval != null)
+        return;
+
+      this.#wheelInterval = setInterval(() => {
+        this.#tabsContainer.scrollBy(this.#wheelVelocity, 0);
+
+        if ( Math.sign(this.#wheelVelocity) === 1 )
+          this.#wheelVelocity = Math.max(0, this.#wheelVelocity - .1);
+        else
+          this.#wheelVelocity = Math.min(0, this.#wheelVelocity + .1);
+
+        if (this.#wheelVelocity === 0) {
+          clearInterval(this.#wheelInterval);
+          this.#wheelInterval = undefined;
+        }
+      }, 10);
+    }
+
+    // smooth scroll tab overflow on button press
+    this.#scrollHeaderL.onmousedown = () => {
+      const interval = setInterval(() => this.#tabsContainer.scrollBy(-5, 0), 10);
+      addEventListener('mouseup', () => clearInterval(interval), { once: true });
+    }
+
+    this.#scrollHeaderR.onmousedown = () => {
+      const interval = setInterval(() => this.#tabsContainer.scrollBy(5, 0), 10);
+      addEventListener('mouseup', () => clearInterval(interval), { once: true });
+    }
   }
 
   /**
@@ -86,8 +136,14 @@ export class TabHeader {
 
     // compose & append container, frame to document
     container.append(this.#playButton, this.#nameLabel, this.#closeButton)
-    if (Tab.selected) Tab.selected.header.#element.after(container)
-    else document.getElementById('newTab').before(container)
+    if (Tab.selected != null)
+      Tab.selected.header.#element.after(container)
+    else if (TabHeader.#overflowMode)
+      TabHeader.#tabsContainer.append(container)
+    else
+      TabHeader.#newTabButton.before(container)
+
+    TabHeader.#treatOverflow()
 
     // set tab events
     setDragEvent(container)
@@ -130,6 +186,7 @@ export class TabHeader {
    */
   remove() {
     this.#element.remove()
+    TabHeader.#treatOverflow()
   }
 
   /**
@@ -137,8 +194,11 @@ export class TabHeader {
    * @param {boolean} [select=true] True or false.
    */
   select(select = true) {
-    if (select) this.#element.classList.add('selected')
-    else this.#element.classList.remove('selected')
+    if (select) {
+      this.#element.classList.add('selected')
+      this.#element.scrollIntoView()
+    } else
+      this.#element.classList.remove('selected')
   }
 
   /**
@@ -188,7 +248,7 @@ export class TabHeader {
    * Get Header Bar visibility.
    */
   static isBarVisible() {
-    return this.#tabsContainer.style.display === ''
+    return this.#headerPanel.style.display === ''
   }
   
   /**
@@ -196,13 +256,31 @@ export class TabHeader {
    * @param {Boolean} [show] Either to force visibility on or off.
    */
   static toggleHeaderBar( show = !this.isBarVisible() ) {
-    this.#tabsContainer.style.display = ''
-    
-    this.#tabsContainer.animate([
-      { height: show ? '0px' : this.#tabsContainerHeight },
-      { height: show ? this.#tabsContainerHeight : '0px' }
-    ], { duration: 80 }).onfinish = () => {
-      this.#tabsContainer.style.display = show ? '' : 'none'
+    this.#headerPanel.style.display = ''
+    const direction = show ? 'normal' : 'reverse';
+
+    this.#headerPanel.animate([
+      { height: '0px' }, { height: this.#headerPanelHeight }
+    ], { duration: 80, direction }).onfinish = () => {
+      this.#headerPanel.style.display = show ? '' : 'none';
+      this.#treatOverflow();
     }
+  }
+
+  /**
+   * Move `newTab` button out of overflow container as tabs overflow,
+   * move in otherwise. Show/hide overflow indicators, Update `overflowMode`.
+   */
+  static #treatOverflow() {
+    const overflowing = this.#tabsContainer.clientWidth < this.#tabsContainer.scrollWidth;
+
+    if (overflowing && !this.#overflowMode)
+      this.#scrollHeaderR.after(TabHeader.#newTabButton);
+    else if (!overflowing && this.#overflowMode)
+      this.#tabsContainer.append(TabHeader.#newTabButton);
+
+    this.#overflowMode = overflowing;
+    this.#headerPanel.toggleAttribute('overflow', overflowing);
+    this.#tabsContainer.querySelector('.selected')?.scrollIntoView();
   }
 }

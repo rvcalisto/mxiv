@@ -90,8 +90,12 @@ export class Tab {
    */
   move(right = true) {
     const next = right ? this.header.right : this.header.left;
-    if (next != null)
+    if (next != null) {
       next.insert(this.header, right);
+
+      if (Tab.selected === this)
+        this.header.select(); // focus into view in case of overflow
+    }
   }
 
   /**

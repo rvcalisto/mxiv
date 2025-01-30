@@ -3,7 +3,7 @@
 /**
  * Tabs Container div.
  */
-const tabsContainer = /** @type {HTMLElement} */ (document.querySelector('header'));
+const tabsContainer = /** @type {HTMLElement} */ (document.querySelector('#tabs'));
 
 /**
  * Dragged tab.
