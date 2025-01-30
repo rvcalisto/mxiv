@@ -197,14 +197,6 @@ export class Tab {
     const tabs = TabHeader.allHeaders;
     return tabs.map(header => header.tabInstance);
   }
-
-  /**
-   * Toggle tab Header Bar visibility.
-   * @param {Boolean} [show] Either to force visibility on or off.
-   */
-  static toggleHeaderBar(show) {
-    TabHeader.toggleHeaderBar(show);
-  }
 }
 
 

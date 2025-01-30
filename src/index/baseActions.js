@@ -7,6 +7,7 @@ import { userAccelerators } from "../actions/userAccelerators.js"
 import { appNotifier } from "../components/notifier.js"
 import { frameRegistry } from "../frames/frameRegistry.js"
 import { userPreferences } from "../components/userPreferences.js"
+import * as headerPanel from "../tabs/tabHeaderPanel.js"
 
 
 actionService.setBaseActions({
@@ -79,7 +80,7 @@ actionService.setBaseActions({
         'desc' : 'toggle or set tab header bar visibility',
         'run'  : (show) => {
           const value = show === 'on' ? true : show === 'off' ? false : undefined
-          Tab.toggleHeaderBar(value)
+          headerPanel.toggleVisibility(value)
         },
         'options': (lastArg, args) => args.length < 2 ?
           [option('toggle', 'default'), 'on', 'off'] : []
