@@ -282,5 +282,7 @@ export class TabHeader {
     this.#overflowMode = overflowing;
     this.#headerPanel.toggleAttribute('overflow', overflowing);
     this.#tabsContainer.querySelector('.selected')?.scrollIntoView();
+
+    this.#tabsContainer.onscroll(); // update scroll buttons on element insertion
   }
 }
