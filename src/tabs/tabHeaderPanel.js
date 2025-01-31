@@ -108,7 +108,10 @@ export function isVisible() {
  * Toggle Header Bar visibility.
  * @param {boolean} [show] Either to force visibility on or off.
  */
-export function toggleVisibility( show = !this.isVisible() ) {
+export function toggleVisibility( show = !isVisible() ) {
+  if ( show === isVisible() )
+    return;
+  
   headerPanel.style.display = '';
   const direction = show ? 'normal' : 'reverse';
 
