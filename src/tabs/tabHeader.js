@@ -1,6 +1,6 @@
 import { Tab } from "./tab.js"
 import setDragEvent from "./tabHeaderDrag.js"
-import { addItem, removeItem } from "./tabHeaderPanel.js"
+import { addItem, removeItem, slideIntoView } from "./tabHeaderPanel.js"
 
 
 /**
@@ -117,7 +117,7 @@ export class TabHeader {
   select(select = true) {
     if (select) {
       this.#element.classList.add('selected')
-      this.#element.scrollIntoView()
+      slideIntoView(this.#element)
     } else
       this.#element.classList.remove('selected')
   }

@@ -1,17 +1,42 @@
 // @ts-check
+
 const headerPanel   = /** @type {HTMLElement} */ (document.querySelector('header'));
 const tabsContainer = /** @type {HTMLElement} */ (document.querySelector('#tabs'));
 const newTabButton  = /** @type {HTMLElement} */ (document.querySelector('#newTab'));
 const scrollHeaderL = /** @type {HTMLElement} */ (document.querySelector('#tabScrollL'));
 const scrollHeaderR = /** @type {HTMLElement} */ (document.querySelector('#tabScrollR'));
 
+/**
+ * Default header panel height. For `toggleVisibility` animation interpolation.
+ */
 const headerPanelHeight = getComputedStyle(headerPanel).height;
 
+/**
+ * Header panel visibility state before going fullscreen.
+ */
 let preFSVisibility = isVisible();
+
+/**
+ * Either tabs surpassed the container overflow threshold.
+ */
 let overflowMode = false;
 
-let wheelVelocity = 0;
-let wheelInterval = /** @type {NodeJS.Timeout|undefined} */ (undefined);
+/**
+ * Smooth scroll interval properties for wheel events.
+ */
+const wheelScroll = {
+  interval: /** @type {NodeJS.Timeout|undefined} */ (undefined),
+  velocity: 0
+};
+
+/**
+ * Smooth scroll interval properties for `slideIntoView`.
+ */
+const slideScroll = {
+  interval: /** @type {NodeJS.Timeout|undefined} */ (undefined),
+  iteration: 0,
+  step: 0
+};
 
 
 /**
@@ -37,6 +62,38 @@ export function addItem(element, after) {
 export function removeItem(element) {
   element.remove();
   treatOverflow();
+}
+
+/**
+ * Smoothly scroll element into view at a constant time (100ms).
+ * @param {HTMLElement} element
+ */
+export function slideIntoView(element) {
+  const containerRect = tabsContainer.getBoundingClientRect();
+  const rect = element.getBoundingClientRect();
+
+  let distance = 0;
+  if (rect.left < containerRect.left)
+    distance = rect.left - tabsContainer.offsetLeft;
+  else if (rect.right > containerRect.right)
+    distance = rect.right - tabsContainer.offsetWidth - tabsContainer.offsetLeft;
+
+  slideScroll.iteration = 0;
+  slideScroll.step = distance > 0
+    ? Math.ceil(distance / 10)
+    : Math.floor(distance / 10);
+
+  if (slideScroll.interval != null)
+    return;
+
+  slideScroll.interval = setInterval(() => {
+    tabsContainer.scrollBy(slideScroll.step, 0);
+    
+    if (++slideScroll.iteration === 10) {
+      clearInterval(slideScroll.interval);
+      slideScroll.interval = undefined;
+    }
+  }, 10);
 }
 
 /**
@@ -112,25 +169,25 @@ function initialize() {
   // disable scroll buttons when hitting start/end positions
   tabsContainer.onscroll = () => updateOverflowIndicators();
 
-  // smooth scroll tab overflow on wheel
+  // smooth scroll tabs horizontally on default wheel
   headerPanel.onwheel = (e) => {
-    const speed = Math.max( 5, Math.min(10, Math.abs(wheelVelocity) + 1) );
-    wheelVelocity = speed * Math.sign(e.deltaY);
+    const speed = Math.max( 5, Math.min(10, Math.abs(wheelScroll.velocity) + 1) );
+    wheelScroll.velocity = speed * Math.sign(e.deltaY);
 
-    if (wheelInterval != null)
+    if (wheelScroll.interval != null)
       return;
 
-    wheelInterval = setInterval(() => {
-      tabsContainer.scrollBy(wheelVelocity, 0);
+    wheelScroll.interval = setInterval(() => {
+      tabsContainer.scrollBy(wheelScroll.velocity, 0);
 
-      if ( Math.sign(wheelVelocity) === 1 )
-        wheelVelocity = Math.max(0, wheelVelocity - .1);
+      if ( Math.sign(wheelScroll.velocity) === 1 )
+        wheelScroll.velocity = Math.max(0, wheelScroll.velocity - .1);
       else
-        wheelVelocity = Math.min(0, wheelVelocity + .1);
+        wheelScroll.velocity = Math.min(0, wheelScroll.velocity + .1);
 
-      if (wheelVelocity === 0) {
-        clearInterval(wheelInterval);
-        wheelInterval = undefined;
+      if (wheelScroll.velocity === 0) {
+        clearInterval(wheelScroll.interval);
+        wheelScroll.interval = undefined;
       }
     }, 10);
   }
