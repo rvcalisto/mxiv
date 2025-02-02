@@ -69,6 +69,9 @@ export function removeItem(element) {
  * @param {HTMLElement} element
  */
 export function slideIntoView(element) {
+  if (tabsContainer.offsetWidth === tabsContainer.scrollWidth)
+    return;
+
   const containerRect = tabsContainer.getBoundingClientRect();
   const rect = element.getBoundingClientRect();
 
@@ -77,6 +80,8 @@ export function slideIntoView(element) {
     distance = rect.left - tabsContainer.offsetLeft;
   else if (rect.right > containerRect.right)
     distance = rect.right - tabsContainer.offsetWidth - tabsContainer.offsetLeft;
+  else
+    return;
 
   slideScroll.iteration = 0;
   slideScroll.step = distance > 0
@@ -86,9 +91,12 @@ export function slideIntoView(element) {
   if (slideScroll.interval != null)
     return;
 
+  clearInterval(wheelScroll.interval);
+  wheelScroll.interval = undefined;
+
   slideScroll.interval = setInterval(() => {
     tabsContainer.scrollBy(slideScroll.step, 0);
-    
+
     if (++slideScroll.iteration === 10) {
       clearInterval(slideScroll.interval);
       slideScroll.interval = undefined;
@@ -174,11 +182,17 @@ function initialize() {
 
   // smooth scroll tabs horizontally on default wheel
   headerPanel.onwheel = (e) => {
+    if (tabsContainer.offsetWidth === tabsContainer.scrollWidth)
+      return;
+
     const speed = Math.max( 5, Math.min(10, Math.abs(wheelScroll.velocity) + 1) );
     wheelScroll.velocity = speed * Math.sign(e.deltaY);
 
     if (wheelScroll.interval != null)
       return;
+
+    clearInterval(slideScroll.interval);
+    slideScroll.interval = undefined;
 
     wheelScroll.interval = setInterval(() => {
       tabsContainer.scrollBy(wheelScroll.velocity, 0);
