@@ -71,14 +71,11 @@ export function removeItem(element) {
 }
 
 /**
- * Smoothly scroll element into view at a constant time (100ms by default).
+ * Get necessary distance to scroll element into focus.
  * @param {HTMLElement} element
- * @param {number} [iterations=10] Number of 10ms intervals to use. Default to 10.
+ * @returns {number}
  */
-export function slideIntoView(element, iterations = 10) {
-  if (tabsContainer.offsetWidth === tabsContainer.scrollWidth)
-    return;
-
+function getScrollDistance(element) {
   const containerRect = tabsContainer.getBoundingClientRect();
   const rect = element.getBoundingClientRect();
 
@@ -88,11 +85,27 @@ export function slideIntoView(element, iterations = 10) {
   else if (rect.right > containerRect.right)
     distance = rect.right - tabsContainer.offsetWidth - tabsContainer.offsetLeft;
   else
-    return;
+    return 0;
 
   // extra push to consume tab items container drop-shadow padding on extremes
   distance += element.nextElementSibling == null ? tabsContainerGap :
-              element.previousElementSibling == null ? -tabsContainerGap : 0;
+  element.previousElementSibling == null ? -tabsContainerGap : 0;
+
+  return distance;
+}
+
+/**
+ * Smoothly scroll element into view at a constant time (100ms by default).
+ * @param {HTMLElement} element
+ * @param {number} [iterations=10] Number of 10ms intervals to use. Default to 10.
+ */
+export function slideIntoView(element, iterations = 10) {
+  if (tabsContainer.offsetWidth === tabsContainer.scrollWidth)
+    return;
+
+  const distance = getScrollDistance(element);
+  if (distance === 0)
+    return;
 
   slideScroll.iteration = 0;
   slideScroll.iterations = iterations;
@@ -131,15 +144,16 @@ export function isVisible() {
 export function toggleVisibility( show = !isVisible() ) {
   if ( show === isVisible() )
     return;
-  
+
   headerPanel.style.display = '';
+  treatOverflow();
+
   const direction = show ? 'normal' : 'reverse';
 
   headerPanel.animate([
     { height: '0px' }, { height: headerPanelHeight }
   ], { duration: 80, direction }).onfinish = () => {
     headerPanel.style.display = show ? '' : 'none';
-    treatOverflow();
   };
 }
 
@@ -169,11 +183,13 @@ function treatOverflow() {
   overflowMode = overflowing;
   headerPanel.toggleAttribute('overflow', overflowing);
 
-  const selectedTab = /** @type {HTMLElement?} */ (tabsContainer.querySelector('.selected'));
-  if (selectedTab != null)
-    slideIntoView(selectedTab, 1);
+  if (overflowing) {
+    updateOverflowIndicators();
 
-  updateOverflowIndicators();
+    const selectedTab = /** @type {HTMLElement?} */ (tabsContainer.querySelector('.selected'));
+    if (selectedTab != null)
+      tabsContainer.scrollBy( getScrollDistance(selectedTab), 0 );
+  }
 }
 
 
