@@ -75,6 +75,10 @@ header {
     gap: var(--small-gap);
     overflow-x: auto;
 
+    /* allow space for tab items drop-shadow */
+    padding: var(--small-gap);
+    margin: calc( var(--small-gap) * -1 );
+
     &::-webkit-scrollbar {
       height: 0;
     }

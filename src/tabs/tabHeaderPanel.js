@@ -12,6 +12,11 @@ const scrollHeaderR = /** @type {HTMLElement} */ (document.querySelector('#tabSc
 const headerPanelHeight = getComputedStyle(headerPanel).height;
 
 /**
+ * Gap between tab elements. For `slideIntoView` focus correction.
+ */
+const tabsContainerGap = Number.parseInt( getComputedStyle(headerPanel).gap );
+
+/**
  * Header panel visibility state before going fullscreen.
  */
 let preFSVisibility = isVisible();
@@ -35,6 +40,7 @@ const wheelScroll = {
 const slideScroll = {
   interval: /** @type {NodeJS.Timeout|undefined} */ (undefined),
   iteration: 0,
+  iterations: 10,
   step: 0
 };
 
@@ -65,10 +71,11 @@ export function removeItem(element) {
 }
 
 /**
- * Smoothly scroll element into view at a constant time (100ms).
+ * Smoothly scroll element into view at a constant time (100ms by default).
  * @param {HTMLElement} element
+ * @param {number} [iterations=10] Number of 10ms intervals to use. Default to 10.
  */
-export function slideIntoView(element) {
+export function slideIntoView(element, iterations = 10) {
   if (tabsContainer.offsetWidth === tabsContainer.scrollWidth)
     return;
 
@@ -83,10 +90,15 @@ export function slideIntoView(element) {
   else
     return;
 
+  // extra push to consume tab items container drop-shadow padding on extremes
+  distance += element.nextElementSibling == null ? tabsContainerGap :
+              element.previousElementSibling == null ? -tabsContainerGap : 0;
+
   slideScroll.iteration = 0;
+  slideScroll.iterations = iterations;
   slideScroll.step = distance > 0
-    ? Math.ceil(distance / 10)
-    : Math.floor(distance / 10);
+    ? Math.ceil(distance / iterations)
+    : Math.floor(distance / iterations);
 
   if (slideScroll.interval != null)
     return;
@@ -97,7 +109,7 @@ export function slideIntoView(element) {
   slideScroll.interval = setInterval(() => {
     tabsContainer.scrollBy(slideScroll.step, 0);
 
-    if (++slideScroll.iteration === 10) {
+    if (++slideScroll.iteration === slideScroll.iterations) {
       clearInterval(slideScroll.interval);
       slideScroll.interval = undefined;
     }
@@ -156,7 +168,10 @@ function treatOverflow() {
 
   overflowMode = overflowing;
   headerPanel.toggleAttribute('overflow', overflowing);
-  tabsContainer.querySelector('.selected')?.scrollIntoView();
+
+  const selectedTab = /** @type {HTMLElement?} */ (tabsContainer.querySelector('.selected'));
+  if (selectedTab != null)
+    slideIntoView(selectedTab, 1);
 
   updateOverflowIndicators();
 }
