@@ -146,7 +146,7 @@ export class Library extends GenericFrame {
       return;
 
     if (files.length < 1) {
-      files = await elecAPI.dialog({
+      files = await elecAPI.dialog('open', {
         title: "Add Folder to Library",
         properties: ['openDirectory'],
         buttonLabel: "Add Selected"

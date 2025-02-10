@@ -161,7 +161,7 @@ export class WatchlistPanel {
     const addtoBtn = this.#componentRoot.getElementById('addToWatch');
     addtoBtn.onclick = async () => {
       /** @type {string[]|undefined} */
-      const files = await elecAPI.dialog({
+      const files = await elecAPI.dialog('open', {
         title: "Add Folders to Watchlist",
         properties: ['openDirectory'],
         buttonLabel: "Add Selected"

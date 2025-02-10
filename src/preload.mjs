@@ -39,10 +39,10 @@ contextBridge.exposeInMainWorld('elecAPI', {
   getTags: (path) => localTagStorage.getTags(path), // renderer, for non-blocking sync
   addTags: async (path, ...tags) => ipcRenderer.invoke('tags:add', path, ...tags),
   removeTags: async (path, ...tags) => ipcRenderer.invoke('tags:remove', path, ...tags),
-  
+
   // app window
   newWindow: async () => ipcRenderer.invoke('window:new'),
-  dialog: (options) => ipcRenderer.invoke('window:dialog', options),
+  dialog: (type, options) => ipcRenderer.invoke('window:dialog', type, options),
   onOpen: (details) => ipcRenderer.on('window:open', details),
   toggleFullscreen: async () => ipcRenderer.invoke('window:fullscreen'),
   onFullscreen: (isFullscreen) => ipcRenderer.on('window:onFullscreen', isFullscreen),

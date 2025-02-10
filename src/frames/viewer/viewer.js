@@ -264,10 +264,21 @@ export class Viewer extends GenericFrame {
    */
   async deletePage() {
     const targetFile = this.fileBook.currentFile
-    if (!targetFile) return appNotifier.notify('no loaded file to delete', 'pageDel')
-    
-    const forReal = confirm(`Permanently delete current file:\n${targetFile.name}?`)
-    if (!forReal) return
+    if (!targetFile)
+      return appNotifier.notify('no loaded file to delete', 'pageDel')
+
+    const answerID = await elecAPI.dialog('message', {
+      type: 'question',
+      title: 'Delete File',
+      message: `Permanently delete current file?`,
+      detail: targetFile.name,
+      buttons: ['Delete', 'Cancel'],
+      defaultId: 0,
+      cancelId: 1
+    });
+
+    if (answerID === 1)
+      return
 
     // try and delete target file from filesystem
     const filterState = this.fileBook.isFiltered()

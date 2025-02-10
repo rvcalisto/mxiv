@@ -160,7 +160,7 @@ actionService.setComponentActions('viewer', {
   'openFileDialog': {
     'desc' : 'open folder with dialog window',
     'run'  : async () => {
-      const paths = await elecAPI.dialog({
+      const paths = await elecAPI.dialog('open', {
         title: "Open Folder",
         properties: ['openDirectory'],
         buttonLabel: "Select Folder",

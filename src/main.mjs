@@ -72,12 +72,13 @@ function ipcHandlers() {
     newWindow();
   });
 
-  ipcMain.handle('window:dialog', (e, options) => {
+  ipcMain.handle('window:dialog', (e, /** @type {'open'|'message'} */ type, options) => {
     const window = BrowserWindow.fromWebContents(e.sender);
-    const files = dialog.showOpenDialogSync(window, options);
-    
-    if (files)
-      return files;
+
+    if (type === 'open')
+      return dialog.showOpenDialogSync(window, options);
+    else
+      return dialog.showMessageBoxSync(window, options);
   });
 
   ipcMain.handle('window:fullscreen', () => {
