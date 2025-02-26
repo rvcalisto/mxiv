@@ -73,7 +73,7 @@ function ipcHandlers() {
   });
 
   ipcMain.handle('window:dialog', (e, /** @type {'open'|'message'} */ type, options) => {
-    const window = BrowserWindow.fromWebContents(e.sender);
+    const window = /** @type {Electron.BrowserWindow} */ (BrowserWindow.fromWebContents(e.sender));
 
     if (type === 'open')
       return dialog.showOpenDialogSync(window, options);
@@ -82,7 +82,7 @@ function ipcHandlers() {
   });
 
   ipcMain.handle('window:fullscreen', () => {
-    const win = BrowserWindow.getFocusedWindow();
+    const win = /** @type {Electron.BrowserWindow} */ (BrowserWindow.getFocusedWindow());
     const newState = !win.fullScreen;
     
     win.setFullScreen(newState);
@@ -96,8 +96,11 @@ function ipcHandlers() {
 }
 
 
-// quit as part of the squirrel.windows installation procedure
-if ( process.platform === 'win32' && (await import('electron-squirrel-startup')).default ) {
+// quit as part of the squirrel.windows installation procedure, if present
+if (process.platform === 'win32' && await import('electron-squirrel-startup')
+  .then(module => module.default)
+  .catch(_ => false)
+) {
   app.quit();
 }
 
@@ -136,7 +139,7 @@ else {
   // set listener for new instances. Spawn new window and open paths if any
   app.on('second-instance', (_, _argv, workingDirectory, userArgv) => {
     newWindow().then(win => {
-      const tabs = tabArguments(userArgv);
+      const tabs = tabArguments(/** @type {string[]} */ (userArgv));
 
       // relative paths still use main process working directory,
       // so solve relative paths to current process working directory.

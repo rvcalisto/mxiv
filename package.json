@@ -6,7 +6,8 @@
   "main": "src/main.mjs",
   "type": "module",
   "scripts": {
-    "start": "electron-forge start",
+    "start": "electron .",
+    "forge-start": "electron-forge start",
     "package": "electron-forge package",
     "make": "electron-forge make",
     "publish": "electron-forge publish",
@@ -15,6 +16,10 @@
   "keywords": [],
   "author": "rvcalisto",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rvcalisto/mxiv.git"
+  },
   "config": {
     "forge": {
       "packagerConfig": {
@@ -59,7 +64,7 @@
       ]
     }
   },
-  "dependencies": {
+  "optionalDependencies": {
     "electron-squirrel-startup": "^1"
   },
   "devDependencies": {

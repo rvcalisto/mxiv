@@ -27,9 +27,9 @@ MXIV is a keyboard-oriented media viewer intended to navigate heterogeneous gall
 ## Runtime Dependencies
 
 - [**Electron**][1] - Application framework
-- [**7z**][2] - To temporarily extract and view archived media files *( optional )*
-- [**ImageMagick**][4] - To generate thumbnails for media folders & archives in library *( optional )*
-- [**Font Awesome**][5] - Icon Fonts **( included )** 
+- [**7z**][2] - To temporarily extract and view archived media files **(optional)**
+- [**ImageMagick**][4] - To generate thumbnails for media folders & archives in library **(optional)**
+- [**Font Awesome**][5] - Icon Fonts **(included)** 
 
 ## Usage
 
