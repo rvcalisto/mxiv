@@ -16,10 +16,13 @@ export function fileType(file) {
     case '.jpg': case '.jpeg': case '.png':
     case '.gif': case '.apng': case '.webp':
     case '.svg': case '.icns': case '.ico':
+    case '.avif':
       return 'image'
     case '.mp3': case '.ogg': case '.wav':
+    case '.m4a': case '.aac': case '.flac':
+    case '.opus':
       return 'audio'
-    case '.mp4': case '.webm':
+    case '.mp4': case '.webm': case '.mov':
       return 'video';
     case '.zip': case '.cbz':
       return 'archive'
