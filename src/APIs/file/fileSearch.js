@@ -5,12 +5,17 @@ import { expandPath, fileType } from './fileTools.js';
 import { tools } from '../tool/toolCapabilities.js';
 
 
+/**
+ * File categories.
+ * @typedef {'image'|'audio'|'video'|'folder'|'archive'} FileCategory
+ */
+
 /** 
  * Wrapper for common file operations in unprivileged contexts.
  * @typedef FileObject
  * @property {string} path Absolute path to file.
  * @property {string} name Basename. (Ex: duck.png)
- * @property {'image'|'audio'|'video'|'folder'|'archive'} category File category.
+ * @property {FileCategory} category File category.
  */
 
 /**
@@ -46,7 +51,7 @@ export function clearCache() {
 
 /**
  * Wrap file properties in object for use in unprivileged contexts.
- * @param {'image'|'audio'|'video'|'folder'|'archive'} category File category.
+ * @param {FileCategory} category File category.
  * @param {string} name Basename. (Ex: `duck.png`)
  * @param {string} fullpath Absolute path. (Ex: `/home/user/Pictures/duck.png`)
  * @returns {FileObject} Wrapped file.

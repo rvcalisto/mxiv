@@ -1,3 +1,5 @@
+// @ts-check
+
 /** 
  * View slideshow controller. 
  */
@@ -7,75 +9,85 @@ export class Slideshow {
    * Host View component.
    * @type {import('./view.js').View}
    */
-  #view
+  #view;
 
   /**
    * File skip timeout.
-   * @type {Number?}
+   * @type {NodeJS.Timeout|undefined}
    */
-  #timer = null
+  #timer = undefined;
 
   /**
    * Seconds to wait between slides.
    */
-  #delay = 1
+  #delay = 1;
+  
+  /**
+   * Slideshow state.
+   */
+  #active = false;
 
   /**
    * @param {import('./view.js').View} view View instance.
    */
   constructor(view) {
-    /**
-     * Slideshow state. Read only.
-     */
-    this.active = false
-
-    this.#view = view
+    this.#view = view;
+  }
+  
+  /**
+   * Slideshow state. Read only.
+   */
+  get active() {
+    return this.#active;
   }
 
   /**
    * Get or set slideshow interval in seconds.
    */
   get delay() {
-    return this.#delay
+    return this.#delay;
   }
 
   /**
    * Get or set slideshow interval in seconds.
-   * @param {Number} value Slideshow interval in secs.
+   * @param {number} value Slideshow interval in secs.
    */
   set delay(value) {
-    this.#delay = Math.max(0, value)
-    this.#view.events.fire('view:notify', `slide delay to ${this.#delay}s`, 'slideshow')
+    this.#delay = Math.max(0, value);
+    this.#view.events.fire('view:notify', `slide delay to ${this.#delay}s`, 'slideshow');
   }
 
   /**
    * Set timeout for next slide, if active.
    */
   tick() {
-    if (!this.active) return
-    clearTimeout(this.#timer)
+    if (!this.active)
+      return;
+
+    clearTimeout(this.#timer);
 
     this.#timer = setTimeout(() => {
-      this.#view.events.fire('view:skip', true)
-    }, this.#delay * 1000)
+      this.#view.events.fire('view:skip', true);
+    }, this.#delay * 1000);
   }
 
   /**
    * Set slideshow on or off. Toggles by default.
-   * @param {Boolean?} active Force slideshow state.
-   * @param {true} notify Either to display an OSD message.
+   * @param {boolean} [active] Force slideshow state.
+   * @param {boolean} [notify=true] Either to display an OSD message.
    */
   toggle(active = !this.active, notify = true) {
-    clearTimeout(this.#timer)
-    
-    // set and signal play state
-    this.active = active
-    if (active) this.tick()
-    this.#view.events.fire('view:playing', active)
+    clearTimeout(this.#timer);
 
-    if (notify) {
-      this.#view.events.fire('view:notify', `slideshow ${active ? 
-      `on [${this.#delay}s]` : 'off'}`, 'slideshow')
-    }
+    // set and signal play state
+    this.#active = active;
+    if (active)
+      this.tick();
+
+    this.#view.events.fire('view:playing', active);
+
+    if (notify)
+      this.#view.events.fire('view:notify', 
+        `slideshow ${active ? `on [${this.#delay}s]` : 'off'}`, 'slideshow');
   }
 }
