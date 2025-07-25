@@ -1,3 +1,4 @@
+// @ts-check
 import { GenericFrame } from "../genericFrame.js"
 import { FileBook } from "./fileBook.js"
 import { FileExplorer } from "./fileExplorer.js"
@@ -15,9 +16,14 @@ import { appNotifier } from "../../components/notifier.js"
 export class Viewer extends GenericFrame {
 
   /**
+   * Block new open calls until book resolves.
+   */
+  #bookIsLoading = false;
+
+  /**
    * Block go-to calls, prevents unloaded page flips.
    */
-  #loading = false
+  #pageIsLoading = false;
   
   /**
    * Last Page flip direction for auto-scroll.
@@ -94,23 +100,29 @@ export class Viewer extends GenericFrame {
 
   /** @override */
   async restoreState(stateObj) {
-    // open path on file
-    if (stateObj.paths.length) await this.open(...stateObj.paths)
-    if (stateObj.tabName) this.tabName = stateObj.tabName
+    // load state and disable autoplay when restoring/duplicating
+    this.viewComponent.state(stateObj.mediaState);
+    this.viewComponent.autoplay = false;
     
-    // load media state
-    this.viewComponent.state(stateObj.mediaState)
+    // open paths and goto file
+    if (stateObj.paths.length)
+      await this.open(...stateObj.paths);
 
-    // don't autoplay if restoring audio/video
-    this.viewComponent.autoplay = this.viewComponent.fileType === 'image'
+    // enable autoplay for next media onwards
+    this.viewComponent.autoplay = true; 
+
+    if (stateObj.tabName)
+      this.tabName = stateObj.tabName;
 
     // re-apply filter (idx based, file order/count may have changed)
-    if (stateObj.filterQuery.length) this.filter(...stateObj.filterQuery)
+    if (stateObj.filterQuery.length)
+      this.filter(...stateObj.filterQuery);
 
     // pass fileExplorer parameters
-    this.fileExplorer.currentDir = stateObj.fileExplorer.dir
-    this.fileExplorer.mode = stateObj.fileExplorer.mode
-    if (stateObj.fileExplorer.show) this.fileExplorer.togglePanel(true)
+    this.fileExplorer.currentDir = stateObj.fileExplorer.dir;
+    this.fileExplorer.mode = stateObj.fileExplorer.mode;
+    if (stateObj.fileExplorer.show)
+      this.fileExplorer.togglePanel(true);
   }
 
   /** 
@@ -119,23 +131,29 @@ export class Viewer extends GenericFrame {
    * @param {String[]} paths Paths. Will display first path if file.
    */
   async open(...paths) {
-    // Prevents state replication failure when duplicating while loading
-    this.#openArgs = paths
+    if (this.#bookIsLoading)
+      return;
+
+    this.hold(true);
+    this.#bookIsLoading = true;
+    this.#openArgs = paths; // fix state replication (duplicates) during bookIsLoading
 
     if ( !await this.fileBook.load(...paths) ) {
-      appNotifier.notify('no files to open', 'viewer:open')
-      return
+      appNotifier.notify('no files to open', 'viewer:open');
+    } else {
+      // reset filter query
+      this.#filterQuery = [];
+
+      // name tab path basenames, sorted for order-redundancy
+      const basedirs = this.fileBook.paths.map(dir => dir.name);
+      this.tabName = String(basedirs);
+
+      await this.gotoPage();
+      this.fileExplorer.reload();
     }
 
-    // reset filter query
-    this.#filterQuery = []
-
-    // name tab path basenames, sorted for order-redundancy
-    const basedirs = this.fileBook.paths.map(dir => dir.name)
-    this.tabName = String(basedirs)
-
-    this.gotoPage()
-    this.fileExplorer.reload()
+    this.#bookIsLoading = false;
+    this.hold(false);
   }
 
   /**
@@ -206,8 +224,10 @@ export class Viewer extends GenericFrame {
     }
 
     // block until resolve
-    if (this.#loading) return
-    this.#loading = true
+    if (this.#pageIsLoading)
+      return;
+
+    this.#pageIsLoading = true;
 
     // get right file, set openArgs
     const file = this.fileBook.setPageIdx(pageIdx)
@@ -217,7 +237,7 @@ export class Viewer extends GenericFrame {
     // wait for display (loaded) and resolve block
     const fileURL = elecAPI.getFileURL(file.path)
     let success = await this.viewComponent.display(fileURL, file.category)
-    this.#loading = false
+    this.#pageIsLoading = false;
     
     if (!success) {
       console.log('Failed to load resource. Delist file and skip.')
