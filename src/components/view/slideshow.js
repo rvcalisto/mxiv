@@ -15,7 +15,7 @@ export class Slideshow {
    * File skip timeout.
    * @type {NodeJS.Timeout|undefined}
    */
-  #timer = undefined;
+  #timer;
 
   /**
    * Seconds to wait between slides.
@@ -37,7 +37,7 @@ export class Slideshow {
   /**
    * Slideshow state. Read only.
    */
-  get active() {
+  get isActive() {
     return this.#active;
   }
 
@@ -61,7 +61,7 @@ export class Slideshow {
    * Set timeout for next slide, if active.
    */
   tick() {
-    if (!this.active)
+    if (!this.isActive)
       return;
 
     clearTimeout(this.#timer);
@@ -76,7 +76,7 @@ export class Slideshow {
    * @param {boolean} [active] Force slideshow state.
    * @param {boolean} [notify=true] Either to display an OSD message.
    */
-  toggle(active = !this.active, notify = true) {
+  toggle(active = !this.isActive, notify = true) {
     clearTimeout(this.#timer);
 
     // set and signal play state

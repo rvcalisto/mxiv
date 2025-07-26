@@ -58,7 +58,7 @@ export class View extends HTMLElement {
 
   /** 
    * On track end behavior.
-   * @type {import('./media.js').OnTrackEndModes}
+   * @type {import('./media.js').OnTrackEndMode}
    */
   onEnd = 'loop';
 
@@ -138,7 +138,7 @@ export class View extends HTMLElement {
       this.slideshow.tick();
 
       const playing = type === 'image'
-        ? this.slideshow.active
+        ? this.slideshow.isActive
         : !this.media.vid?.paused;
 
       this.events.fire('view:playing', playing);

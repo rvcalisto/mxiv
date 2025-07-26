@@ -1,5 +1,7 @@
+// @ts-check
+
 /**
- * @typedef {'cycle'|'loop'|'skip'|'random'} OnTrackEndModes
+ * @typedef {'loop'|'skip'|'random'} OnTrackEndMode
  */
 
 
@@ -12,13 +14,13 @@ export class ViewMedia {
    * Host View component.
    * @type {import('./view.js').View}
    */
-  #view
+  #view;
 
   /**
    * @param {import('./view.js').View} view View instance.
    */
   constructor(view) {
-    this.#view = view
+    this.#view = view;
   }
 
   /**
@@ -28,204 +30,227 @@ export class ViewMedia {
    * @returns {HTMLVideoElement?}
    */
   get vid() {
-    const videoElement = this.#view.shadowRoot.getElementById('view')
-    return videoElement.tagName === 'VIDEO' ? videoElement : null
+    const shadowRoot = /** @type ShadowRoot */ (this.#view.shadowRoot);
+    const element = /** @type {HTMLImageElement|HTMLVideoElement} */ 
+      (shadowRoot.getElementById('view'));
+
+    return element.tagName === 'VIDEO'
+      ? /** @type {HTMLVideoElement} */ (element)
+      : null;
   }
   
   /**
    * Toggle play state.
-   * @param {Boolean} [force] Force play on `true`, pause on `false`.
+   * @param {boolean} [force] Force play on `true`, pause on `false`.
    */
   playToggle(force) {
-    const vid = this.vid
-    if (!vid) return
+    const vid = this.vid;
+    if (!vid)
+      return;
 
-    if (force !== undefined) force ? vid.play() : vid.pause()
-    else vid.paused ? vid.play() : vid.pause()
-    this.#view.trackBar.peek()
+    if (force !== undefined)
+      force ? vid.play() : vid.pause();
+    else
+      vid.paused ? vid.play() : vid.pause();
+
+    this.#view.trackBar.peek();
 
     // also toggle interval 
-    if (this.#view.aLoop != Infinity && this.#view.bLoop != Infinity) {
-      this.#abLoopInterval(!vid.paused)
-    }
+    if (this.#view.aLoop != Infinity && this.#view.bLoop != Infinity)
+      this.#abLoopInterval(!vid.paused);
 
-    this.#view.events.fire('view:playing', !vid.paused)
+    this.#view.events.fire('view:playing', !vid.paused);
   }
   
   /**
    * Toggle media mute.
-   * @param {Boolean} [force] Either to force mute on or off.
+   * @param {boolean} [force] Either to force mute on or off.
    */
   muteToggle(force) {
-    const vid = this.vid
-    if (!vid) return
+    const vid = this.vid;
+    if (!vid)
+      return;
   
-    if (force !== undefined) vid.muted = force
-    else vid.muted = !vid.muted
+    vid.muted = force === undefined
+      ? !vid.muted
+      : force;
   
-    this.#view.mute = vid.muted
-    this.#view.trackBar.peek()
+    this.#view.mute = vid.muted;
+    this.#view.trackBar.peek();
   }
   
   /**
    * Set volume or increment/decrement with +/-.
-   * @param {String|Number} volume 
+   * @param {string|number} volume 
    */
   setVolume(volume) {
-    const vid = this.vid
-    if (!vid) return
+    const vid = this.vid;
+    if (!vid)
+      return;
   
     // detect signs for incremental/decremental volume
-    const add = String(volume)[0] == '+' || String(volume)[0] == '-'
-    const value = parseFloat(volume)
+    const volumeString = String(volume);
+    const value = parseFloat(volumeString);
 
-    if (isNaN(value)) return
-    
+    if ( isNaN(value) )
+      return;
+
     // normalize and clamp volume
-    let newVol = add ? vid.volume + (value / 100) : value / 100
-    newVol = Math.min(1, Math.max(0, newVol))
-  
-    vid.volume = newVol
-    this.#view.volume = vid.volume
-    this.#view.trackBar.peek()
+    const relative = volumeString[0] === '+' || volumeString[0] === '-';
+    let newVol = relative ? vid.volume + (value / 100) : value / 100;
+    newVol = Math.min( 1, Math.max(0, newVol) );
+
+    vid.volume = newVol;
+    this.#view.volume = vid.volume;
+    this.#view.trackBar.peek();
   }
   
   /**
    * Set flow behavior on end of track. Cycle through modes by default.
-   * @param {OnTrackEndModes} [behavior] What to do on end of track.
+   * @param {OnTrackEndMode} [behavior] What to do on end of track.
    */
-  onEndRepeat(behavior = 'cycle') {
-    const vid = this.vid
-    if (!vid) return
+  onEndRepeat(behavior) {
+    const vid = this.vid;
+    if (!vid)
+      return;
 
-    // no arg given or invalid, cycle and notify 
-    const modes = ['loop', 'skip', 'random']
-    const invalid = modes.indexOf(behavior) < 0
-    if (behavior == null || invalid) {
-      behavior = modes[ (modes.indexOf(this.#view.onEnd) + 1) % 3 ]
-      this.#view.events.fire('view:notify', `on track end: ${behavior}`, 'loopFile')
+    const modes = /** @type OnTrackEndMode[] */ (['loop', 'skip', 'random']);
+
+    // if no arg given or invalid, cycle and notify 
+    if ( behavior == null || !modes.includes(behavior) ) {
+      behavior = modes[ (modes.indexOf(this.#view.onEnd) + 1) % 3 ];
+      this.#view.events.fire('view:notify', `on track end: ${behavior}`, 'loopFile');
     }
 
-    vid.loop = behavior === 'loop'
-    this.#view.onEnd = behavior
-    this.#view.trackBar.peek()
+    vid.loop = behavior === 'loop';
+    this.#view.onEnd = behavior;
+    this.#view.trackBar.peek();
   }
   
   /**
    * Skip video position in seconds. `10%` skips the video by 10% of total duration.
-   * @param {Number|String} value By how much to skip video in secs.
+   * @param {number|string} value By how much to skip video in secs.
    */
   skipBy(value) {
-    const vid = this.vid
-    if (!vid) return
+    const vid = this.vid;
+    if (!vid)
+      return;
 
-    // relative or raw seconds
-    if (String(value).includes('%')) {
-      const percent = vid.duration * (parseFloat(value) * .01); 
-      vid.currentTime += percent
-    } else {
-      vid.currentTime += value
-    }
+    const fetchString = String(value);
+    const newValue = parseFloat(fetchString);
 
-    this.#view.trackBar.peek()
+    if ( isNaN(newValue) )
+      return;
+
+    vid.currentTime += fetchString.includes('%')
+      ? vid.duration * (newValue * .01) // relative to track duration
+      : newValue;
+
+    this.#view.trackBar.peek();
   }
   
   /**
    * Set video playback speed or increment/decrement with +/-.
-   * @param {Number|String} value Playback speed to set.
+   * @param {number|string} value Playback speed to set.
    */
   playbackRate(value) {
-    const vid = this.vid
-    if (!vid) return
+    const vid = this.vid;
+    if (!vid)
+      return;
 
-    let valueNumber = parseFloat(value)
-    if ( isNaN(valueNumber) ) valueNumber = 1
+    const rateString = String(value);
+    let valueNumber = parseFloat(rateString);
 
-    const signed = String(value)[0] == '+' || String(value)[0] == '-'
-    value = signed ? vid.playbackRate + valueNumber : valueNumber
+    if ( isNaN(valueNumber) )
+      valueNumber = 1; // reset if invalid
 
-    vid.playbackRate = Math.min( Math.max(value, .25), 16 )
+    value = rateString[0] === '+' || rateString[0] === '-'
+      ? vid.playbackRate + valueNumber // relative
+      : valueNumber;
 
-    const fixedRate = vid.playbackRate.toFixed(2)
-    this.#view.events.fire('view:notify', `playback rate set to ${fixedRate}`, 'playbackRate')
-    this.#view.trackBar.peek()
+    vid.playbackRate = Math.min( Math.max(value, .25), 16 );
+
+    const fixedRate = vid.playbackRate.toFixed(2);
+    this.#view.events.fire('view:notify', `playback rate set to ${fixedRate}`, 'playbackRate');
+    this.#view.trackBar.peek();
   }
 
   /**
    * Set audio pitch-correction behavior at modified playback rates.
-   * @param {Boolean} [preserve] Toggle behavior by default.
+   * @param {boolean} [preserve] Toggle behavior by default.
    */
   preservePitch(preserve) {
-    const vid = this.vid
-    if (!vid) return
+    const vid = this.vid;
+    if (!vid)
+      return;
 
-    if ( preserve == null ) vid.preservesPitch = !vid.preservesPitch
-    else vid.preservesPitch = preserve
+    vid.preservesPitch = preserve == null
+      ? !vid.preservesPitch
+      : preserve;
 
-    this.#view.events.fire('view:notify', `preservePitch: ${vid.preservesPitch}`, 'prePitch')
-    this.#view.trackBar.peek()
+    this.#view.events.fire('view:notify', `preservePitch: ${vid.preservesPitch}`, 'prePitch');
+    this.#view.trackBar.peek();
   }
   
   /**
    * Get HH:MM:SS string from seconds.
-   * @param {Number} seconds 
-   * @returns {String} Formated time string.
+   * @param {number} seconds 
+   * @returns {string} Formated time string.
    */
   secToHMS(seconds) {
-    let h = Math.floor(seconds / 3600)
-    let m = Math.floor(seconds % 3600 / 60)
-    let s = Math.floor(seconds % 3600 % 60)
-    // let ms = String(seconds).split('.')[1]
-    
-    h = h ? String(h).padStart(2, 0) : '00'
-    m = m ? String(m).padStart(2, 0) : '00'
-    s = s ? String(s).padStart(2, 0) : '00'
-    // ms = ms ? ms.substring(0,3) : '000'
-  
-    return `${h}:${m}:${s}`
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor(seconds % 3600 / 60);
+    const s = Math.floor(seconds % 3600 % 60);
+
+    const H = h ? String(h).padStart(2, '0') : '00';
+    const M = m ? String(m).padStart(2, '0') : '00';
+    const S = s ? String(s).padStart(2, '0') : '00';
+
+    return `${H}:${M}:${S}`;
   }
 
   /**
    * Set A loop, B loop on current time. Clear loop if A and B already set or null is passed.
-   * @param {Number|undefined|null} [customTime] Custom video time in secs.
+   * @param {number|undefined|null} [customTime] Custom video time in secs.
    */
   abLoop(customTime) {
     // reset exactly on null
     if (customTime === null) {
-      this.#view.aLoop = Infinity
-      this.#view.bLoop = Infinity
-      this.#abLoopInterval(false)
-      return
+      this.#view.aLoop = Infinity;
+      this.#view.bLoop = Infinity;
+      this.#abLoopInterval(false);
+      return;
     }
 
-    const vid = this.vid
-    if (!vid) return
+    const vid = this.vid;
+    if (!vid)
+      return;
 
-    const tgtTime = customTime ?? vid.currentTime
+    const tgtTime = customTime ?? vid.currentTime;
 
     // set A
     if (this.#view.aLoop == Infinity) {
-      this.#view.aLoop = tgtTime
-      this.#view.events.fire('view:notify', `A loop at ${this.secToHMS(tgtTime)}`, 'abLoop')
+      this.#view.aLoop = tgtTime;
+      this.#view.events.fire('view:notify', `A loop at ${this.secToHMS(tgtTime)}`, 'abLoop');
     }
     // set B
     else if (this.#view.bLoop == Infinity) {
       if (tgtTime > this.#view.aLoop) {
-        this.#view.bLoop = tgtTime
-        !vid.paused && this.#abLoopInterval()
-        this.#view.events.fire('view:notify', `B loop at ${this.secToHMS(tgtTime)}`, 'abLoop')
+        this.#view.bLoop = tgtTime;
+        !vid.paused && this.#abLoopInterval();
+        this.#view.events.fire('view:notify', `B loop at ${this.secToHMS(tgtTime)}`, 'abLoop');
       } else {
-        this.abLoop(null)
-        this.#view.events.fire('view:notify', 'B loop before A, clear', 'abLoop')
+        this.abLoop(null);
+        this.#view.events.fire('view:notify', 'B loop before A, clear', 'abLoop');
       }
     }
     // clear loop
     else {
-      this.abLoop(null)
-      this.#view.events.fire('view:notify', 'AB loop clear', 'abLoop')
+      this.abLoop(null);
+      this.#view.events.fire('view:notify', 'AB loop clear', 'abLoop');
     }
 
-    this.#view.trackBar.peek()
+    this.#view.trackBar.peek();
   }
 
   /**
@@ -233,16 +258,17 @@ export class ViewMedia {
    * @param {boolean} [start=true] Either to start interval. Clear if false.
    */
   #abLoopInterval(start = true) {
-    if (!start) return clearInterval(this.abLoopInterval)
+    if (!start)
+      return clearInterval(this.abLoopInterval);
 
-    const vid = this.vid
-    if (!vid) return
+    const vid = this.vid;
+    if (!vid)
+      return;
 
     // best effort to enforce ABloop on time
     this.abLoopInterval = setInterval(() => {
-      if (vid.currentTime + .010 >= this.#view.bLoop) {
-        vid.currentTime = this.#view.aLoop
-      }
+      if (vid.currentTime + .010 >= this.#view.bLoop)
+        vid.currentTime = this.#view.aLoop;
     }, 10);
   }
 }
