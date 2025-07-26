@@ -26,16 +26,16 @@ export class ViewScreen {
    */
   constructor(view) {
     this.#view = view;
-    this.#emptyView = this.img; // store default content
+    this.#emptyView = this.element; // store default content
   }
 
   /**
-   * View image/video element. 
+   * Current View image/video element. 
    * - References gets lost as object is replaced every `display()`. 
    * This re-captures it every call.
    * @returns {HTMLImageElement|HTMLVideoElement}
    */
-  get img() {
+  get element() {
     const shadowRoot = /** @type ShadowRoot */ (this.#view.shadowRoot);
     return /** @type {HTMLImageElement|HTMLVideoElement} */ (shadowRoot.getElementById('view'));
   }
@@ -48,7 +48,7 @@ export class ViewScreen {
     this.#view.trackBar.detach();
     this.#view.media.abLoop(null);
 
-    const view = this.img;
+    const view = this.element;
     view.src = '';
     view.replaceWith(content);
   }
@@ -135,7 +135,7 @@ export class ViewScreen {
    * @param {DisplayModes} mode View mode. 
    */
   #applyMode(mode) {
-    const img = this.img, zoom = this.#view.zoom;
+    const img = this.element, zoom = this.#view.zoom;
 
     switch (mode) {
       case 'none':

@@ -139,7 +139,7 @@ export class View extends HTMLElement {
 
       const playing = type === 'image'
         ? this.slideshow.isActive
-        : !this.media.vid?.paused;
+        : ! /** @type HTMLVideoElement */ (this.screen.element).paused;
 
       this.events.fire('view:playing', playing);
       this.events.fire('view:loaded');

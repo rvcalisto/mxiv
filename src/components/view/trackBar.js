@@ -58,7 +58,7 @@ export class TrackBar {
     videoElement.ontimeupdate = () => this.#updateTrack();
     videoElement.onmousemove = () => {
       if ( this.#panelElement.hasAttribute('hidden') )
-        this.#view.trackBar.peek();
+        this.peek();
       else
         this.#resetHideTimeout();
     };
@@ -173,19 +173,18 @@ export class TrackBar {
 
     // sync ab loop section
     const trackLoopBar = /** @type HTMLParagraphElement */ (shadowRoot.getElementById('vidLoop'));
-    if (this.#view.aLoop < Infinity) {
+    if (this.#view.aLoop === Infinity) {
+      trackLoopBar.style.marginLeft = '0%';
+      trackLoopBar.style.width = '0%';
+    } else {
       const marginLeft = (this.#view.aLoop / vid.duration) * 100;
       trackLoopBar.style.marginLeft = `${marginLeft.toFixed(2)}%`;
       trackLoopBar.style.width = '2px';
-      
+
       if (this.#view.bLoop < Infinity) {
         const width = (this.#view.bLoop / vid.duration) * 100;
-        trackLoopBar.style.width =
-          `${Number( width.toFixed(2) ) - Number( marginLeft.toFixed(2) )}%`;
+        trackLoopBar.style.width = `${(width - marginLeft).toFixed(2)}%`;
       }
-    } else {
-      trackLoopBar.style.marginLeft = '0%';
-      trackLoopBar.style.width = '0%';
     }
   }
 

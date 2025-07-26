@@ -35,7 +35,7 @@ export class ViewMedia {
    * This re-captures it every call.
    * @returns {HTMLVideoElement?}
    */
-  get vid() {
+  get #vid() {
     const shadowRoot = /** @type ShadowRoot */ (this.#view.shadowRoot);
     const element = /** @type {HTMLImageElement|HTMLVideoElement} */ 
       (shadowRoot.getElementById('view'));
@@ -50,7 +50,7 @@ export class ViewMedia {
    * @param {boolean} [force] Force play on `true`, pause on `false`.
    */
   playToggle(force) {
-    const vid = this.vid;
+    const vid = this.#vid;
     if (!vid)
       return;
 
@@ -73,7 +73,7 @@ export class ViewMedia {
    * @param {boolean} [force] Either to force mute on or off.
    */
   muteToggle(force) {
-    const vid = this.vid;
+    const vid = this.#vid;
     if (!vid)
       return;
   
@@ -90,7 +90,7 @@ export class ViewMedia {
    * @param {string|number} volume 
    */
   setVolume(volume) {
-    const vid = this.vid;
+    const vid = this.#vid;
     if (!vid)
       return;
   
@@ -116,7 +116,7 @@ export class ViewMedia {
    * @param {OnTrackEndMode} [behavior] What to do on end of track.
    */
   onEndRepeat(behavior) {
-    const vid = this.vid;
+    const vid = this.#vid;
     if (!vid)
       return;
 
@@ -138,7 +138,7 @@ export class ViewMedia {
    * @param {number|string} value By how much to skip video in secs.
    */
   skipBy(value) {
-    const vid = this.vid;
+    const vid = this.#vid;
     if (!vid)
       return;
 
@@ -160,7 +160,7 @@ export class ViewMedia {
    * @param {number|string} value Playback speed to set.
    */
   playbackRate(value) {
-    const vid = this.vid;
+    const vid = this.#vid;
     if (!vid)
       return;
 
@@ -186,7 +186,7 @@ export class ViewMedia {
    * @param {boolean} [preserve] Toggle behavior by default.
    */
   preservePitch(preserve) {
-    const vid = this.vid;
+    const vid = this.#vid;
     if (!vid)
       return;
 
@@ -228,7 +228,7 @@ export class ViewMedia {
       return;
     }
 
-    const vid = this.vid;
+    const vid = this.#vid;
     if (!vid)
       return;
 
@@ -267,7 +267,7 @@ export class ViewMedia {
     if (!start)
       return clearInterval(this.#abLoopTimer);
 
-    const vid = this.vid;
+    const vid = this.#vid;
     if (!vid)
       return;
 
