@@ -1,11 +1,11 @@
 import { actionService } from "../actions/actionService.js"
 import { Tab } from "../tabs/tab.js"
 import { statusBar } from "../components/statusBar.js"
-import { sessionProfiles } from "../tabs/profiles.js"
+import * as sessionProfiles from "../tabs/profiles.js"
 import { actionPalette, option } from "../components/actionPalette/actionPalette.js"
 import { userAccelerators } from "../actions/userAccelerators.js"
 import { appNotifier } from "../components/notifier.js"
-import { frameRegistry } from "../frames/frameRegistry.js"
+import * as frameRegistry from "../frames/frameRegistry.js"
 import { userPreferences } from "../components/userPreferences.js"
 import * as headerPanel from "../tabs/tabHeaderPanel.js"
 
@@ -39,9 +39,10 @@ actionService.setBaseActions({
       'new': {
         'desc' : 'create new tab',
         'run'  : (type = 'viewer') => {
-          const success = Tab.newTab(type)
-          if (!success)
-            appNotifier.notify(`tab "${type}" does not exist`, 'newTab')
+          if ( frameRegistry.isFrameType(type) )
+            Tab.newTab(type)
+          else
+            appNotifier.notify(`"${type}" is not a valid tab type`, 'newTab')
         },
         'options': (lastArg, allArgs) => {
           const frameDescs = frameRegistry.getDescriptors()

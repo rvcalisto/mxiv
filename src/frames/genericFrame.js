@@ -1,8 +1,13 @@
+// @ts-check
 import { ObservableEvents } from "../components/observableEvents.js";
 
 
 /**
- * @typedef {'frame:rename'|'frame:statusChange'|'frame:isPlaying'} GenericFrameEvents
+ * @typedef {import("./frameRegistry.js").FrameType} FrameType
+ */
+
+/**
+ * @typedef {'frame:rename'|'frame:statusChange'|'frame:isPlaying'|'frame:hold'} GenericFrameEvents
  */
 
 
@@ -15,9 +20,9 @@ export class GenericFrame extends HTMLElement {
 
   /**
    * Frame class type, class constructor name in lowercase.
-   * @type {String}
+   * @type {FrameType}
    */
-  type = this.constructor.name.toLowerCase();
+  type = /** @type FrameType */ (this.constructor.name.toLowerCase());
   
   /**
    * @type {ObservableEvents<GenericFrameEvents>}
@@ -34,12 +39,12 @@ export class GenericFrame extends HTMLElement {
    * @returns {string}
    */
   get tabName() {
-    return this.#tabName
+    return this.#tabName;
   }
 
   /**
    * Rename tab header name.
-   * @param {String} newName 
+   * @param {string} newName 
    */
   set tabName(newName) {
     this.#tabName = newName;
@@ -48,7 +53,7 @@ export class GenericFrame extends HTMLElement {
 
   /**
    * Update tab header play state icon.
-   * @param {Boolean} playing Either tab is playing.
+   * @param {boolean} playing Either tab is playing.
    */
   setFrameIsPlaying(playing) {
     this.events.fire('frame:isPlaying', playing);
@@ -76,10 +81,10 @@ export class GenericFrame extends HTMLElement {
 
   /**
    * Hold frame open, prevent closing tab/window.
-   * @param {Boolean} value Either to hold frame open.
+   * @param {boolean} value Either to hold frame open.
    */
   hold(value) {
-    this.toggleAttribute('hold', value);
+    this.events.fire('frame:hold', value);
   }
 
   /**

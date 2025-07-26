@@ -1,10 +1,11 @@
+// @ts-check
 import { Viewer } from "./viewer/viewer.js";
 import { Library } from "./library/library.js";
 
 
 /**
  * @typedef FrameEntry
- * @property {String} description
+ * @property {string} description
  * @property {typeof import("./genericFrame.js").GenericFrame} class
  * @property {FramePolicy} policy
  */
@@ -15,77 +16,90 @@ import { Library } from "./library/library.js";
  * @property {boolean} allowProfiling
  */
 
+/**
+ * @typedef {keyof registry} FrameType
+ */
+
 
 /**
- * Frame component registry,
+ * Frame registry entries.
+ * @satisfies {Object<string, FrameEntry>}
  */
-export const frameRegistry = new class {
-
-  #tagSuffix = 'component';
-
-  /**
-   * Frame registry entries.
-   * @type {Object<string, FrameEntry>}
-   */
-  #registry = {
-
-    'viewer': {
-      'description': 'file navigator and general viewer (default)',
-      'class': Viewer,
-      'policy': {
-        allowDuplicate: true,
-        allowProfiling: true
-      }
-    },
-
-    'library': {
-      'description': 'collection of media directories and archives',
-      'class': Library,
-      'policy': {
-        allowProfiling: true,
-        allowDuplicate: false
-      }
+const registry = {
+  'viewer': {
+    'description': 'file navigator and general viewer (default)',
+    'class': Viewer,
+    'policy': {
+      allowDuplicate: true,
+      allowProfiling: true
+    }
+  },
+  'library': {
+    'description': 'collection of media directories and archives',
+    'class': Library,
+    'policy': {
+      allowProfiling: true,
+      allowDuplicate: false
     }
   }
+}
 
-  // define frame customElements
-  constructor() {
-    for (const frame in this.#registry) {
-      const frameClass = this.#registry[frame].class;
-      customElements.define(`${frame}-${this.#tagSuffix}`, frameClass);
-    }
-  }
+/**
+ * Frame custom element tag suffix.
+ */
+const tagSuffix = 'component';
 
-  /**
-   * @param {string} frame Frame type.
-   * @returns {typeof import("./genericFrame.js").GenericFrame?}
-   */
-  getClass(frame) {
-    return this.#registry[frame]?.class;
-  }
 
-  /**
-   * @param {string} frame Frame type.
-   * @returns {FramePolicy?}
-   */
-  getPolicy(frame) {
-    return this.#registry[frame]?.policy;
-  }
-  
-  /**
-   * @param {string} frame Frame type.
-   * @return {string}
-   */
-  getTagName(frame) {
-    return `${frame}-${this.#tagSuffix}`;
-  }
+/**
+ * Get class for frame type.
+ * @param {FrameType} type Frame type.
+ */
+export function getClass(type) {
+  return registry[type].class;
+}
 
-  /**
-   * Returns frame, description tuple array.
-   * @returns {String[][]}
-   */
-  getDescriptors() {
-    return Object.entries(this.#registry)
-      .map( ([frame, entry]) => [frame, entry.description] );
+/**
+ * Get policy for frame type.
+ * @param {FrameType} type Frame type.
+ */
+export function getPolicy(type) {
+  return registry[type].policy;
+}
+
+/**
+ * Get tagname for frame type.
+ * @param {FrameType} type Frame type.
+ */
+export function getTagName(type) {
+  return `${type}-${tagSuffix}`;
+}
+
+/**
+ * Returns frame type, description tuple array.
+ * @returns {string[][]}
+ */
+export function getDescriptors() {
+  return Object.entries(registry)
+    .map( ([type, entry]) => [type, entry.description] );
+}
+
+/**
+ * Check if string is a valid frame type.
+ * @param {string} type Type to test.
+ * @returns {boolean}
+ */
+export function isFrameType(type) {
+  return registry[type] != null;
+}
+
+/**
+ * Define frame customElements.
+ */
+function initialize() {
+  for (const frame in registry) {
+    const frameClass = registry[frame].class;
+    customElements.define(`${frame}-${tagSuffix}`, frameClass);
   }
-};
+}
+
+initialize();

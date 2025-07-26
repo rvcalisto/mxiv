@@ -1,7 +1,19 @@
+// @ts-check
 import { TabHeader } from "./tabHeader.js";
 import { statusBar } from "../components/statusBar.js";
 import { GenericFrame } from "../frames/genericFrame.js";
-import { frameRegistry } from "../frames/frameRegistry.js";
+import * as frameRegistry from "../frames/frameRegistry.js";
+
+
+/**
+ * @typedef {import("../frames/frameRegistry.js").FrameType} FrameType
+ */
+
+/**
+ * @typedef TabProfileType
+ * @property {FrameType} type Tab frame type.
+ * @property {object} state Tab frame state.
+ */
 
 
 /**
@@ -23,43 +35,58 @@ export class Tab {
   static selected;
 
   /**
+   * Keep tab open against close calls.
+   */
+  #hold = false;
+
+  /**
    * Create a new Tab instance.
-   * @param {string} [type=viewer] Frame type.
+   * @param {FrameType} [type=viewer] Frame type.
    * @param {(instance:GenericFrame)=>void} [callback] Callback, executed before selection.
-   * @param {String} [name=tab] Tab name.
+   * @param {string} [name=tab] Tab name.
    */
   constructor(type = 'viewer', callback, name = 'tab') {
     this.header = new TabHeader(this, name);
     this.frame = this.#createFrame(type);
 
-    if (callback) callback(this.frame);
+    if (callback)
+      callback(this.frame);
+
     this.select();
   }
 
   /** 
    * Append tab frame component to DOM.
-   * @param {string} type Frame type.
+   * @param {FrameType} type Frame type.
    * @returns {GenericFrame}
    */
   #createFrame(type) {
     const tagName = frameRegistry.getTagName(type);
     const frame = /** @type {GenericFrame} */ (document.createElement(tagName));
+
+    // set and store tab name, hide frame on start
     frame.tabName = this.header.name;
-    frame.style.display = 'none'; // starts hidden
+    frame.style.display = 'none';
 
     frame.events.observe('frame:rename', (newName) => {
       this.header.rename(newName);
-    })
+    });
+
+    frame.events.observe('frame:hold', (value) => {
+      this.#hold = value;
+    });
 
     frame.events.observe('frame:isPlaying', (isPlaying) => {
       this.header.setPlayingIcon(isPlaying);
-    })
+    });
 
     frame.events.observe('frame:statusChange', () => {
-      if (frame === FRAME) statusBar.updateStatus( frame.status() );
-    })
+      if (frame === FRAME)
+        statusBar.updateStatus( frame.status() );
+    });
 
-    document.getElementById('contents').appendChild(frame);
+    const contentContainer = /** @type HTMLDivElement */ (document.getElementById('contents'));
+    contentContainer.appendChild(frame);
 
     return frame;
   }
@@ -86,21 +113,22 @@ export class Tab {
 
   /**
    * Move tab header to the right or to the left.
-   * @param {Boolean} [right=true] 
+   * @param {boolean} [right=true] 
    */
   move(right = true) {
     const next = right ? this.header.right : this.header.left;
     if (next != null) {
       next.insert(this.header, right);
 
+      // focus into view in case of overflow
       if (Tab.selected === this)
-        this.header.select(); // focus into view in case of overflow
+        this.header.select();
     }
   }
 
   /**
    * Rename tab header.
-   * @param {String} newName 
+   * @param {string} newName 
    */
   rename(newName) {
     this.frame.tabName = newName;
@@ -132,7 +160,7 @@ export class Tab {
    * @param {boolean} [closeWindowOnLast=true] Also close window if on last tab.
    */
   close(closeWindowOnLast = true) {
-    if ( this.frame.hasAttribute('hold') ) {
+    if (this.#hold) {
       this.frame.animate([
         { filter: 'brightness(1)' }, { filter: 'brightness(1.5)' }, 
         { filter: 'brightness(1)' }], { duration: 200 });
@@ -143,27 +171,26 @@ export class Tab {
     this.frame.remove();
     this.header.remove();
 
-    if (nextHeader != null && Tab.selected === this) nextHeader.tabInstance.select();
-    else if (nextHeader == null && closeWindowOnLast) window.close();
-    else if (Tab.selected === this) Tab.selected = FRAME = null;
+    if (nextHeader != null && Tab.selected === this)
+      nextHeader.tabInstance.select();
+    else if (nextHeader == null && closeWindowOnLast)
+      window.close();
+    else if (Tab.selected === this)
+      Tab.selected = FRAME = null;
   }
 
   /**
-   * Create new tab of given type.
+   * Create a new default tab of given type.
    * - `viewer`: Start with FileExplorer open.
-   * @param {String} [type]
-   * @returns {boolean} Success.
+   * @param {FrameType} [type='viewer']
    */
   static newTab(type = 'viewer') {
     const framePolicy = frameRegistry.getPolicy(type);
-    if (framePolicy == null) return false;
-    
+
     if (!framePolicy.allowDuplicate) {
       const instance = this.allTabs.find(tab => tab.frame.type === type);
-      if (instance) {
+      if (instance)
         instance.select();
-        return true;
-      }
     }
 
     new Tab(type, frame => {
@@ -171,20 +198,21 @@ export class Tab {
         /** @type {import("../frames/viewer/viewer.js").Viewer} */ 
         (frame).fileExplorer.togglePanel();
     });
-
-    return true;
   }
 
   /**
    * Cycle currently selected tab.
-   * @param {Boolean} [forward=true] 
+   * @param {boolean} [forward=true] 
    */
   static cycleTabs(forward = true) {
+    if (Tab.selected == null)
+      return;
+
     const header = Tab.selected.header;
     const nextHeader = forward ? header.right : header.left;
 
     if (nextHeader == null)
-      Tab.allTabs.at(forward ? 0 : -1).select();
+      Tab.allTabs.at(forward ? 0 : -1)?.select();
     else
       nextHeader.tabInstance.select();
   }
@@ -201,6 +229,7 @@ export class Tab {
 
 
 // add newTab event listener (side effect)
-document.getElementById('newTab').onclick = function newTabListener() {
+const newTabButton = /** @type HTMLDivElement */ (document.getElementById('newTab'));
+newTabButton.onclick = function newTabListener() {
   Tab.newTab();
 }

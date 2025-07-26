@@ -1,18 +1,13 @@
+// @ts-check
 import { GenericStorage } from "../components/genericStorage.js";
-import { appNotifier } from "../components/notifier.js"
-import { frameRegistry } from "../frames/frameRegistry.js";
-import { Tab } from "./tab.js"
+import { appNotifier } from "../components/notifier.js";
+import * as frameRegistry from "../frames/frameRegistry.js";
+import { Tab } from "./tab.js";
 
-
-/**
- * @typedef TabProfileType
- * @property {string} type Tab frame type.
- * @property {object} state Tab frame state.
- */
 
 /**
  * @typedef SessionProfileType
- * @property {TabProfileType[]} tabs Tabs in session.
+ * @property {import('./tab.js').TabProfileType[]} tabs Tabs in session.
  * @property {GeneralState} general General session state.
  */
 
@@ -23,108 +18,101 @@ import { Tab } from "./tab.js"
  */
 export let generalState = {
   librarySelection: ''
-}
+};
+
+/**
+ * Profile persistence.
+ * @type {GenericStorage<SessionProfileType>}
+ */
+const storage = new GenericStorage('profiles');
+
+/**
+ * Sorting tool.
+ */
+const collator = new Intl.Collator();
 
 
 /**
- * Manage tab session profiles.
+ * Store current tab session.
+ * @param {string} name Profile name.
  */
-export const sessionProfiles = new class {
+export function store(name) {
+  const session = /** @type {SessionProfileType} */ ({
+    tabs: [],
+    general: generalState
+  });
 
-  #collator = new Intl.Collator();
+  // store tab data in order of presentation, if allowed and implemented
+  for (const tab of Tab.allTabs) {
+    const type = tab.frame.type;
 
-  /**
-   * @type {GenericStorage<SessionProfileType>}
-   */
-  #storage = new GenericStorage('profiles');
-
-  /**
-   * Store current tab session.
-   * @param {String} name Profile name.
-   */
-  store(name) {
-    /** @type {SessionProfileType} */
-    const session = {
-      tabs: [],
-      general: generalState
-    }
-  
-    // store tab data in order of presentation, if allowed and implemented
-    for (const tab of Tab.allTabs) {
-      const type = tab.frame.type;
-      const allowProfiling = frameRegistry.getPolicy(type)?.allowProfiling;
-      
-      if (!allowProfiling) continue;
-
+    if ( frameRegistry.getPolicy(type).allowProfiling )
       session.tabs.push({
         type: type,
         state: tab.frame.getState() || null
       });
-    }
-  
-    // update or insert session entry
-    this.#storage.set(name, session);
-  
-    appNotifier.notify(`stored ${name} profile`);
   }
-  
-  /**
-   * Load tab session from profile. Clears current tab session by default.
-   * @param {String} name Profile name.
-   * @param {boolean} [clearSession=true] Clear current tab session before loading profile.
-   */
-  load(name, clearSession = true) {
-    const session = this.#storage.get(name);
-  
-    if (!session) {
-      appNotifier.notify(`profile ${name} does not exist`);
-      return;
-    }
-  
-    if (clearSession) {
-      Tab.allTabs.forEach( tab => tab.close(false) );
-      Object.assign(generalState, session.general);
-    }
-  
-    // recover state and re-create session
-    for (const tabStateObj of session.tabs) {
-      const { type, state } = tabStateObj;
 
-      // enforce single instance
-      const policy = frameRegistry.getPolicy(type);
-      if (!policy?.allowDuplicate) {
-        const hasDuplicate = Tab.allTabs.some(tab => tab.frame.type === type);
-        if (hasDuplicate) continue;
-      }
-  
-      new Tab(type, async (frame) => {
-        frame.restoreState(state);
-      });
+  // update or insert session entry
+  storage.set(name, session);
+  appNotifier.notify(`stored ${name} profile`);
+}
+
+/**
+ * Load tab session from profile. Clears current tab session by default.
+ * @param {string} name Profile name.
+ * @param {boolean} [clearSession=true] Clear current tab session before loading profile.
+ */
+export function load(name, clearSession = true) {
+  const session = storage.get(name);
+
+  if (!session) {
+    appNotifier.notify(`profile ${name} does not exist`);
+    return;
+  }
+
+  if (clearSession) {
+    Tab.allTabs.forEach( tab => tab.close(false) );
+    Object.assign(generalState, session.general);
+  }
+
+  // re-create profile session
+  for (const { type, state } of session.tabs) {
+
+    // enforce single instance policies when keeping old sessions
+    if ( !frameRegistry.getPolicy(type).allowDuplicate ) {
+      const hasDuplicate = Tab.allTabs.some(tab => tab.frame.type === type);
+      if (hasDuplicate)
+        continue;
     }
+
+    new Tab(type, async (frame) => {
+      frame.restoreState(state);
+    });
   }
-  
-  /**
-   * Erase a tab session.
-   * @param {String} name Profile name.
-   */
-  erase(name) {
-    const session = this.#storage.get(name);
-  
-    if (!session) {
-      appNotifier.notify(`profile ${name} does not exist`);
-      return;
-    }
-  
-    this.#storage.delete(name);
-    appNotifier.notify(`erased ${name} profile`);
+}
+
+/**
+ * Erase a tab session.
+ * @param {string} name Profile name.
+ */
+export function erase(name) {
+  const session = storage.get(name);
+
+  if (!session) {
+    appNotifier.notify(`profile ${name} does not exist`);
+    return;
   }
-  
-  /**
-   * Return sorted array of profile entries.
-   * @returns {String[]}
-   */
-  list() {
-    return this.#storage.keys()
-      .sort( (a, b) => this.#collator.compare(a, b) );
-  }
+
+  storage.delete(name);
+  appNotifier.notify(`erased ${name} profile`);
+}
+
+/**
+ * Return sorted array of profile entries.
+ * @returns {string[]}
+ */
+export function list() {
+  return storage.keys()
+    .sort( (a, b) => collator.compare(a, b) );
 }
