@@ -3,6 +3,7 @@ import { TabHeader } from "./tabHeader.js";
 import { statusBar } from "../components/statusBar.js";
 import { GenericFrame } from "../frames/genericFrame.js";
 import * as frameRegistry from "../frames/frameRegistry.js";
+import { appNotifier } from "../components/notifier.js";
 
 
 /**
@@ -144,10 +145,10 @@ export class Tab {
     const frameState = framePolicy.allowDuplicate ? this.frame.getState() : null;
 
     if (!frameState) {
-      console.log(`${type}: duplicate disallowed or stateless.`);
+      appNotifier.notify(`${type} doesn't support multiple instances`, 'singleInst');
       return;
     }
-    
+
     const newTab = new Tab(type, async (frame) => {
       frame.restoreState(frameState);
     }, this.frame.tabName);
@@ -190,8 +191,11 @@ export class Tab {
 
     if (!framePolicy.allowDuplicate) {
       const instance = this.allTabs.find(tab => tab.frame.type === type);
-      if (instance)
+      if (instance) {
         instance.select();
+        appNotifier.notify(`${type} doesn't support multiple instances`, 'singleInst');
+        return;
+      }
     }
 
     new Tab(type, frame => {
