@@ -40,6 +40,11 @@
   font-size: large;
 }
 
+[icon=hold]::before {
+  content: "";
+  font-size: larger;
+}
+
 [icon=left]::before {
   content: "";
   font-size: large;

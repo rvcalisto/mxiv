@@ -48,7 +48,7 @@ const slideScroll = {
 /**
  * Add tab item to header panel. Trigger overflow reflow.
  * @param {HTMLElement} element
- * @param {HTMLElement} after
+ * @param {HTMLElement} [after]
  */
 export function addItem(element, after) {
   if (after != null)

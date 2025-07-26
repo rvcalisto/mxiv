@@ -1,6 +1,7 @@
-import { Tab } from "./tab.js"
-import setDragEvent from "./tabHeaderDrag.js"
-import { addItem, removeItem, slideIntoView } from "./tabHeaderPanel.js"
+// @ts-check
+import { Tab } from "./tab.js";
+import setDragEvent from "./tabHeaderDrag.js";
+import { addItem, removeItem, slideIntoView } from "./tabHeaderPanel.js";
 
 
 /**
@@ -8,14 +9,14 @@ import { addItem, removeItem, slideIntoView } from "./tabHeaderPanel.js"
  */
 export class TabHeader {
 
-  static #classMap = /** @type {WeakMap<Element, TabHeader>} */ new WeakMap()
-  static #tabsContainer = /** @type {HTMLElement} */ (document.querySelector('#tabs'))
+  static #classMap = /** @type {WeakMap<Element, TabHeader>} */ (new WeakMap());
+  static #tabsContainer = /** @type {HTMLElement} */ (document.querySelector('#tabs'));
 
   #nameCount = 1
-  /** @type {HTMLElement}          */ #element
-  /** @type {HTMLButtonElement}    */ #playButton
-  /** @type {HTMLParagraphElement} */ #nameLabel
-  /** @type {HTMLButtonElement}    */ #closeButton
+  /** @type {HTMLElement}          */ #element;
+  /** @type {HTMLButtonElement}    */ #playButton;
+  /** @type {HTMLParagraphElement} */ #nameLabel;
+  /** @type {HTMLButtonElement}    */ #closeButton;
 
 
   /**
@@ -23,10 +24,10 @@ export class TabHeader {
    * @param {string} [name] Tab name. 
    */
   constructor(tabInstance, name = 'tab') {
-    this.name
-    this.tabInstance = tabInstance
-    this.#element = this.#createHeaderElement()
-    this.rename(name)
+    this.name;
+    this.tabInstance = tabInstance;
+    this.#element = this.#createHeaderElement();
+    this.rename(name);
   }
 
   /** 
@@ -34,48 +35,48 @@ export class TabHeader {
    * @returns {HTMLElement}
    */
   #createHeaderElement() {
-    const container = document.createElement('div')
-    container.className = 'tab'
-    TabHeader.#classMap.set(container, this)
-    
-    this.#nameLabel = document.createElement('p')
+    const container = document.createElement('div');
+    container.className = 'tab';
+    TabHeader.#classMap.set(container, this);
 
-    this.#playButton = document.createElement('button')
-    this.#playButton.title = 'playing (click to pause)'
-    this.#playButton.setAttribute('icon', 'playing')
-    this.#playButton.style.display = 'none'
+    this.#nameLabel = document.createElement('p');
+
+    this.#playButton = document.createElement('button');
+    this.#playButton.title = 'playing (click to pause)';
+    this.#playButton.setAttribute('icon', 'playing');
+    this.#playButton.style.display = 'none';
 
     // pause media via tab button
     this.#playButton.onclick = (e) => {
-      e.stopImmediatePropagation()
-      this.tabInstance.frame.mediaControl('pause')
-    }
-    
-    this.#closeButton = document.createElement('button')
-    this.#closeButton.title = 'close tab'
-    this.#closeButton.className = 'closeTab'
-    this.#closeButton.setAttribute('icon', 'close')
+      e.stopImmediatePropagation();
+      this.tabInstance.frame.mediaControl('pause');
+    };
+
+    this.#closeButton = document.createElement('button');
+    this.#closeButton.title = 'close tab';
+    this.#closeButton.className = 'closeTab';
+    this.#closeButton.setAttribute('icon', 'close');
     this.#closeButton.onclick = (e) => {
-      e.stopImmediatePropagation()
-      this.tabInstance.close()
-    }
+      e.stopImmediatePropagation();
+      this.tabInstance.close();
+    };
 
     // compose & append to DOM
-    container.append(this.#playButton, this.#nameLabel, this.#closeButton)
+    container.append(this.#playButton, this.#nameLabel, this.#closeButton);
     if (Tab.selected != null)
       addItem(container, Tab.selected.header.#element);
     else
       addItem(container);
 
     // set tab events
-    setDragEvent(container)
-    container.onclick = () => this.tabInstance.select()
+    setDragEvent(container);
+    container.onclick = () => this.tabInstance.select();
     container.onauxclick = (e) => {
       if (e.button === 1)
-        this.tabInstance.duplicate()
-    }
-    
-    return container
+        this.tabInstance.duplicate();
+    };
+
+    return container;
   }
 
   /**
@@ -83,24 +84,28 @@ export class TabHeader {
    * @param {string} newName 
    */
   rename(newName) {
-    if (newName === this.name) return
-    
-    let nameIdx = 1, usedSuffixes = []
+    if (newName === this.name)
+      return;
+
+    let nameIdx = 1, usedSuffixes = [];
     for (const header of TabHeader.allHeaders) {
-      if (header.name === newName) usedSuffixes.push(header.#nameCount);
+      if (header.name === newName)
+        usedSuffixes.push(header.#nameCount);
     }
 
-    usedSuffixes.sort( (a, b) => a - b )
+    usedSuffixes.sort( (a, b) => a - b );
     for (const idx of usedSuffixes) {
-      if (idx === nameIdx) nameIdx++
-      else break
+      if (idx === nameIdx)
+        nameIdx++;
+      else
+        break;
     }
-    
-    this.name = newName
-    this.#nameCount = nameIdx
-    
-    const textFormat = `${newName} ${nameIdx > 1 ? nameIdx : ''}`
-    this.#nameLabel.textContent = this.#element.title = textFormat
+
+    this.name = newName;
+    this.#nameCount = nameIdx;
+
+    const textFormat = `${newName} ${nameIdx > 1 ? nameIdx : ''}`;
+    this.#nameLabel.textContent = this.#element.title = textFormat;
   }
 
   /**
@@ -115,19 +120,28 @@ export class TabHeader {
    * @param {boolean} [select=true] True or false.
    */
   select(select = true) {
-    if (select) {
-      this.#element.classList.add('selected')
-      slideIntoView(this.#element)
-    } else
-      this.#element.classList.remove('selected')
+    if (!select)
+      this.#element.classList.remove('selected');
+    else {
+      this.#element.classList.add('selected');
+      slideIntoView(this.#element);
+    }
   }
 
   /**
-   * Show or header hide playing icon.
+   * Show or hide play icon from header.
    * @param {boolean} show
    */
   setPlayingIcon(show) {
-    this.#playButton.style.display = show ? '' : 'none'
+    this.#playButton.style.display = show ? '' : 'none';
+  }
+
+  /**
+   * Swap close button icon to signal on-hold tab.
+   * @param {boolean} show
+   */
+  setHoldIcon(show) {
+    this.#closeButton.setAttribute('icon', show ? 'hold' : 'close');
   }
 
   /**
@@ -137,25 +151,29 @@ export class TabHeader {
    */
   insert(header, after = true) {
     if (after)
-      this.#element.after(header.#element)
+      this.#element.after(header.#element);
     else
-      this.#element.before(header.#element)
+      this.#element.before(header.#element);
   }
 
   /**
    * Neighbor header on the left, if any.
-   * @returns {TabHeader?}
+   * @returns {TabHeader|undefined}
    */
   get left() {
-    return TabHeader.#classMap.get(this.#element.previousElementSibling)
+    const neighbor = this.#element.previousElementSibling;
+    if (neighbor != null)
+      return TabHeader.#classMap.get(neighbor);
   }
 
   /**
    * Neighbor header on the right, if any.
-   * @returns {TabHeader?}
+   * @returns {TabHeader|undefined}
    */
   get right() {
-    return TabHeader.#classMap.get(this.#element.nextElementSibling)
+    const neighbor = this.#element.nextElementSibling;
+    if (neighbor != null)
+      return TabHeader.#classMap.get(neighbor)
   }
 
   /**
@@ -163,7 +181,8 @@ export class TabHeader {
    * @returns {TabHeader[]}
    */
   static get allHeaders() {
-    const elements = this.#tabsContainer.getElementsByClassName('tab')
-    return [...elements].map(element => TabHeader.#classMap.get(element))
+    const elements = this.#tabsContainer.getElementsByClassName('tab');
+    const headers = [...elements].map(element => TabHeader.#classMap.get(element));
+    return /** @type TabHeader[] */ (headers);
   }
 }

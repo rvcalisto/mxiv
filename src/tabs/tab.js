@@ -73,6 +73,7 @@ export class Tab {
     });
 
     frame.events.observe('frame:hold', (value) => {
+      this.header.setHoldIcon(value);
       this.#hold = value;
     });
 
