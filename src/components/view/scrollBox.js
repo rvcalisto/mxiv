@@ -40,24 +40,31 @@ export class ScrollBox {
   #cursorHideTimer;
 
   /**
+   * Smooth scroll animation on programmatic scroll position change.
+   */
+  #smoothScroll = true;
+
+  /**
    * @param {import('./view.js').View} view View instance.
    */
   constructor(view) {
     this.#view = view;
     const shadowRoot = /** @type {ShadowRoot} */ (view.shadowRoot);
     this.#box = /** @type {HTMLDivElement} */ (shadowRoot.getElementById('scrollBox'));
-    this.smooth = true;
 
     this.#initEvents();
   }
 
   /**
-   * Enable/disable scroll animation.
-   * @param {boolean} active
+   * Toggle animation for scroll position changes.
+   * @param {boolean} [active] Force state.
    */
-  setAutoScrollAnimation(active) {
-    this.smooth = active;
-    this.#view.events.fire('view:notify', `auto-scroll animation ${this.smooth ? 'on' : 'off'}`);
+  toggleScrollAnimation(active) {
+    this.#smoothScroll = active == null
+      ? !this.#smoothScroll
+      : active;
+
+    this.#view.events.fire('view:notify', `auto-scroll animation ${this.#smoothScroll ? 'on' : 'off'}`);
   }
 
   /**
@@ -108,7 +115,7 @@ export class ScrollBox {
     // smooth scroll, else snap
     this.#box.scroll({
       top: y, left: x, 
-      behavior: vector.behavior || (this.smooth ? 'smooth' : 'auto')
+      behavior: vector.behavior || (this.#smoothScroll ? 'smooth' : 'auto')
     });
   }
 

@@ -162,10 +162,7 @@ export class View extends HTMLElement {
    * @param {boolean} [value] Force a value.
    */
   toggleAutoScrollAnimation(value) {
-    if (value == null)
-      value = !this.scrollBox.smooth;
-
-    this.scrollBox.setAutoScrollAnimation(value);
+    this.scrollBox.toggleScrollAnimation(value);
   }
 
   /**

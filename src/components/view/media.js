@@ -17,6 +17,12 @@ export class ViewMedia {
   #view;
 
   /**
+   * A-B loop interval timer.
+   * @type {NodeJS.Timeout|undefined}
+   */
+  #abLoopTimer;
+
+  /**
    * @param {import('./view.js').View} view View instance.
    */
   constructor(view) {
@@ -259,14 +265,14 @@ export class ViewMedia {
    */
   #abLoopInterval(start = true) {
     if (!start)
-      return clearInterval(this.abLoopInterval);
+      return clearInterval(this.#abLoopTimer);
 
     const vid = this.vid;
     if (!vid)
       return;
 
     // best effort to enforce ABloop on time
-    this.abLoopInterval = setInterval(() => {
+    this.#abLoopTimer = setInterval(() => {
       if (vid.currentTime + .010 >= this.#view.bLoop)
         vid.currentTime = this.#view.aLoop;
     }, 10);
