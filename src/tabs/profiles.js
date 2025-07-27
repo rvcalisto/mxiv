@@ -1,7 +1,6 @@
 // @ts-check
 import { GenericStorage } from "../components/genericStorage.js";
 import { appNotifier } from "../components/notifier.js";
-import * as frameRegistry from "../frames/frameRegistry.js";
 import { Tab } from "./tab.js";
 
 
@@ -44,13 +43,10 @@ export function store(name) {
 
   // store tab data in order of presentation, if allowed and implemented
   for (const tab of Tab.allTabs) {
-    const type = tab.frame.type;
+    const tabProfile = tab.getProfile();
 
-    if ( frameRegistry.getPolicy(type).allowProfiling )
-      session.tabs.push({
-        type: type,
-        state: tab.frame.getState() || null
-      });
+    if (tabProfile != null)
+      session.tabs.push(tabProfile);
   }
 
   // update or insert session entry
@@ -78,17 +74,9 @@ export function load(name, clearSession = true) {
 
   // re-create profile session
   for (const { type, state } of session.tabs) {
-
-    // enforce single instance policies when keeping old sessions
-    if ( !frameRegistry.getPolicy(type).allowDuplicate ) {
-      const hasDuplicate = Tab.allTabs.some(tab => tab.frame.type === type);
-      if (hasDuplicate)
-        continue;
-    }
-
-    new Tab(type, async (frame) => {
+    Tab.newTab(type, async (frame) => {
       frame.restoreState(state);
-    });
+    }, { quiet: true });
   }
 }
 

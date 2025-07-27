@@ -1,4 +1,4 @@
-import { Tab } from "../tabs/tab.js";
+import { Tab, newFileViewer } from "../tabs/tab.js";
 import "./mediaSession.js";
 import "./baseActions.js";
 import "./baseAccelerators.js";
@@ -11,7 +11,7 @@ import { userAccelerators } from "../actions/userAccelerators.js";
  */
 elecAPI.onOpen(function openInViewer(_e, /** @type {string[][]} */ tabs) {
   for (const paths of tabs)
-    new Tab( 'viewer', (viewer) => viewer.open(...paths) );
+    Tab.newTab( 'viewer', (viewer) => viewer.open(...paths) );
 });
 
 /**
@@ -28,5 +28,5 @@ onbeforeunload = function onClose() {
  */
 onload = function startApp() {
   userAccelerators.reload();
-  Tab.newTab();
+  newFileViewer();
 };

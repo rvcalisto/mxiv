@@ -16,6 +16,12 @@ import { appNotifier } from "../components/notifier.js";
  * @property {object} state Tab frame state.
  */
 
+/**
+ * @typedef NewTabOptions
+ * @property {string} [name] Custom tab name.
+ * @property {boolean} [quiet] Suppress policy violation notifications.
+ */
+
 
 /**
  * Returns reference to currently active frame component.
@@ -137,24 +143,31 @@ export class Tab {
   }
 
   /**
+   * Get profile for tab, if profiling is supported.
+   * @returns {TabProfileType?}
+   */
+  getProfile() {
+    const policy = frameRegistry.getPolicy(this.frame.type);
+    if (!policy.allowProfiling)
+      return null;
+
+    return {
+      type: this.frame.type,
+      state: this.frame.getState() || null
+    };
+  }
+
+  /**
    * Duplicate tab and state.
    */
   duplicate() {
-    const type = this.frame.type;
-    const framePolicy = frameRegistry.getPolicy(type);
-    const frameState = framePolicy.allowDuplicate ? this.frame.getState() : null;
-
-    if (!frameState) {
-      appNotifier.notify(`${type} doesn't support multiple instances`, 'singleInst');
-      return;
-    }
-
-    const newTab = new Tab(type, async (frame) => {
-      frame.restoreState(frameState);
-    }, this.frame.tabName);
+    const newTab = Tab.newTab(this.frame.type, async (frame) => {
+      frame.restoreState( this.frame.getState() );
+    }, { name: this.frame.tabName });
 
     // move duplicate behind currentTab
-    this.header.insert(newTab.header, true);
+    if (newTab != null)
+      this.header.insert(newTab.header, true);
   }
 
   /**
@@ -182,27 +195,28 @@ export class Tab {
   }
 
   /**
-   * Create a new default tab of given type.
-   * - `viewer`: Start with FileExplorer open.
-   * @param {FrameType} [type='viewer']
+   * Create a new tab of given type, if policy allows it.
+   * @param {FrameType} [type=viewer] Frame type.
+   * @param {(instance:GenericFrame)=>void} [callback] Callback, executed before selection.
+   * @param {NewTabOptions} [options] Custom options.
+   * @returns {Tab?}
    */
-  static newTab(type = 'viewer') {
+  static newTab(type = 'viewer', callback, options = {}) {
     const framePolicy = frameRegistry.getPolicy(type);
 
     if (!framePolicy.allowDuplicate) {
       const instance = this.allTabs.find(tab => tab.frame.type === type);
       if (instance) {
-        instance.select();
-        appNotifier.notify(`${type} doesn't support multiple instances`, 'singleInst');
-        return;
+        if (!options.quiet) {
+          instance.select();
+          appNotifier.notify(`${type} doesn't support multiple instances`, 'singleInst');
+        }
+
+        return null;
       }
     }
 
-    new Tab(type, frame => {
-      if (type === 'viewer') 
-        /** @type {import("../frames/viewer/viewer.js").Viewer} */ 
-        (frame).fileExplorer.togglePanel();
-    });
+    return new Tab(type, callback, options.name);
   }
 
   /**
@@ -233,8 +247,16 @@ export class Tab {
 }
 
 
+/**
+ * Create a Viewer tab with FileExplorer panel visible by default.
+ */
+export function newFileViewer() {
+  Tab.newTab('viewer', frame => {
+    /** @type {import("../frames/viewer/viewer.js").Viewer} */ 
+    (frame).fileExplorer.togglePanel();
+  });
+}
+
 // add newTab event listener (side effect)
 const newTabButton = /** @type HTMLDivElement */ (document.getElementById('newTab'));
-newTabButton.onclick = function newTabListener() {
-  Tab.newTab();
-}
+newTabButton.onclick = newFileViewer;

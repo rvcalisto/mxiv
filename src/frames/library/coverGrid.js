@@ -200,7 +200,7 @@ export class CoverGrid {
 
     const libraryTab = keepOpen ? null : Tab.selected;
 
-    new Tab('viewer', viewer => {
+    Tab.newTab('viewer', viewer => {
       /** @type {import('../viewer/viewer.js').Viewer} */ 
       (viewer).open(cover.bookPath)
     });

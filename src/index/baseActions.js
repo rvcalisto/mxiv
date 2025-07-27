@@ -1,5 +1,5 @@
 import { actionService } from "../actions/actionService.js"
-import { Tab } from "../tabs/tab.js"
+import { Tab, newFileViewer } from "../tabs/tab.js"
 import { statusBar } from "../components/statusBar.js"
 import * as sessionProfiles from "../tabs/profiles.js"
 import { actionPalette, option } from "../components/actionPalette/actionPalette.js"
@@ -40,7 +40,7 @@ actionService.setBaseActions({
         'desc' : 'create new tab',
         'run'  : (type = 'viewer') => {
           if ( frameRegistry.isFrameType(type) )
-            Tab.newTab(type)
+            type === 'viewer' ? newFileViewer() : Tab.newTab(type)
           else
             appNotifier.notify(`"${type}" is not a valid tab type`, 'newTab')
         },
