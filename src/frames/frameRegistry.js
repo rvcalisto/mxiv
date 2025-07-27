@@ -51,34 +51,26 @@ const tagSuffix = 'component';
 
 
 /**
- * Get class for frame type.
- * @param {FrameType} type Frame type.
- */
-export function getClass(type) {
-  return registry[type].class;
-}
-
-/**
  * Get policy for frame type.
  * @param {FrameType} type Frame type.
  */
-export function getPolicy(type) {
+export function getFramePolicy(type) {
   return registry[type].policy;
 }
 
 /**
- * Get tagname for frame type.
+ * Create and return new frame DOM element.
  * @param {FrameType} type Frame type.
  */
-export function getTagName(type) {
-  return `${type}-${tagSuffix}`;
+export function createFrame(type) {
+  return document.createElement(`${type}-${tagSuffix}`);
 }
 
 /**
  * Returns frame type, description tuple array.
  * @returns {string[][]}
  */
-export function getDescriptors() {
+export function frameDescriptors() {
   return Object.entries(registry)
     .map( ([type, entry]) => [type, entry.description] );
 }

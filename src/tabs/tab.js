@@ -2,7 +2,7 @@
 import { TabHeader } from "./tabHeader.js";
 import { statusBar } from "../components/statusBar.js";
 import { GenericFrame } from "../frames/genericFrame.js";
-import * as frameRegistry from "../frames/frameRegistry.js";
+import { getFramePolicy, createFrame } from "../frames/frameRegistry.js";
 import { appNotifier } from "../components/notifier.js";
 
 
@@ -54,7 +54,7 @@ export class Tab {
    */
   constructor(type = 'viewer', callback, name = 'tab') {
     this.header = new TabHeader(this, name);
-    this.frame = this.#createFrame(type);
+    this.frame = this.#setupFrame(type);
 
     if (callback)
       callback(this.frame);
@@ -67,9 +67,8 @@ export class Tab {
    * @param {FrameType} type Frame type.
    * @returns {GenericFrame}
    */
-  #createFrame(type) {
-    const tagName = frameRegistry.getTagName(type);
-    const frame = /** @type {GenericFrame} */ (document.createElement(tagName));
+  #setupFrame(type) {
+    const frame = /** @type {GenericFrame} */ (createFrame(type));
 
     // set and store tab name, hide frame on start
     frame.tabName = this.header.name;
@@ -147,7 +146,7 @@ export class Tab {
    * @returns {TabProfileType?}
    */
   getProfile() {
-    const policy = frameRegistry.getPolicy(this.frame.type);
+    const policy = getFramePolicy(this.frame.type);
     if (!policy.allowProfiling)
       return null;
 
@@ -202,7 +201,7 @@ export class Tab {
    * @returns {Tab?}
    */
   static newTab(type = 'viewer', callback, options = {}) {
-    const framePolicy = frameRegistry.getPolicy(type);
+    const framePolicy = getFramePolicy(type);
 
     if (!framePolicy.allowDuplicate) {
       const instance = this.allTabs.find(tab => tab.frame.type === type);

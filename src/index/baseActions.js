@@ -5,7 +5,7 @@ import * as sessionProfiles from "../tabs/profiles.js"
 import { actionPalette, option } from "../components/actionPalette/actionPalette.js"
 import { userAccelerators } from "../actions/userAccelerators.js"
 import { appNotifier } from "../components/notifier.js"
-import * as frameRegistry from "../frames/frameRegistry.js"
+import { isFrameType, frameDescriptors } from "../frames/frameRegistry.js"
 import { userPreferences } from "../components/userPreferences.js"
 import * as headerPanel from "../tabs/tabHeaderPanel.js"
 
@@ -39,13 +39,13 @@ actionService.setBaseActions({
       'new': {
         'desc' : 'create new tab',
         'run'  : (type = 'viewer') => {
-          if ( frameRegistry.isFrameType(type) )
+          if ( isFrameType(type) )
             type === 'viewer' ? newFileViewer() : Tab.newTab(type)
           else
             appNotifier.notify(`"${type}" is not a valid tab type`, 'newTab')
         },
         'options': (lastArg, allArgs) => {
-          const frameDescs = frameRegistry.getDescriptors()
+          const frameDescs = frameDescriptors()
           return allArgs.length < 2 ?
             frameDescs.map( ([frame, desc]) => option(frame, desc) ) : []
         }
@@ -162,8 +162,8 @@ actionService.setBaseActions({
           // hint available components
           if (allArgs.length < 2) return [
             option('base', 'on all components, but overruled on concurrency'),
-            ...frameRegistry.getDescriptors()
-              .map(([name, desc]) => option(name, `set/overwrite ${name} accelerators`)),
+            ...frameDescriptors().map(([name, desc]) => 
+              option(name, `set/overwrite ${name} accelerators`))
           ]
 
           // hint stored user accelerators for component
