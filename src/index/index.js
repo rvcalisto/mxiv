@@ -9,7 +9,7 @@ import { userAccelerators } from "../actions/userAccelerators.js";
 /**
  * Open paths passed as arguments.
  */
-elecAPI.onOpen(function openInViewer(_e, /** @type {string[][]} */ tabs) {
+elecAPI.onOpen(function openInViewer(_, /** @type {string[][]} */ tabs) {
   for (const paths of tabs)
     Tab.newTab( 'viewer', (viewer) => viewer.open(...paths) );
 });
@@ -18,15 +18,15 @@ elecAPI.onOpen(function openInViewer(_e, /** @type {string[][]} */ tabs) {
  * Properly "Destruct" tabs to trigger termination callbacks.
  * Keep open if any tab is still on hold.
  */
-onbeforeunload = function onClose() {
+addEventListener('beforeunload', function onClose(e) {
   Tab.allTabs.forEach( tab => tab.close(false) );
-  return Tab.allTabs.length > 0 ? false : null;
-};
+  Tab.allTabs.length > 0 && e.preventDefault();
+});
 
 /**
  * Load user accelerators and create first tab.
  */
-onload = function startApp() {
+addEventListener('load', function startApp() {
   userAccelerators.reload();
   newFileViewer();
-};
+});
