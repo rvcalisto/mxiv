@@ -120,7 +120,7 @@ export class Tab {
     this.frame.focus();
 
     statusBar.updateStatus( this.frame.status() );
-    this.channel.diplayChannel();
+    this.channel.displayChannel();
     this.frame.onSelected();
   }
 

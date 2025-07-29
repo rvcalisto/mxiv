@@ -52,9 +52,9 @@ export class NotificationChannel {
   }
 
   /**
-   * Display channel while hidding all others.
+   * Display channel while hiding all others.
    */
-  diplayChannel() {
+  displayChannel() {
     channels.forEach( channel => channel.#showChannel(false) );
 
     this.#showChannel(true);

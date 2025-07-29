@@ -81,10 +81,14 @@ actionService.setComponentActions('library', {
         'desc': 'remove folder to Watchlist',
         'run': (path) => {
           const validPath = path && path.trim()
-          if (!validPath) return
+          if (!validPath)
+            return;
 
-          Library.watchlistPanel.removeItem(path)
-          Library.notify(`removed ${path} from Watchlist`)
+          const success = Library.watchlistPanel.removeItem(path);
+          if (success)
+            Library.notify(`removed ${path} from Watchlist`)
+          else
+            Library.notify(`no "${path}" in watchlist to remove`);
         },
         'options': () => Library.watchlistPanel.getItems().map(i => i.path)
       },

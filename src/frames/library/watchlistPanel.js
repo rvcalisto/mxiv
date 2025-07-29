@@ -1,5 +1,4 @@
 import { GenericStorage } from "../../components/genericStorage.js";
-import { notify } from "../../components/notifier.js";
 
 
 /**
@@ -85,14 +84,15 @@ export class WatchlistPanel {
   /**
    * Remove watchlist item from watchlist.
    * @param {string} path Watchlist item path.
+   * @returns {boolean} Success.
    */
   removeItem(path) {
-    const watchItem = this.#storage.get(path);
-    if (!watchItem)
-      return notify(`no "${path}" in watchlist to remove`);
+    if ( this.#storage.get(path) == null )
+      return false;
 
     this.#storage.delete(path);
     console.log(`removed "${path}" from watchlist`);
+    return true;
   }
 
   /**
