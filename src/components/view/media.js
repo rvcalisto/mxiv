@@ -1,4 +1,5 @@
 // @ts-check
+import { HMStoSec, secToHMS } from './trackUtils.js';
 
 /**
  * @typedef {'loop'|'skip'|'random'} OnTrackEndMode
@@ -63,7 +64,7 @@ export class ViewMedia {
 
     // also toggle interval 
     if (this.#view.aLoop != Infinity && this.#view.bLoop != Infinity)
-      this.#abLoopInterval(!vid.paused);
+      this.#toggleABloopInterval(!vid.paused);
 
     this.#view.events.fire('view:playing', !vid.paused);
   }
@@ -197,34 +198,19 @@ export class ViewMedia {
     this.#view.events.fire('view:notify', `preservePitch: ${vid.preservesPitch}`, 'prePitch');
     this.#view.trackBar.peek();
   }
-  
-  /**
-   * Get HH:MM:SS string from seconds.
-   * @param {number} seconds 
-   * @returns {string} Formated time string.
-   */
-  secToHMS(seconds) {
-    const h = Math.floor(seconds / 3600);
-    const m = Math.floor(seconds % 3600 / 60);
-    const s = Math.floor(seconds % 3600 % 60);
-
-    const H = h ? String(h).padStart(2, '0') : '00';
-    const M = m ? String(m).padStart(2, '0') : '00';
-    const S = s ? String(s).padStart(2, '0') : '00';
-
-    return `${H}:${M}:${S}`;
-  }
 
   /**
-   * Set A loop, B loop on current time. Clear loop if A and B already set or null is passed.
-   * @param {number|undefined|null} [customTime] Custom video time in secs.
+   * Set AB loop nodes on current time. Clear if both already set or null is passed.
+   * @param {string?} [customA] Custom A loop HH:MM:SS time.
+   * @param {string} [customB] Custom B loop HH:MM:SS time.
    */
-  abLoop(customTime) {
+  abLoop(customA, customB) {
+
     // reset exactly on null
-    if (customTime === null) {
+    if (customA === null) {
       this.#view.aLoop = Infinity;
       this.#view.bLoop = Infinity;
-      this.#abLoopInterval(false);
+      this.#toggleABloopInterval(false);
       return;
     }
 
@@ -232,24 +218,56 @@ export class ViewMedia {
     if (!vid)
       return;
 
-    const tgtTime = customTime ?? vid.currentTime;
+    const validateA = (/** @type number */ aTime) => {
+      return !isNaN(aTime) && aTime <= vid.duration
+    };
+
+    const validateB = (/** @type number */ bTime, /** @type number */ aTime) => {
+      return !isNaN(bTime) && bTime <= vid.duration && bTime > aTime;
+    };
+
+    // set current node as current time
+    const loopNode = customA == null
+      ? vid.currentTime
+      : HMStoSec(customA);
 
     // set A
-    if (this.#view.aLoop == Infinity) {
-      this.#view.aLoop = tgtTime;
-      this.#view.events.fire('view:notify', `A loop at ${this.secToHMS(tgtTime)}`, 'abLoop');
-    }
-    // set B
-    else if (this.#view.bLoop == Infinity) {
-      if (tgtTime > this.#view.aLoop) {
-        this.#view.bLoop = tgtTime;
-        !vid.paused && this.#abLoopInterval();
-        this.#view.events.fire('view:notify', `B loop at ${this.secToHMS(tgtTime)}`, 'abLoop');
-      } else {
-        this.abLoop(null);
-        this.#view.events.fire('view:notify', 'B loop before A, clear', 'abLoop');
+    if (customB == null && this.#view.aLoop == Infinity) {
+      if ( !validateA(loopNode) )
+        this.#view.events.fire('view:notify', 'A loop exceeds track length', 'abLoop');
+      else {
+        this.#view.aLoop = loopNode;
+        this.#view.events.fire('view:notify', `A loop at ${secToHMS(loopNode)}`, 'abLoop');
       }
     }
+
+    // set B
+    else if (customB == null && this.#view.bLoop == Infinity) {
+      if ( !validateB(loopNode, this.#view.aLoop) )   {
+        this.abLoop(null);
+        this.#view.events.fire('view:notify', 'B loop before A, clear', 'abLoop');
+      } else {
+        this.#view.bLoop = loopNode;
+        !vid.paused && this.#toggleABloopInterval(true);
+        this.#view.events.fire('view:notify', `B loop at ${secToHMS(loopNode)}`, 'abLoop');
+      }
+    }
+
+    // set A and B
+    else if (customA != null && customB != null) {
+      const Anode = HMStoSec(customA), 
+            Bnode = HMStoSec(customB);
+
+      if ( !validateA(Anode) || !validateB(Bnode, Anode) )
+        this.#view.events.fire('view:notify', 'invalid AB loop range', 'abLoop');
+      else {
+        this.#view.aLoop = Anode;
+        this.#view.bLoop = Bnode;
+        !vid.paused && this.#toggleABloopInterval(true);
+        this.#view.events.fire('view:notify', 'AB loop set', 'abLoop');
+      }
+    }
+
     // clear loop
     else {
       this.abLoop(null);
@@ -261,9 +279,9 @@ export class ViewMedia {
 
   /**
    * Start or clear A-B loop interval.
-   * @param {boolean} [start=true] Either to start interval. Clear if false.
+   * @param {boolean} start Either to start interval. Clear if false.
    */
-  #abLoopInterval(start = true) {
+  #toggleABloopInterval(start) {
     if (!start)
       return clearInterval(this.#abLoopTimer);
 

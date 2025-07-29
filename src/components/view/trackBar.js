@@ -1,4 +1,6 @@
 // @ts-check
+import { secToHMS } from './trackUtils.js';
+
 
 /** 
  * Track bar methods for Viewer video elements. 
@@ -117,8 +119,8 @@ export class TrackBar {
     }
 
     // track label
-    let duration = this.#view.media.secToHMS(vidDuration);
-    let time = this.#view.media.secToHMS(vid.currentTime);
+    let duration = secToHMS(vidDuration);
+    let time = secToHMS(vid.currentTime);
 
     if ( duration.startsWith('00:') ) {
       duration = duration.slice(3);
@@ -234,7 +236,7 @@ export class TrackBar {
 
     // show cursor position timestamp, don't go out-bounds
     const timestamp = /** @type {HTMLParagraphElement}*/ (this.#panelElement.querySelector('.timestamp'));
-    const time = this.#view.media.secToHMS( this.#seekTo(e) );
+    const time = secToHMS( this.#seekTo(e) );
     timestamp.textContent = time.startsWith('00') ? time.slice(3) : time;
     timestamp.style.transform = `translateX(-50%) translateX(${e.offsetX}px)`;
 

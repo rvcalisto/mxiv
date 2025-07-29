@@ -120,8 +120,8 @@ actionService.setComponentActions('viewer', {
   },
 
   'loop': {
-    'desc' : 'AB loop audio/video',
-    'run'  : () => FRAME.viewComponent.media.abLoop()
+    'desc' : 'set AB loop at track time, takes optional [hh:][mm:][ss] range',
+    'run'  : (aTime, bTime) => FRAME.viewComponent.media.abLoop(aTime, bTime)
   },
 
   'endRepeat': {
