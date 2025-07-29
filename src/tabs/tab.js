@@ -11,6 +11,10 @@ import { NotificationChannel } from "../components/notifier.js";
  */
 
 /**
+ * @typedef {Tab} TabType
+ */
+
+/**
  * @typedef TabProfileType
  * @property {FrameType} type Tab frame type.
  * @property {object} state Tab frame state.
@@ -24,22 +28,22 @@ import { NotificationChannel } from "../components/notifier.js";
 
 
 /**
- * Returns reference to currently active frame component.
+ * Currently selected tab reference.
+ * @type {Tab?}
+ */
+export let TAB;
+
+/**
+ * Currently selected frame reference.
  * @type {GenericFrame?}
  */
 export let FRAME;
 
 
 /**
- * Tab instace and manager via static methods.
+ * Tab instance.
  */
-export class Tab {
-
-  /**
-   * Currently selected tab reference.
-   * @type {Tab?}
-   */
-  static selected;
+class Tab {
 
   /**
    * Keep tab open against close calls.
@@ -107,15 +111,15 @@ export class Tab {
    * Present and update tab references as selected.
    */
   select() {
-    if (Tab.selected) {
-      Tab.selected.frame.style.display = 'none';
-      Tab.selected.header.select(false);
+    if (TAB) {
+      TAB.frame.style.display = 'none';
+      TAB.header.select(false);
     }
 
     this.frame.style.display = '';
     this.header.select();
 
-    Tab.selected = this;
+    TAB = this;
     FRAME = this.frame;
     this.frame.focus();
 
@@ -134,7 +138,7 @@ export class Tab {
       next.insert(this.header, right);
 
       // focus into view in case of overflow
-      if (Tab.selected === this)
+      if (TAB === this)
         this.header.select();
     }
   }
@@ -166,13 +170,13 @@ export class Tab {
    * Duplicate tab and state.
    */
   duplicate() {
-    const newTab = Tab.newTab(this.frame.type, async (frame) => {
+    const tab = newTab(this.frame.type, async (frame) => {
       frame.restoreState( this.frame.getState() );
     }, { name: this.frame.tabName });
 
     // move duplicate behind currentTab
-    if (newTab != null)
-      this.header.insert(newTab.header, true);
+    if (tab != null)
+      this.header.insert(tab.header, true);
   }
 
   /**
@@ -192,72 +196,72 @@ export class Tab {
     this.header.remove();
     this.channel.close();
 
-    if (nextHeader != null && Tab.selected === this)
+    if (nextHeader != null && TAB === this)
       nextHeader.tabInstance.select();
     else if (nextHeader == null && closeWindowOnLast)
       window.close();
-    else if (Tab.selected === this)
-      Tab.selected = FRAME = null;
-  }
-
-  /**
-   * Create a new tab of given type, if policy allows it.
-   * @param {FrameType} [type=viewer] Frame type.
-   * @param {(instance:GenericFrame)=>void} [callback] Callback, executed before selection.
-   * @param {NewTabOptions} [options] Custom options.
-   * @returns {Tab?}
-   */
-  static newTab(type = 'viewer', callback, options = {}) {
-    const framePolicy = getFramePolicy(type);
-
-    if (!framePolicy.allowDuplicate) {
-      const instance = this.allTabs.find(tab => tab.frame.type === type);
-      if (instance) {
-        if (!options.quiet) {
-          instance.select();
-          instance.frame.notify(`${type} doesn't support multiple instances`, 'singleInst');
-        }
-
-        return null;
-      }
-    }
-
-    return new Tab(type, callback, options.name);
-  }
-
-  /**
-   * Cycle currently selected tab.
-   * @param {boolean} [forward=true] 
-   */
-  static cycleTabs(forward = true) {
-    if (Tab.selected == null)
-      return;
-
-    const header = Tab.selected.header;
-    const nextHeader = forward ? header.right : header.left;
-
-    if (nextHeader == null)
-      Tab.allTabs.at(forward ? 0 : -1)?.select();
-    else
-      nextHeader.tabInstance.select();
-  }
-
-  /**
-   * Array of all open tabs at the time, in order of presentation.
-   * @returns {Tab[]}
-   */
-  static get allTabs() {
-    const tabs = TabHeader.allHeaders;
-    return tabs.map(header => header.tabInstance);
+    else if (TAB === this)
+      TAB = FRAME = null;
   }
 }
 
 
 /**
+ * Create a new tab of given type, if policy allows it.
+ * @param {FrameType} [type=viewer] Frame type.
+ * @param {(instance:GenericFrame)=>void} [callback] Callback, executed before selection.
+ * @param {NewTabOptions} [options] Custom options.
+ * @returns {Tab?}
+ */
+export function newTab(type = 'viewer', callback, options = {}) {
+  const framePolicy = getFramePolicy(type);
+
+  if (!framePolicy.allowDuplicate) {
+    const instance = allTabs().find(tab => tab.frame.type === type);
+    if (instance) {
+      if (!options.quiet) {
+        instance.select();
+        instance.frame.notify(`${type} doesn't support multiple instances`, 'singleInst');
+      }
+
+      return null;
+    }
+  }
+
+  return new Tab(type, callback, options.name);
+}
+
+/**
+ * Cycle currently selected tab.
+ * @param {boolean} [forward=true] 
+ */
+export function cycleTabs(forward = true) {
+  if (TAB == null)
+    return;
+
+  const header = TAB.header;
+  const nextHeader = forward ? header.right : header.left;
+  
+  if (nextHeader == null)
+    allTabs().at(forward ? 0 : -1)?.select();
+  else
+    nextHeader.tabInstance.select();
+}
+
+/**
+ * Array of all open tabs at the time, in order of presentation.
+ * @returns {Tab[]}
+ */
+export function allTabs() {
+  const tabs = TabHeader.allHeaders;
+  return tabs.map(header => header.tabInstance);
+}
+
+/**
  * Create a Viewer tab with FileExplorer panel visible by default.
  */
 export function newFileViewer() {
-  Tab.newTab('viewer', frame => {
+  newTab('viewer', frame => {
     /** @type {import("../frames/viewer/viewer.js").Viewer} */ 
     (frame).fileExplorer.togglePanel();
   });

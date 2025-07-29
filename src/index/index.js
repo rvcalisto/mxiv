@@ -1,4 +1,4 @@
-import { Tab, newFileViewer } from "../tabs/tab.js";
+import { newTab, newFileViewer, allTabs } from "../tabs/tab.js";
 import "./mediaSession.js";
 import "./baseActions.js";
 import "./baseAccelerators.js";
@@ -11,7 +11,7 @@ import { userAccelerators } from "../actions/userAccelerators.js";
  */
 elecAPI.onOpen(function openInViewer(_, /** @type {string[][]} */ tabs) {
   for (const paths of tabs)
-    Tab.newTab( 'viewer', (viewer) => viewer.open(...paths) );
+    newTab( 'viewer', (viewer) => viewer.open(...paths) );
 });
 
 /**
@@ -19,8 +19,8 @@ elecAPI.onOpen(function openInViewer(_, /** @type {string[][]} */ tabs) {
  * Keep open if any tab is still on hold.
  */
 addEventListener('beforeunload', function onClose(e) {
-  Tab.allTabs.forEach( tab => tab.close(false) );
-  Tab.allTabs.length > 0 && e.preventDefault();
+  allTabs().forEach( tab => tab.close(false) );
+  allTabs().length > 0 && e.preventDefault();
 });
 
 /**

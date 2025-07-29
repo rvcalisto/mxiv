@@ -1,7 +1,7 @@
 // @ts-check
 import { ItemList } from "../../components/itemList.js"
 import { Cover } from "./coverElement.js";
-import { Tab } from "../../tabs/tab.js";
+import { newTab, TAB } from "../../tabs/tab.js";
 import { ObservableEvents } from "../../components/observableEvents.js";
 import { generalState } from "../../tabs/profiles.js";
 import { matchNameOrTags } from '../../components/fileMethods.js';
@@ -198,9 +198,9 @@ export class CoverGrid {
       return;
     }
 
-    const libraryTab = keepOpen ? null : Tab.selected;
+    const libraryTab = keepOpen ? null : TAB;
 
-    Tab.newTab('viewer', viewer => {
+    newTab('viewer', viewer => {
       /** @type {import('../viewer/viewer.js').Viewer} */ 
       (viewer).open(cover.bookPath)
     });

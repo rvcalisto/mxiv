@@ -1,5 +1,5 @@
 // @ts-check
-import { Tab } from "./tab.js";
+import { TAB } from "./tab.js";
 import setDragEvent from "./tabHeaderDrag.js";
 import { addItem, removeItem, slideIntoView } from "./tabHeaderPanel.js";
 
@@ -20,7 +20,7 @@ export class TabHeader {
 
 
   /**
-   * @param {Tab} tabInstance Host Tab instance.
+   * @param {import("./tab.js").TabType} tabInstance Host Tab instance.
    * @param {string} [name] Tab name. 
    */
   constructor(tabInstance, name = 'tab') {
@@ -63,8 +63,8 @@ export class TabHeader {
 
     // compose & append to DOM
     container.append(this.#playButton, this.#nameLabel, this.#closeButton);
-    if (Tab.selected != null)
-      addItem(container, Tab.selected.header.#element);
+    if (TAB != null)
+      addItem(container, TAB.header.#element);
     else
       addItem(container);
 

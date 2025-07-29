@@ -1,7 +1,7 @@
 // @ts-check
 import { GenericStorage } from "../components/genericStorage.js";
 import { notify } from "../components/notifier.js";
-import { Tab } from "./tab.js";
+import { allTabs, newTab } from "./tab.js";
 
 
 /**
@@ -42,7 +42,7 @@ export function store(name) {
   });
 
   // store tab data in order of presentation, if allowed and implemented
-  for (const tab of Tab.allTabs) {
+  for ( const tab of allTabs() ) {
     const tabProfile = tab.getProfile();
 
     if (tabProfile != null)
@@ -68,13 +68,13 @@ export function load(name, clearSession = true) {
   }
 
   if (clearSession) {
-    Tab.allTabs.forEach( tab => tab.close(false) );
+    allTabs().forEach( tab => tab.close(false) );
     Object.assign(generalState, session.general);
   }
 
   // re-create profile session
   for (const { type, state } of session.tabs) {
-    Tab.newTab(type, async (frame) => {
+    newTab(type, async (frame) => {
       frame.restoreState(state);
     }, { quiet: true });
   }

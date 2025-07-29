@@ -1,5 +1,5 @@
 import { actionService } from "../actions/actionService.js"
-import { Tab, newFileViewer } from "../tabs/tab.js"
+import { TAB, cycleTabs, newFileViewer, newTab } from "../tabs/tab.js"
 import { statusBar } from "../components/statusBar.js"
 import * as sessionProfiles from "../tabs/profiles.js"
 import { actionPalette, option } from "../components/actionPalette/actionPalette.js"
@@ -40,7 +40,7 @@ actionService.setBaseActions({
         'desc' : 'create new tab',
         'run'  : (type = 'viewer') => {
           if ( isFrameType(type) )
-            type === 'viewer' ? newFileViewer() : Tab.newTab(type)
+            type === 'viewer' ? newFileViewer() : newTab(type)
           else
             notify(`"${type}" is not a valid tab type`, 'newTab')
         },
@@ -52,29 +52,29 @@ actionService.setBaseActions({
       },
       'move': {
         'desc' : 'move current tab to the right or left',
-        'run'  : (next = 'right') => Tab.selected.move(next !== 'left'),
+        'run'  : (next = 'right') => TAB.move(next !== 'left'),
         'options': (lastArg, args) => args.length < 2 ?
           [option('right', 'default'), 'left'] : []
       },
       'cycle': {
         'desc' : 'cycle through tabs',
-        'run'  : (next = 'next') => Tab.cycleTabs(next !== 'back'),
+        'run'  : (next = 'next') => cycleTabs(next !== 'back'),
         'options': (lastArg, args) => args.length < 2 ?
           [option('next', 'default'), 'back'] : []
       },
       'close': {
         'desc' : 'close current tab',
-        'run'  : () => Tab.selected.close()
+        'run'  : () => TAB.close()
       },
       'duplicate': {
         'desc' : 'duplicate current tab',
-        'run'  : () => Tab.selected.duplicate()
+        'run'  : () => TAB.duplicate()
       },
       'rename': {
         'desc' : 'rename current tab',
         'run'  : (newName) => {
           newName = newName.trim()
-          if (newName) Tab.selected.rename(newName)
+          if (newName) TAB.rename(newName)
         }
       },
       'visibility': {
