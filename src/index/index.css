@@ -232,7 +232,7 @@ action-palette {
   pointer-events: none;
 }
 
-#appNotifier {
+#notifier {
   position: absolute;
   pointer-events: none;
   width: 100%;
@@ -240,15 +240,23 @@ action-palette {
   z-index: 3;
   overflow: hidden;
 
-  .notification {
-    margin: .4em auto;
-    padding: .5em 1em; 
-    border-radius: 1em;
-    width: fit-content;
-    box-shadow: var(--theme-notification-shadow);
+  .tabContext {
+    display: none;
 
-    background: var(--theme-notification-bg);
-    color: var(--theme-notification-fg);
+    &[active] {
+      display: block;
+    }
+
+    .notification {
+      margin: .4em auto;
+      padding: .5em 1em; 
+      border-radius: 1em;
+      width: fit-content;
+      box-shadow: var(--theme-notification-shadow);
+
+      background: var(--theme-notification-bg);
+      color: var(--theme-notification-fg);
+    }
   }
 }
 

@@ -1,7 +1,6 @@
 import { GenericFrame } from "../genericFrame.js"
 import { CoverGrid } from "./coverGrid.js"
 import { WatchlistPanel } from "./watchlistPanel.js"
-import { appNotifier } from "../../components/notifier.js"
 
 import "./libraryActions.js"
 import "./libraryAccelerators.js"
@@ -121,7 +120,7 @@ export class Library extends GenericFrame {
     let addedPaths = await elecAPI.addToLibrary(watchItems);
     console.timeEnd(`syncToWatchlist`);
 
-    appNotifier.notify(`${addedPaths} new book(s) added`, 'syncToWatchlist');
+    this.notify(`${addedPaths} new book(s) added`, 'syncToWatchlist');
 
     // reload entries & generate thumbnails
     if (addedPaths > 0) {
@@ -162,7 +161,7 @@ export class Library extends GenericFrame {
       let addedPaths = await elecAPI.addToLibrary(items);
       console.timeEnd(`addToLibrary`);
 
-      appNotifier.notify(`${addedPaths} new book(s) added`, 'addToLibrary');
+      this.notify(`${addedPaths} new book(s) added`, 'addToLibrary');
       
       // reload entries & generate thumbnails
       if (addedPaths > 0) {

@@ -3,7 +3,7 @@ import { TabHeader } from "./tabHeader.js";
 import { statusBar } from "../components/statusBar.js";
 import { GenericFrame } from "../frames/genericFrame.js";
 import { getFramePolicy, createFrame } from "../frames/frameRegistry.js";
-import { appNotifier } from "../components/notifier.js";
+import { NotificationChannel } from "../components/notifier.js";
 
 
 /**
@@ -55,6 +55,7 @@ export class Tab {
   constructor(type = 'viewer', callback, name = 'tab') {
     this.header = new TabHeader(this, name);
     this.frame = this.#setupFrame(type);
+    this.channel = new NotificationChannel();
 
     if (callback)
       callback(this.frame);
@@ -73,6 +74,10 @@ export class Tab {
     // set and store tab name, hide frame on start
     frame.tabName = this.header.name;
     frame.style.display = 'none';
+
+    frame.events.observe('frame:notify', (message, typeId) => {
+      this.channel.notify(message, typeId);
+    });
 
     frame.events.observe('frame:rename', (newName) => {
       this.header.rename(newName);
@@ -115,6 +120,7 @@ export class Tab {
     this.frame.focus();
 
     statusBar.updateStatus( this.frame.status() );
+    this.channel.diplayChannel();
     this.frame.onSelected();
   }
 
@@ -184,6 +190,7 @@ export class Tab {
     const nextHeader = this.header.left || this.header.right;
     this.frame.remove();
     this.header.remove();
+    this.channel.close();
 
     if (nextHeader != null && Tab.selected === this)
       nextHeader.tabInstance.select();
@@ -208,7 +215,7 @@ export class Tab {
       if (instance) {
         if (!options.quiet) {
           instance.select();
-          appNotifier.notify(`${type} doesn't support multiple instances`, 'singleInst');
+          instance.frame.notify(`${type} doesn't support multiple instances`, 'singleInst');
         }
 
         return null;

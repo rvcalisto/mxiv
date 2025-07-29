@@ -4,7 +4,7 @@ import { statusBar } from "../components/statusBar.js"
 import * as sessionProfiles from "../tabs/profiles.js"
 import { actionPalette, option } from "../components/actionPalette/actionPalette.js"
 import { userAccelerators } from "../actions/userAccelerators.js"
-import { appNotifier } from "../components/notifier.js"
+import { notify } from "../components/notifier.js"
 import { isFrameType, frameDescriptors } from "../frames/frameRegistry.js"
 import { userPreferences } from "../components/userPreferences.js"
 import * as headerPanel from "../tabs/tabHeaderPanel.js"
@@ -42,7 +42,7 @@ actionService.setBaseActions({
           if ( isFrameType(type) )
             type === 'viewer' ? newFileViewer() : Tab.newTab(type)
           else
-            appNotifier.notify(`"${type}" is not a valid tab type`, 'newTab')
+            notify(`"${type}" is not a valid tab type`, 'newTab')
         },
         'options': (lastArg, allArgs) => {
           const frameDescs = frameDescriptors()
@@ -148,7 +148,7 @@ actionService.setBaseActions({
         'run': (component, keycombo, ...args) => {
           if (!component || !keycombo) return
           userAccelerators.set(component, { [keycombo]: args })
-          appNotifier.notify(`user accelerator updated`)
+          notify(`user accelerator updated`)
         },
         'options': (lastArg, allArgs) => {
           if (allArgs.length > 3) return []
@@ -192,7 +192,7 @@ actionService.setBaseActions({
       }
       
       elecAPI.setTheme(theme);
-      appNotifier.notify(`set theme to "${theme}"`, 'setTheme');
+      notify(`set theme to "${theme}"`, 'setTheme');
       
       userPreferences.themeOverride = theme;
     },

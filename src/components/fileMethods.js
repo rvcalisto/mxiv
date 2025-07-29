@@ -1,4 +1,4 @@
-import { appNotifier } from "./notifier.js";
+import { notify } from "./notifier.js";
 
 
 /**
@@ -9,20 +9,20 @@ import { appNotifier } from "./notifier.js";
  */
 export async function tag(filepath, add, ...tags) {
   if (!filepath)
-    return appNotifier.notify('no file to tag', 'tag');
+    return notify('no file to tag', 'tag');
 
   // treat tags
   tags = tags.map( tag => tag.toLowerCase().trim() )
     .filter(tag => tag !== '');
   
   if (tags.length < 1) 
-    return appNotifier.notify('no tags to update');
+    return notify('no tags to update');
 
   const success = add ?
     await elecAPI.addTags(filepath, ...tags) :
     await elecAPI.removeTags(filepath, ...tags);
 
-  appNotifier.notify(`${success ? '' : 'no '}tags updated`, 'tag');
+  notify(`${success ? '' : 'no '}tags updated`, 'tag');
 }
 
 /**
@@ -33,11 +33,11 @@ export async function tag(filepath, add, ...tags) {
  */
 export async function runScript(userScript, filepath, optMsg) {
   if (!userScript)
-    return appNotifier.notify('no script to run', 'runScript');
+    return notify('no script to run', 'runScript');
 
   const success = await elecAPI.runOnFile(userScript, filepath);
   if (!success)
-    return appNotifier.notify(`this script needs a file to run`, 'runScript');
+    return notify(`this script needs a file to run`, 'runScript');
   
   console.log(`Ran user script:`, {
     script: userScript,
@@ -45,7 +45,7 @@ export async function runScript(userScript, filepath, optMsg) {
   });
 
   if (optMsg)
-    appNotifier.notify(optMsg, 'runScript');
+    notify(optMsg, 'runScript');
 }
 
 /**

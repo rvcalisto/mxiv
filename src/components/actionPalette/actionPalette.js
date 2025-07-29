@@ -4,7 +4,7 @@ import { PriorityStack } from "./priorityStack.js";
 import { OptionElement } from "./optionElement.js";
 import { actionService } from "../../actions/actionService.js";
 import { acceleratorService } from "../../actions/acceleratorService.js";
-import { appNotifier } from "../notifier.js";
+import { notify } from "../notifier.js";
 import { GenericStorage } from "../genericStorage.js";
 
 
@@ -123,7 +123,7 @@ class ActionPalette extends HTMLElement {
       if (textItem !== 'palette repeatLast')
         this.#actionStack.insert(textItem);
     } else {
-      appNotifier.notify(`"${action[0]}" is not an action in current context`, 'actionPalette');
+      notify(`"${action[0]}" is not an action in current context`, 'actionPalette');
     }
   }
 
@@ -134,10 +134,10 @@ class ActionPalette extends HTMLElement {
   clearActionHistory(historyItem) {
     if (historyItem == null) {
       this.#actionStack.clearAll();
-      appNotifier.notify('history cleared', 'actionPalette:clear');
+      notify('history cleared', 'actionPalette:clear');
     } else {
       this.#actionStack.remove(historyItem);
-      appNotifier.notify('history item removed', 'actionPalette:forget');
+      notify('history item removed', 'actionPalette:forget');
       this.toggle(true); // recapture focus from 'forget' button click
     }
   }

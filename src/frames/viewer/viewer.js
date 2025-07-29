@@ -7,7 +7,6 @@ import { View } from "../../components/view/view.js";
 import "./viewerActions.js";
 import "./viewerAccelerators.js";
 import "./keyEventController.js";
-import { appNotifier } from "../../components/notifier.js";
 
 
 /**
@@ -142,7 +141,7 @@ export class Viewer extends GenericFrame {
     this.#openArgs = paths; // fix state replication (duplicates) during bookIsLoading
 
     if ( !await this.fileBook.load(...paths) ) {
-      appNotifier.notify('no files to open', 'viewer:open');
+      this.notify('no files to open', 'viewer:open');
     } else {
       // reset filter query
       this.#filterQuery = [];
@@ -172,7 +171,7 @@ export class Viewer extends GenericFrame {
       return queries.every( query => name.includes(query) );
     });
 
-    idx < 0 ? appNotifier.notify('no matches') : this.gotoPage(idx);
+    idx < 0 ? this.notify('no matches') : this.gotoPage(idx);
   }
 
   /**
@@ -186,13 +185,13 @@ export class Viewer extends GenericFrame {
     if (queries.length < 1) {
       this.fileBook.clearFilter();
       this.#filterQuery = [];
-      appNotifier.notify('clear filter');
+      this.notify('clear filter');
     } else {
       const currentFilePath = this.fileBook.currentFile?.path;
       const matches = this.fileBook.filterStringAndTags(...queries);
   
       if (matches === 0)
-        return appNotifier.notify('no matches');
+        return this.notify('no matches');
       else
         this.#filterQuery = queries;
   
@@ -200,7 +199,7 @@ export class Viewer extends GenericFrame {
       if (currentFilePath !== this.fileBook.currentFile?.path) 
         this.gotoPage();
 
-      appNotifier.notify(`${matches} files matched`);
+      this.notify(`${matches} files matched`);
     }
 
     // update status bar and reload fileExplorer
@@ -269,7 +268,7 @@ export class Viewer extends GenericFrame {
     const currentFile = this.fileBook.currentFile;
     if (!currentFile) {
       this.fileExplorer.reload();
-      appNotifier.notify('reloaded fileExplorer', 'fileReload');
+      this.notify('reloaded fileExplorer', 'fileReload');
       return;
     }
 
@@ -278,7 +277,7 @@ export class Viewer extends GenericFrame {
     const tabName = this.tabName;
 
     // re-open current paths, starting by current-file
-    appNotifier.notify('reloading files...', 'fileReload');
+    this.notify('reloading files...', 'fileReload');
     await this.open(currentFile.path, ...paths);
 
     // restore tab name and re-apply filter
@@ -286,7 +285,7 @@ export class Viewer extends GenericFrame {
     if (filterQuery.length > 0)
       this.filter(...filterQuery);
 
-    appNotifier.notify('files reloaded', 'fileReload');
+    this.notify('files reloaded', 'fileReload');
   }
   
   /**
@@ -295,7 +294,7 @@ export class Viewer extends GenericFrame {
   async deletePage() {
     const targetFile = this.fileBook.currentFile;
     if (!targetFile)
-      return appNotifier.notify('no loaded file to delete', 'pageDel');
+      return this.notify('no loaded file to delete', 'pageDel');
 
     const answerID = await elecAPI.dialog('message', {
       type: 'question',
@@ -327,7 +326,7 @@ export class Viewer extends GenericFrame {
 
     const message = `${success ? 'deleted' : 'failed to delete'} ${targetFile.path}`;
     console.log(message);
-    appNotifier.notify(message);
+    this.notify(message);
   }
 
   /**
@@ -410,7 +409,7 @@ export class Viewer extends GenericFrame {
     });
 
     // view events
-    viewComponent.events.observe('view:notify', (msg, type) => appNotifier.notify(msg, type));
+    viewComponent.events.observe('view:notify', (msg, type) => this.notify(msg, type));
     viewComponent.events.observe('view:playing', (playing) => this.setFrameIsPlaying(playing));
     viewComponent.events.observe('view:skip', (forward) => this.flipPage(forward));
     viewComponent.events.observe('view:random', () => this.gotoRandom());
@@ -447,7 +446,7 @@ export class Viewer extends GenericFrame {
       status.infoRight = `${filterInfo} fit-${mode}:${zoom.toFixed(0)}% ${pager}`;
       status.infoLeftFunc = () => {
         navigator.clipboard.writeText(currentFile.path);
-        appNotifier.notify('filepath copied to clipboard');
+        this.notify('filepath copied to clipboard');
       };
     }
 

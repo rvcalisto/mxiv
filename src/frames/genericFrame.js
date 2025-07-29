@@ -7,7 +7,7 @@ import { ObservableEvents } from "../components/observableEvents.js";
  */
 
 /**
- * @typedef {'frame:rename'|'frame:statusChange'|'frame:isPlaying'|'frame:hold'} GenericFrameEvents
+ * @typedef {'frame:rename'|'frame:statusChange'|'frame:isPlaying'|'frame:hold'|'frame:notify'} GenericFrameEvents
  */
 
 
@@ -85,6 +85,15 @@ export class GenericFrame extends HTMLElement {
    */
   hold(value) {
     this.events.fire('frame:hold', value);
+  }
+  
+  /**
+   * Display tab-wide on-screen notification.
+   * @param {string} message Notification body.
+   * @param {string} [typeId] Identifier to avoid duplicates.
+   */
+  notify(message, typeId) {
+    this.events.fire('frame:notify', message, typeId);
   }
 
   /**

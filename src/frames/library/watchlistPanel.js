@@ -1,5 +1,5 @@
 import { GenericStorage } from "../../components/genericStorage.js";
-import { appNotifier } from "../../components/notifier.js";
+import { notify } from "../../components/notifier.js";
 
 
 /**
@@ -89,7 +89,7 @@ export class WatchlistPanel {
   removeItem(path) {
     const watchItem = this.#storage.get(path);
     if (!watchItem)
-      return appNotifier.notify(`no "${path}" in watchlist to remove`);
+      return notify(`no "${path}" in watchlist to remove`);
 
     this.#storage.delete(path);
     console.log(`removed "${path}" from watchlist`);

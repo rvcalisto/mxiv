@@ -1,6 +1,6 @@
 // @ts-check
 import { GenericStorage } from "../components/genericStorage.js";
-import { appNotifier } from "../components/notifier.js";
+import { notify } from "../components/notifier.js";
 import { Tab } from "./tab.js";
 
 
@@ -51,7 +51,7 @@ export function store(name) {
 
   // update or insert session entry
   storage.set(name, session);
-  appNotifier.notify(`stored ${name} profile`);
+  notify(`stored ${name} profile`, 'storePro');
 }
 
 /**
@@ -63,7 +63,7 @@ export function load(name, clearSession = true) {
   const session = storage.get(name);
 
   if (!session) {
-    appNotifier.notify(`profile ${name} does not exist`);
+    notify(`profile ${name} does not exist`, 'loadPro');
     return;
   }
 
@@ -88,12 +88,12 @@ export function erase(name) {
   const session = storage.get(name);
 
   if (!session) {
-    appNotifier.notify(`profile ${name} does not exist`);
+    notify(`profile ${name} does not exist`, 'erasePro');
     return;
   }
 
   storage.delete(name);
-  appNotifier.notify(`erased ${name} profile`);
+  notify(`erased ${name} profile`, 'erasePro');
 }
 
 /**
