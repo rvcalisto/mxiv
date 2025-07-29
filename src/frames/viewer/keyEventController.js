@@ -1,4 +1,5 @@
 import { acceleratorService } from "../../actions/acceleratorService.js";
+import { frameKeyEvHandler } from "../../index/keyEventController.js";
 import { FRAME } from "../../tabs/tab.js";
 
 
@@ -14,7 +15,7 @@ addEventListener('fileExplorerKeyEvent', function handleFileExplorer(e) {
 
   // bubble-up on null, call function directly on match
   if (action == null)
-    return onkeydown(keyEvent);
+    return frameKeyEvHandler(keyEvent);
 
   keyEvent.preventDefault();
   const [cmd, ...args] = action;
