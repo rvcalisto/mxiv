@@ -2,10 +2,11 @@
 
 /**
  * Get HH:MM:SS string from seconds.
- * @param {number} seconds 
+ * @param {number} seconds
+ * @param {boolean} [shorten=false] Cut leading zeros.
  * @returns {string} Formatted time string.
  */
-export function secToHMS(seconds) {
+export function secToHMS(seconds, shorten = false) {
   const h = Math.floor(seconds / 3600);
   const m = Math.floor(seconds % 3600 / 60);
   const s = Math.floor(seconds % 3600 % 60);
@@ -14,7 +15,22 @@ export function secToHMS(seconds) {
   const M = m ? String(m).padStart(2, '0') : '00';
   const S = s ? String(s).padStart(2, '0') : '00';
   
-  return `${H}:${M}:${S}`;
+  const hhMmSs = `${H}:${M}:${S}`;
+
+  if (!shorten)
+    return hhMmSs;
+
+  let toDiscard = 0;
+  for (const char of hhMmSs) {
+    if (hhMmSs.length - toDiscard === 4)
+      break; // assure at least a single minute digit (0:10)
+    if (char === '0' || char === ':')
+      toDiscard++;
+    else
+      break;
+  }
+
+  return hhMmSs.slice(toDiscard);
 }
 
 /**

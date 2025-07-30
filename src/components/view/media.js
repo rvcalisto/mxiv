@@ -237,7 +237,7 @@ export class ViewMedia {
         this.#view.events.fire('view:notify', 'A loop exceeds track length', 'abLoop');
       else {
         this.#view.aLoop = loopNode;
-        this.#view.events.fire('view:notify', `A loop at ${secToHMS(loopNode)}`, 'abLoop');
+        this.#view.events.fire('view:notify', `A loop at ${secToHMS(loopNode, true)}`, 'abLoop');
       }
     }
 
@@ -249,7 +249,7 @@ export class ViewMedia {
       } else {
         this.#view.bLoop = loopNode;
         !vid.paused && this.#toggleABloopInterval(true);
-        this.#view.events.fire('view:notify', `B loop at ${secToHMS(loopNode)}`, 'abLoop');
+        this.#view.events.fire('view:notify', `B loop at ${secToHMS(loopNode, true)}`, 'abLoop');
       }
     }
 

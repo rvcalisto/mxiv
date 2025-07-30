@@ -37,6 +37,11 @@ export class TrackBar {
   #videoElement;
 
   /**
+   * Null zeros, colon chars to discard from track time string.
+   */
+  #HMScharsToDiscard = 0;
+
+  /**
    * @param {import('./view.js').View} view View instance.
    */
   constructor(view) {
@@ -64,6 +69,10 @@ export class TrackBar {
       else
         this.#resetHideTimeout();
     };
+
+    // store how many leading zeros, colon to slice later
+    this.#HMScharsToDiscard = secToHMS(videoElement.duration).length 
+                            - secToHMS(videoElement.duration, true).length;
   }
 
   /**
@@ -119,14 +128,8 @@ export class TrackBar {
     }
 
     // track label
-    let duration = secToHMS(vidDuration);
-    let time = secToHMS(vid.currentTime);
-
-    if ( duration.startsWith('00:') ) {
-      duration = duration.slice(3);
-      time = time.slice(3);
-    }
-
+    let duration = secToHMS(vidDuration).slice(this.#HMScharsToDiscard);
+    let time = secToHMS(vid.currentTime).slice(this.#HMScharsToDiscard);
     trackTimeLabel.textContent = `${time} / ${duration}`;
   
     // bar progress
@@ -236,8 +239,7 @@ export class TrackBar {
 
     // show cursor position timestamp, don't go out-bounds
     const timestamp = /** @type {HTMLParagraphElement}*/ (this.#panelElement.querySelector('.timestamp'));
-    const time = secToHMS( this.#seekTo(e) );
-    timestamp.textContent = time.startsWith('00') ? time.slice(3) : time;
+    timestamp.textContent = secToHMS( this.#seekTo(e), true );
     timestamp.style.transform = `translateX(-50%) translateX(${e.offsetX}px)`;
 
     const track = /** @type {HTMLDivElement}*/ (this.#panelElement.querySelector('#vidTrack'));
