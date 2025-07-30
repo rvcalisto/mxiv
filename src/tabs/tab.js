@@ -1,13 +1,12 @@
 // @ts-check
 import { TabHeader } from "./tabHeader.js";
 import { statusBar } from "../components/statusBar.js";
-import { GenericFrame } from "../frames/genericFrame.js";
 import { getFramePolicy, createFrame } from "../frames/frameRegistry.js";
 import { NotificationChannel } from "../components/notifier.js";
 
 
 /**
- * @typedef {import("../frames/frameRegistry.js").FrameType} FrameType
+ * @import { GenericFrame, FrameType } from "../frames/genericFrame.js"
  */
 
 /**
