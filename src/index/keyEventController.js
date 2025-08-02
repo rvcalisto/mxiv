@@ -1,7 +1,7 @@
 // @ts-check
 import { actionPalette } from "../components/actionPalette/actionPalette.js";
-import { actionService } from "../actions/actionService.js";
-import { acceleratorService } from "../actions/acceleratorService.js";
+import { getCurrentActions } from "../actions/actionService.js";
+import { getCurrentAccelerators } from "../actions/acceleratorService.js";
 
 
 /**
@@ -13,10 +13,10 @@ export function frameKeyEvHandler(e) {
   if (actionPalette.active)
     return actionPalette.toggle(e.key !== 'Escape');
 
-  const action = acceleratorService.currentFrameAccelerators.byEvent(e);
+  const action = getCurrentAccelerators().byEvent(e);
   if (action != null) {
     e.preventDefault();
-    actionService.currentFrameActions.run(action);
+    getCurrentActions().run(action);
   }
 };
 

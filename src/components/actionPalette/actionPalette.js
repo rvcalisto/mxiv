@@ -3,8 +3,8 @@ import { ItemList } from "../itemList.js";
 import { InputPrompt } from "./inputPrompt.js";
 import { PriorityStack } from "./priorityStack.js";
 import { OptionElement } from "./optionElement.js";
-import { actionService } from "../../actions/actionService.js";
-import { acceleratorService } from "../../actions/acceleratorService.js";
+import { getCurrentActions } from "../../actions/actionService.js";
+import { getCurrentAccelerators } from "../../actions/acceleratorService.js";
 import { notify } from "../notifier.js";
 import { GenericStorage } from "../genericStorage.js";
 
@@ -124,7 +124,7 @@ class ActionPalette extends HTMLElement {
     if (action.length < 1)
       return; 
 
-    const frameActions = actionService.currentFrameActions;
+    const frameActions = getCurrentActions();
     if ( frameActions.run(action) ) {
       const textItem = actionText.trim();
 
@@ -176,7 +176,7 @@ class ActionPalette extends HTMLElement {
       : (name = item);
 
     const element = OptionElement.createElement(type, name, desc);
-    const frameAccelerators = acceleratorService.currentFrameAccelerators;
+    const frameAccelerators = getCurrentAccelerators();
 
     // tag accelerators keys, if any
     element.tags = type === 'shortcut'
@@ -208,7 +208,7 @@ class ActionPalette extends HTMLElement {
    * Generate hint list based on current this.#prompt text.
    */
   async #displayHints() {
-    const currentActions = actionService.currentFrameActions,
+    const currentActions = getCurrentActions(),
           inputTextArray = this.#prompt.getTextArray(),
           [cmd = '', ...args] = inputTextArray;
 

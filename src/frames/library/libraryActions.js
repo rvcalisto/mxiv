@@ -1,11 +1,11 @@
-import { actionService } from "../../actions/actionService.js"
+import { setComponentActions } from "../../actions/actionService.js"
 import { CoverGrid } from "./coverGrid.js"
 import { option, standardFilter } from "../../components/actionPalette/actionPalette.js"
 import { FRAME as Library }  from "../../tabs/tab.js"
 import { runScript, tag } from "../../components/fileMethods.js"
 
 
-actionService.setComponentActions('library', {
+setComponentActions('library', {
 
   'filter' : {
     'desc' : 'filter books by name or tags, list tags with ?, prepend - to exclude it',

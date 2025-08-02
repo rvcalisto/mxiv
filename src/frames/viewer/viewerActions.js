@@ -1,10 +1,10 @@
-import { actionService } from "../../actions/actionService.js"
+import { setComponentActions } from "../../actions/actionService.js"
 import { FRAME } from "../../tabs/tab.js"
 import { option, standardFilter } from "../../components/actionPalette/actionPalette.js"
 import { runScript, tag } from "../../components/fileMethods.js"
 
 
-actionService.setComponentActions('viewer', {
+setComponentActions('viewer', {
 
   'open': {
     'desc' : 'open file(s) or folder(s)',

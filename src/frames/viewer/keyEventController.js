@@ -1,4 +1,4 @@
-import { acceleratorService } from "../../actions/acceleratorService.js";
+import { getAccelerators } from "../../actions/acceleratorService.js";
 import { frameKeyEvHandler } from "../../index/keyEventController.js";
 import { FRAME } from "../../tabs/tab.js";
 
@@ -9,8 +9,7 @@ import { FRAME } from "../../tabs/tab.js";
 addEventListener('fileExplorerKeyEvent', function handleFileExplorer(e) {
   const keyEvent = e.detail;
 
-  const action = acceleratorService
-    .getAccelerators('fileExplorer', 'default')
+  const action = getAccelerators('fileExplorer', 'default')
     .byEvent(keyEvent);
 
   // bubble-up on null, call function directly on match
@@ -30,8 +29,7 @@ addEventListener('keyup', function releaseViewSlide(e) {
   if (FRAME == null || FRAME.type !== 'viewer')
     return;
 
-  const action = acceleratorService
-    .getAccelerators('viewer')
+  const action = getAccelerators('viewer')
     .byEvent(e);
   
   if (action != null && action[0] === 'navigate') {

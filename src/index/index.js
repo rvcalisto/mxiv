@@ -3,7 +3,7 @@ import "./mediaSession.js";
 import "./baseActions.js";
 import "./baseAccelerators.js";
 import "./keyEventController.js";
-import { userAccelerators } from "../actions/userAccelerators.js";
+import { reloadUserAccelerators } from "../actions/userAccelerators.js";
 
 
 /**
@@ -27,6 +27,6 @@ addEventListener('beforeunload', function onClose(e) {
  * Load user accelerators and create first tab.
  */
 addEventListener('load', function startApp() {
-  userAccelerators.reload();
+  reloadUserAccelerators();
   newFileViewer();
 });

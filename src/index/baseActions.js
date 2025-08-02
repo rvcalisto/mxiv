@@ -1,16 +1,16 @@
-import { actionService } from "../actions/actionService.js"
+import { setBaseActions } from "../actions/actionService.js"
 import { TAB, cycleTabs, newFileViewer, newTab } from "../tabs/tab.js"
 import { statusBar } from "../components/statusBar.js"
 import * as sessionProfiles from "../tabs/profiles.js"
 import { actionPalette, option } from "../components/actionPalette/actionPalette.js"
-import { userAccelerators } from "../actions/userAccelerators.js"
+import { getUserAccelerators, setUserAccelerators } from "../actions/userAccelerators.js"
 import { notify } from "../components/notifier.js"
 import { isFrameType, frameDescriptors } from "../frames/frameRegistry.js"
 import { userPreferences } from "../components/userPreferences.js"
 import * as headerPanel from "../tabs/tabHeaderPanel.js"
 
 
-actionService.setBaseActions({
+setBaseActions({
   
   'palette': {
     'desc': 'action palette methods',
@@ -140,9 +140,10 @@ actionService.setBaseActions({
       'set': {
         'desc': 'accelerate action with a hotkey : <component> <key/combo> <action...>',
         'run': (component, keycombo, ...args) => {
-          if (!component || !keycombo) return
-          userAccelerators.set(component, { [keycombo]: args })
-          notify(`user accelerator updated`)
+          if (component && keycombo) {
+            setUserAccelerators(component, { [keycombo]: args })
+            notify(`user accelerator updated`)
+          }
         },
         'options': (lastArg, allArgs) => {
           if (allArgs.length > 3) return []
@@ -161,7 +162,7 @@ actionService.setBaseActions({
           ]
 
           // hint stored user accelerators for component
-          const accelObject = userAccelerators.getAcceleratorSet(allArgs[0])
+          const accelObject = getUserAccelerators(allArgs[0])
           const options = []
 
           for (const [keycombo, actionArg] of Object.entries(accelObject) ) {

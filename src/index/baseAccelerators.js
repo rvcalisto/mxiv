@@ -1,7 +1,7 @@
-import { acceleratorService } from "../actions/acceleratorService.js";
+import { setBaseAccelerators } from "../actions/acceleratorService.js";
 
 
-acceleratorService.setBaseDefaults({
+setBaseAccelerators({
   // cmds
   'x': ['palette', 'show'],
   'r+Shift': ['palette', 'repeatLast'],

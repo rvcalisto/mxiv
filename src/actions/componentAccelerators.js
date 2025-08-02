@@ -1,3 +1,6 @@
+// @ts-check
+
+
 /**
  * @typedef {Object<string, string[]>} AcceleratorSet
  */
@@ -37,8 +40,8 @@ export class ComponentAccelerators {
 
   /**
    * Treats keycombo as to make it an unique key.
-   * @param {String} key Keycombo to be treated.
-   * @return {String} Parsed unique accelerator.
+   * @param {string} key Keycombo to be treated.
+   * @return {string} Parsed unique accelerator.
    */
   static parseKeycombo(key) {
     key = key.toLowerCase();
@@ -47,8 +50,9 @@ export class ComponentAccelerators {
     // rip modifier concatenations into ordered string
     if ( key.includes('+') ) {
       for (const modifier of ['control', 'shift']) {
-        if ( !key.includes(modifier) ) continue 
-        
+        if ( !key.includes(modifier) )
+          continue;
+
         modifiers += `${modifier}+`;
         key = key.replace(modifier, '');
       }
@@ -65,11 +69,13 @@ export class ComponentAccelerators {
    * @param {boolean} [deleteEmpty=true] Delete keys whose value is an empty array.
    */
   merge(accelerators, deleteEmpty = true) {
-    for (const [key, value] of Object.entries(accelerators)) {
-      let treatedKey = ComponentAccelerators.parseKeycombo(key);
+    for ( const [key, value] of Object.entries(accelerators) ) {
+      const treatedKey = ComponentAccelerators.parseKeycombo(key);
 
-      if (deleteEmpty && value.length < 1) delete this.#byKeycombo[treatedKey];
-      else this.#byKeycombo[treatedKey] = value;
+      if (deleteEmpty && value.length < 1)
+        delete this.#byKeycombo[treatedKey];
+      else
+        this.#byKeycombo[treatedKey] = value;
     }
 
     this.#buildAcceleratedActions();
@@ -80,9 +86,7 @@ export class ComponentAccelerators {
    * @returns {AcceleratorSet}
    */
   asObject() {
-    /** @type {AcceleratorSet} */
-    const accelSetClone = {};
-
+    const accelSetClone = /** @type {AcceleratorSet} */ ({});
     Object.assign(accelSetClone, this.#byKeycombo);
 
     return accelSetClone;
@@ -110,7 +114,7 @@ export class ComponentAccelerators {
   /**
    * Returns action and arguments accelerated by given event. null otherwise.
    * @param {KeyboardEvent} keyEvent Raw `KeyboardEvent` to match accelerators.
-   * @returns {String[]?}
+   * @returns {string[]?}
    */
   byEvent(keyEvent) {
     let eventCombo = '';
@@ -126,8 +130,8 @@ export class ComponentAccelerators {
 
   /**
    * Return an array of keycombos accelarating a given action, if any.
-   * @param {String[]} actions Command strings accelerated by keys.
-   * @returns {String[]?}
+   * @param {string[]} actions Command strings accelerated by keys.
+   * @returns {string[]?}
    */
   byAction(actions) {
     return this.#byAction[String(actions)];

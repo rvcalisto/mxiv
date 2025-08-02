@@ -1,82 +1,78 @@
+// @ts-check
 import { FRAME } from "../tabs/tab.js";
 import { ComponentActions } from "./componentActions.js";
 
 
 /** 
- * @typedef {import("./componentActions.js").ActionSet} ActionSet
+ * @import { ActionSet } from "./componentActions.js"
  */
 
 
 /**
- * Manages actions for multiple components.
+ * Collection of component actions.
+ * @type {Object<string, ComponentActions>}
  */
-export const actionService = new class {
+const collection = {};
 
-  /**
-   * Collection of component actions.
-   * @type {Object<string, ComponentActions>}
-   */
-  #collection = {};
+/**
+ * Non-base components.
+ * @type {Set<string>}
+ */
+const components = new Set();
 
-  /**
-   * Composable components (non-meta).
-   * @type {Set<String>}
-   */
-  #components = new Set();
 
-  /**
-   * Set common base actions.
-   * @param {ActionSet} actions Action set.
-   */
-  setBaseActions(actions) {
-    this.#collection['base'] = new ComponentActions(actions);
-    
-    this.#components.forEach(component => {
-      this.#buildComposedActions(component);
-    });
-  }
+/**
+ * Set common base actions.
+ * @param {ActionSet} actions Action set.
+ */
+export function setBaseActions(actions) {
+  collection['base'] = new ComponentActions(actions);
 
-  /**
-   * Set component actions.
-   * @param {String} component Component name.
-   * @param {ActionSet} actions Component actions.
-   */
-  setComponentActions(component, actions) {
-    this.#components.add(component);
+  for (const component of components)
+    buildComposedActions(component); // propagate changes
+}
 
-    this.#collection[component] = new ComponentActions(actions);
-    this.#buildComposedActions(component);
-  }
+/**
+ * Set component actions.
+ * @param {string} component Component name.
+ * @param {ActionSet} actions Component actions.
+ */
+export function setComponentActions(component, actions) {
+  components.add(component);
 
-  /**
-   * Builds composed component actions.
-   * @param {String} component Component name.
-   */
-  #buildComposedActions(component) {
-    const composedActions = new ComponentActions();
-    const baseActionSet = this.#collection['base']?.asObject() || {};
+  collection[component] = new ComponentActions(actions);
+  buildComposedActions(component);
+}
 
-    composedActions.merge(baseActionSet);
-    composedActions.merge( this.#collection[component].asObject() );
+/**
+ * Builds composed component actions.
+ * @param {string} component Component name.
+ */
+function buildComposedActions(component) {
+  const composedActions = new ComponentActions();
+  const baseActionSet = collection['base']?.asObject() || {};
 
-    this.#collection[`${component}-all`] = composedActions;
-  }
+  composedActions.merge(baseActionSet);
+  composedActions.merge( collection[component].asObject() );
 
-  /**
-   * Returns component actions.
-   * @param {String} component Component name.
-   * @returns {ComponentActions}
-   */
-  getActions(component) {
-    return this.#collection[`${component}-all`];
-  }
+  collection[`${component}-all`] = composedActions;
+}
 
-  /**
-   * Returns current FRAME Actions.
-   * @returns {ComponentActions} 
-   */
-  get currentFrameActions() {
-    if (!FRAME) return this.#collection['base'];
-    return this.#collection[`${FRAME.type}-all`];
-  }
+/**
+ * Returns component actions.
+ * @param {string} component Component name.
+ * @returns {ComponentActions}
+ */
+export function getActions(component) {
+  return collection[`${component}-all`];
+}
+
+/**
+ * Returns current FRAME Actions.
+ * @returns {ComponentActions} 
+ */
+export function getCurrentActions() {
+  return FRAME == null
+    ? collection['base']
+    : collection[`${FRAME.type}-all`];
 }

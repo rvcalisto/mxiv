@@ -1,7 +1,7 @@
-import { acceleratorService } from "../../actions/acceleratorService.js"
+import { setComponentAccelerators } from "../../actions/acceleratorService.js"
 
 
-acceleratorService.setComponentDefaults('library', {
+setComponentAccelerators('library', {
   'o'   : ['addToLibrary'],
   'r'   : ['random'],
   'F5'  : ['watchlist', 'sync'],
