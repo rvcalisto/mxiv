@@ -10,7 +10,7 @@ import { GenericStorage } from "../genericStorage.js";
 
 
 /**
- * @typedef {'history'|'group'|'action'|'argument'|'shortcut'} OptionObjectType
+ * @typedef {'history'|'group'|'action'|'argument'|'shortcut'} OptionType
  */
 
 /**
@@ -18,7 +18,7 @@ import { GenericStorage } from "../genericStorage.js";
  * @typedef OptionObject
  * @property {string} name Option name.
  * @property {string} desc Option description.
- * @property {OptionObjectType} type Option type.
+ * @property {OptionType} type Option type.
  * @property {string[]} [keys] Filter key overrides.
  */
 
@@ -164,21 +164,27 @@ class ActionPalette extends HTMLElement {
 
   /**
    * Returns a HTMLElement for this option.
-   * @param {OptionObject|String} item Option string or object.
+   * @param {OptionObject|string} item Option string or object.
    * @param {string[]} [leadingAction] Action being evaluated.
    * @param {boolean} [replace=false] Either option replaces input prompt.
    * @returns {OptionElement}
    */
   #createElement(item, leadingAction = [], replace = false) {
-    const itemOption = typeof item === 'string' ? option(item) : item;
-    const element = OptionElement.createElement(itemOption);
+    let name = '', desc = '', type = /** @type OptionType */ ('argument');
+    typeof item !== 'string'
+      ? (name = item.name, desc = item.desc, type = item.type)
+      : (name = item);
+
+    const element = OptionElement.createElement(type, name, desc);
+    const frameAccelerators = acceleratorService.currentFrameAccelerators;
 
     // tag accelerators keys, if any
-    const frameAccelerators = acceleratorService.currentFrameAccelerators;
-    element.tags = frameAccelerators.byAction([...leadingAction, itemOption.name]);
-    
-    if (itemOption.type === 'history') {
-      element.onForget = () => this.clearActionHistory(itemOption.name);
+    element.tags = type === 'shortcut'
+      ? frameAccelerators.byAction( name.split(' ') )
+      : frameAccelerators.byAction([...leadingAction, name]);
+
+    if (type === 'history') {
+      element.onForget = () => this.clearActionHistory(name);
     }
 
     element.onclick = () => {
@@ -187,7 +193,7 @@ class ActionPalette extends HTMLElement {
     };
 
     element.onAccess = () => {
-      this.#prompt.setText(itemOption.name, replace);
+      this.#prompt.setText(name, replace);
     };
 
     element.ondblclick = () => {
@@ -327,7 +333,7 @@ class ActionPalette extends HTMLElement {
  * Returns rich option object to be displayed by ActionPalette.
  * @param {string} name Option name.
  * @param {string} [desc] Option description.
- * @param {OptionObjectType} [type='generic'] Option type.
+ * @param {OptionType} [type='generic'] Option type.
  * @param {string[]} [keys] Option keys.
  * @returns {OptionObject}
  */

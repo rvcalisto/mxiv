@@ -1,7 +1,7 @@
 // @ts-check
 
 /**
- * @import { OptionObject, OptionObjectType } from "./actionPalette"
+ * @import { OptionType } from "./actionPalette"
  */
 
 
@@ -14,7 +14,7 @@ export class OptionElement extends HTMLElement {
 
   /**
    * Option type, icon.
-   * @type {OptionObjectType}
+   * @type {OptionType}
    */
   type = 'argument';
 
@@ -52,21 +52,23 @@ export class OptionElement extends HTMLElement {
 
   /**
    * Create and return new OptionElement.
-   * @param {OptionObject} itemOption
+   * @param {OptionType} type
+   * @param {string} name
+   * @param {string} description
    * @returns {OptionElement}
    */
-  static createElement(itemOption) {
+  static createElement(type, name, description) {
     const element = /** @type {OptionElement} */ (document.createElement(OptionElement.tagName));
-    element.type = itemOption.type;
-    element.name = itemOption.name;
-    element.description = itemOption.desc;
-    
+    element.type = type;
+    element.name = name;
+    element.description = description;
+
     return element;
   }
 
   connectedCallback() {
     this.#setupBaseElement();
-    
+
     if (this.tags != null)
       this.append( this.#tagDecorators(this.tags) );
     else if (this.onForget != null)
@@ -82,7 +84,7 @@ export class OptionElement extends HTMLElement {
     const text = document.createElement('p');
     text.textContent = this.name;
 
-    // description to be applied as atribute for css ::after 
+    // description to be applied as attribute for css ::after 
     if (this.description !== '')
       text.setAttribute('desc', this.description);
 
