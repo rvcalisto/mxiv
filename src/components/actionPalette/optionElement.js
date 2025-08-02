@@ -1,5 +1,7 @@
+// @ts-check
+
 /**
- * @typedef {import('./actionPalette').OptionObject} OptionObject
+ * @import { OptionObject, OptionObjectType } from "./actionPalette"
  */
 
 
@@ -10,10 +12,20 @@ export class OptionElement extends HTMLElement {
 
   static tagName = 'option-element';
 
-  type = 'generic'
+  /**
+   * Option type, icon.
+   * @type {OptionObjectType}
+   */
+  type = 'argument';
 
-  name = 'option'
+  /**
+   * Option name, title.
+   */
+  name = 'option';
 
+  /**
+   * Option descriptor.
+   */
   description = ''
 
   /**
@@ -107,7 +119,9 @@ export class OptionElement extends HTMLElement {
 
     element.onclick = (e) => {
       e.stopImmediatePropagation();
-      if (this.onForget != null) this.onForget();
+      if (this.onForget != null)
+        this.onForget();
+
       this.remove();
     };
 

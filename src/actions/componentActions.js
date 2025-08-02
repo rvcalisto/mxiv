@@ -1,18 +1,29 @@
-/**
- * @typedef Action
- * @property {String} desc Action description.
- * @property {(...args:string[])=>void} run Main procedure.
- * @property {(lastArg:string, allArgs:string[])=>(string|DetailedHint)[]} [options] Optional hints.
- * @property {(query:string)=>(lastArg:string)=>boolean} [customFilter] Optional custom hint filter.
- * @property {Object<string, Action>} [methods] Optional methods for action.
- */
+// @ts-check
 
 /**
  * @typedef {{name:string, desc:string}} DetailedHint
  */
 
 /**
- * @typedef {Object<string, Action>} ActionSet
+ * @typedef {(string|DetailedHint)[]} Options
+ */
+
+/**
+ * @typedef Action
+ * @property {string} desc Action description.
+ * @property {(...args:string[])=>void} run Main procedure.
+ * @property {(lastArg:string, allArgs:string[])=>Options|Promise<Options>} [options] Optional hints.
+ * @property {(query:string)=>(lastArg:string)=>boolean} [customFilter] Optional custom hint filter.
+ */
+
+/**
+ * @typedef Group
+ * @property {string} desc Group description.
+ * @property {Object<string, Action>} actions Group actions.
+ */
+
+/**
+ * @typedef {Object<string, Action|Group>} ActionSet
  */
 
 
@@ -22,16 +33,62 @@
 export class ComponentActions {
 
   /**
-   * Collection of actions per component.
+   * Component actions, groups.
    * @type {ActionSet}
    */
   #actionSet = {};
+
+  /**
+   * Actions organized by group.
+   * @type {Map<string, Group>}
+   */
+  #groups = new Map();
+
+  /**
+   * Actions, including group actions ('group action').
+   * @type {Map<string, Action>}
+   */
+  #actions = new Map();
 
   /**
    * @param {ActionSet} actions
    */
   constructor(actions = {}) {
     this.#actionSet = actions;
+    this.#buildActionMaps();
+  }
+
+  /**
+   * Build updated map objects from component's ActionSet.
+   */
+  #buildActionMaps() {
+    this.#groups.clear();
+    this.#actions.clear();
+
+    for ( const [key, entry] of Object.entries(this.#actionSet) ) {
+      if (entry['actions'] == null)
+        this.#actions.set(key, /** @type Action */ (entry) );
+      else {
+        this.#groups.set(key, /** @type Group */ (entry) );
+
+        Object.entries( /** @type Group */ (entry).actions )
+          .forEach( ([name, action]) => this.#actions.set(`${key} ${name}`, action));
+      }
+    }
+  }
+
+  /**
+   * Component group map object.
+   */
+  getGroups() {
+    return this.#groups;
+  }
+
+  /**
+   * Component action map object.
+   */
+  getActions() {
+    return this.#actions;
   }
 
   /**
@@ -40,6 +97,7 @@ export class ComponentActions {
    */
   merge(actions) {
     Object.assign(this.#actionSet, actions);
+    this.#buildActionMaps();
   }
 
   /**
@@ -51,23 +109,21 @@ export class ComponentActions {
   }
 
   /**
-   * Run action or method. Return true on successful call.
-   * @param {String[]} cmdArgs Action and arguments.
-   * @returns {Boolean} Either the corresponding action was called.
+   * Run action. Return true on successful call.
+   * @param {string[]} cmdArgs Action and arguments.
+   * @returns {boolean} Either the corresponding action was called.
    */
   run(cmdArgs) {
     const [cmd, ...args] = cmdArgs;
-    const action = this.#actionSet[cmd];
 
-    if (!action)
+    let action = this.#groups.has(cmd)
+      ? this.#actions.get(`${cmd} ${args.shift()}`)
+      : this.#actions.get(cmd);
+
+    if (action == null)
       return false;
 
-    // run action or method
-    if (action.methods != null && action.methods[args[0]])
-      action.methods[args[0]].run(...args.slice(1));
-    else
-      action.run(...args);
-
+    action.run(...args);
     return true;
   }
 }

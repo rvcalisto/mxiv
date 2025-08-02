@@ -10,8 +10,10 @@
   --theme-icon-playlist: white;
   --theme-icon-explorer: var(--theme-icon-folder);
   --theme-icon-run: limegreen;
+  --theme-icon-group: violet;
   --theme-icon-action: #7db440;
-  --theme-icon-generic: #ff9900;
+  --theme-icon-argument: #ff9900;
+  --theme-icon-shortcut: #55aaff;
   --theme-icon-history: inherit;
 
   /**

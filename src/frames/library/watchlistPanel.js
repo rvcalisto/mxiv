@@ -135,6 +135,9 @@ export class WatchlistPanel {
    * @param {number} duration Animation duration in ms.
    */
   toggleVisibility(show = !this.isVisible, duration = 150) {
+    if (show === this.isVisible)
+      return;
+
     if (show)
       this.#drawList();
 

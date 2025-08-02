@@ -21,9 +21,7 @@ actionService.setComponentActions('viewer', {
 
   'navigate': {
     'desc': 'scroll media by pixels if zoomed in, skip seconds if video, flip page otherwise',
-    'run': () => {},
-
-    'methods': {
+    'actions': {
       'up': {
         'desc' : 'up: <pixels?> <seconds?>',
         'run'  : (pixelDelta = 6, secsDelta = 60) => {
@@ -53,8 +51,7 @@ actionService.setComponentActions('viewer', {
 
   'viewFactor': {
     'desc': 'change image size relative to view frame',
-    'run': () => {},
-    'methods': {
+    'actions': {
       'scale': {
         'desc': 'scale image to fit view',
         'run': () => FRAME.viewComponent.screen.setViewMode('scale')
@@ -211,8 +208,7 @@ actionService.setComponentActions('viewer', {
 
   'fileExplorer': {
     'desc': 'alternate fileExplorer mode and focus',
-    'run': () => {},
-    'methods': {
+    'actions': {
       'mode': {
         'desc': 'set mode or collapse/expand panel',
         'run': (mode = 'toggle') => {
@@ -265,9 +261,7 @@ actionService.setComponentActions('viewer', {
 
   'tag': {
     'desc' : 'add or remove tags from current file',
-    'run'  : (action, ...tags) => {},
-
-    'methods': {
+    'actions': {
       'add': {
         'desc': 'add one or more tags to current file',
         'run': async (...tags) => {

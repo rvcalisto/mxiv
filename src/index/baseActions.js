@@ -14,8 +14,7 @@ actionService.setBaseActions({
   
   'palette': {
     'desc': 'action palette methods',
-    'run': () => {},
-    'methods': {
+    'actions': {
       'show': {
         'desc': 'show action palette, optionally with a given string',
         'run': (customStr) => actionPalette.toggle(true, customStr)
@@ -33,9 +32,7 @@ actionService.setBaseActions({
 
   'tab': {
     'desc': 'create, move, rename tabs and more',
-    'run': () => {},
-
-    'methods': {
+    'actions': {
       'new': {
         'desc' : 'create new tab',
         'run'  : (type = 'viewer') => {
@@ -91,9 +88,7 @@ actionService.setBaseActions({
 
   'profile': {
     'desc': 'store, load or erase profiles',
-    'run' : () => {},
-
-    'methods': {
+    'actions': {
       'load': {
         'desc': 'load session profile',
         'run': (name, clearSession = 'default') =>
@@ -141,8 +136,7 @@ actionService.setBaseActions({
 
   'accel': {
     'desc': 'manage user accelerators',
-    'run': () => {},
-    'methods': {
+    'actions': {
       'set': {
         'desc': 'accelerate action with a hotkey : <component> <key/combo> <action...>',
         'run': (component, keycombo, ...args) => {

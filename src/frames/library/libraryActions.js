@@ -32,9 +32,7 @@ actionService.setComponentActions('library', {
 
   'tag': {
     'desc' : 'add or remove tags from current book',
-    'run' : (action, ...tags) => {},
-
-    'methods': {
+    'actions': {
       'add': {
         'desc': 'add one or more tags to current book',
         'run': (...tags) => {
@@ -63,9 +61,7 @@ actionService.setComponentActions('library', {
 
   'watchlist': {
     'desc': 'toggle panel, add or remove paths from Watchlist',
-    'run': (action, path) => Library.watchlistPanel.toggleVisibility(),
-
-    'methods': {
+    'actions': {
       'add': {
         'desc': 'add folder to Watchlist',
         'run': (path) => {
@@ -96,20 +92,22 @@ actionService.setComponentActions('library', {
         'desc': 'synchronize books with Watchlist entries',
         'run': async () => await Library.syncToWatchlist()
       },
-      'close': {
-        'desc': 'close Watchlist if open',
-        'run': () => {
-          const watchlistPanel = Library.watchlistPanel
-          if (watchlistPanel.isVisible) watchlistPanel.toggleVisibility(false)
-        }
+      'panel': {
+        'desc': 'open or close Watchlist panel',
+        'run': (option) => {
+          const values = { 'open': true, 'close': false };
+          Library.watchlistPanel.toggleVisibility(values[option]);
+        },
+        'options': (lastArg, allArgs) => allArgs.length < 2 
+          ? [option('toggle', '(default)'), 'open', 'close']
+          : []
       }
     }
   },
 
   'book': {
     'desc': 'open or delist selected book',
-    'run': () => {},
-    'methods': {
+    'actions': {
       'open': {
         'desc': 'open currently selected book in-place or on a new tab',
         'run': (whichTab = 'inPlace') => {

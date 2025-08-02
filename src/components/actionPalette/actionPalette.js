@@ -1,3 +1,4 @@
+// @ts-check
 import { ItemList } from "../itemList.js";
 import { InputPrompt } from "./inputPrompt.js";
 import { PriorityStack } from "./priorityStack.js";
@@ -9,11 +10,16 @@ import { GenericStorage } from "../genericStorage.js";
 
 
 /**
+ * @typedef {'history'|'group'|'action'|'argument'|'shortcut'} OptionObjectType
+ */
+
+/**
  * Descriptive option object for display in ActionPalette.
  * @typedef OptionObject
- * @property {String} name Option name.
- * @property {String} desc Option description.
- * @property {'action'|'history'|'generic'} type Option type.
+ * @property {string} name Option name.
+ * @property {string} desc Option description.
+ * @property {OptionObjectType} type Option type.
+ * @property {string[]} [keys] Filter key overrides.
  */
 
 
@@ -60,21 +66,21 @@ class ActionPalette extends HTMLElement {
   active = false;
 
   connectedCallback() {
-    const fragment = document.getElementById('actionPaletteTemplate').content;
-    this.attachShadow({ mode: 'open' });
-    this.shadowRoot.append( fragment.cloneNode(true) );
+    const template = /** @type HTMLTemplateElement */ (document.getElementById('actionPaletteTemplate'));
+    const shadowRoot = this.attachShadow({ mode: 'open' });
+    shadowRoot.append( template.content.cloneNode(true) );
 
-    this.#list = this.shadowRoot.getElementById('itemList');
-    this.#prompt = new InputPrompt( this.shadowRoot.getElementById('cmdInput') );
-    this.#background = this.shadowRoot.getElementById('cmdOverlay');
+    this.#list = /** @type ItemList */ (shadowRoot.getElementById('itemList'));
+    this.#prompt = new InputPrompt( /** @type HTMLInputElement */ (shadowRoot.getElementById('cmdInput')) );
+    this.#background = /** @type HTMLDivElement */ (shadowRoot.getElementById('cmdOverlay'));
 
     this.#initEvents();
   }
 
   /**
    * Toggle visibility. Focus prompt if opening while already open.
-   * @param {Boolean} open Open or close action palette.
-   * @param {String} [optionalStr] Open on custom string.
+   * @param {boolean} open Open or close action palette.
+   * @param {string} [optionalStr] Open on custom string.
    */
   toggle(open, optionalStr = '') {
     // make elements visible and focusable
@@ -83,10 +89,12 @@ class ActionPalette extends HTMLElement {
     // focus prompt, sync action history between windows, set text & list hints.
     if (open) {
       this.#prompt.focus();
-      if (this.active) return;
+      if (this.active)
+        return;
 
       const historyStack = this.#store.get('stack');
-      if (historyStack) this.#actionStack.items = historyStack;
+      if (historyStack)
+        this.#actionStack.items = historyStack;
       
       this.#prompt.setText(optionalStr);
       this.#displayHints();
@@ -94,21 +102,20 @@ class ActionPalette extends HTMLElement {
 
     // set state, play fade-in/out animation and clear list on close
     this.active = open;
-    this.#background.animate([
-      { opacity : open ? 0 : 1 },
-      { opacity : open ? 1 : 0 }
-      ], { duration: 150})
-      .onfinish = () => {
-        if (open) return;
-
+    this.#background.animate(
+      [{ opacity : open ? 0 : 1 }, { opacity : open ? 1 : 0 }],
+       { duration: 150}
+    ).onfinish = () => {
+      if (!open) {
         this.#list.populate([], this.#createElement);
         this.#background.style.display = 'none';
-      };
+      }
+    };
   }
 
   /**
    * Run given action text, otherwise get it from input.
-   * @param {String} [actionText] Optional action text.
+   * @param {string} [actionText] Optional action text.
    */
   #runAction(actionText) {
     actionText = actionText || this.#prompt.getText();
@@ -117,19 +124,24 @@ class ActionPalette extends HTMLElement {
     if (action.length < 1)
       return; 
 
-    const success = actionService.currentFrameActions.run(action);
-    if (success) {
+    const frameActions = actionService.currentFrameActions;
+    if ( frameActions.run(action) ) {
       const textItem = actionText.trim();
+
       if (textItem !== 'palette repeatLast')
         this.#actionStack.insert(textItem);
-    } else {
-      notify(`"${action[0]}" is not an action in current context`, 'actionPalette');
+
+      return;
     }
+
+    frameActions.getGroups().has(action[0])
+      ? notify(`"${action[1]}" isn't a "${action[0]}" action in current context`, 'runAct')
+      : notify(`"${action[0]}" isn't an action nor group in current context`, 'runAct');
   }
 
   /**
    * Erase past executed action or actions from history.
-   * @param {String} [historyItem] If given, remove only this item from history.
+   * @param {string} [historyItem] If given, remove only this item from history.
    */
   clearActionHistory(historyItem) {
     if (historyItem == null) {
@@ -158,7 +170,7 @@ class ActionPalette extends HTMLElement {
    * @returns {OptionElement}
    */
   #createElement(item, leadingAction = [], replace = false) {
-    const itemOption = (typeof item === 'string') ? option(item) : item;
+    const itemOption = typeof item === 'string' ? option(item) : item;
     const element = OptionElement.createElement(itemOption);
 
     // tag accelerators keys, if any
@@ -170,7 +182,7 @@ class ActionPalette extends HTMLElement {
     }
 
     element.onclick = () => {
-      this.#list.selectIntoFocus(element, false);
+      this.#list.selectIntoFocus(element, { block: 'nearest' });
       this.#prompt.focus();
     };
 
@@ -180,67 +192,71 @@ class ActionPalette extends HTMLElement {
 
     element.ondblclick = () => {
       element.onAccess();
-      this.toggle(false);
-      this.#runAction();
+      this.#displayHints();
     };
 
     return element;
   }
 
   /**
-   * Genereate hint list based on current this.#prompt text.
+   * Generate hint list based on current this.#prompt text.
    */
   async #displayHints() {
-    const currentActions = actionService.currentFrameActions.asObject();
-    const inputTextArray = this.#prompt.getTextArray();
-    let [cmd, ...args] = inputTextArray;
-    let action = currentActions[cmd];
+    const currentActions = actionService.currentFrameActions,
+          inputTextArray = this.#prompt.getTextArray(),
+          [cmd = '', ...args] = inputTextArray;
 
-    // hint history + root actions
-    if (action == null || args.length < 1) {
-      this.#defaultHints(currentActions, cmd);
-      return;
+    const actionMap = currentActions.getActions(),
+          groupMap = currentActions.getGroups(),
+          group = groupMap.get(cmd);
+
+    // hint history, groups, actions
+    if (group == null && args.length < 1) {
+      const history = this.#actionStack.items
+        .map( key => option(key, '', 'history') );
+
+      const groups = [...groupMap]
+        .map( ([key, group]) => option(key, group.desc, 'group') );
+
+      const actions = [];
+      actionMap.forEach( (action, key) => {
+        if ( key.includes(' ') ) // match group actions by name upon 2 characters
+          cmd.length > 1 && actions.push( option(key, action.desc, 'shortcut', [key.split(' ')[1]]) );
+        else // match non-group actions
+          actions.push( option(key, action.desc, 'action') );
+      });
+
+      return this.#list.populate( history.concat(groups, actions), 
+        item => this.#createElement(item, [], true), 
+        standardFilter(cmd)
+      );
     }
 
-    // hint action methods / options
-    let options = [], lastArg = /** @type {String} */ (args.at(-1));
-    const leadingAction = inputTextArray.slice(0, -1);
-    const actionMethods = action.methods;
-    
-    if (actionMethods != null) {
-      // hint methods
-      if (args.length === 1) {
-        options = Object.keys(actionMethods)
-          .map( key => option(key, actionMethods[key].desc, 'action') );
-      }
-      // evaluate method as action
-      else if (actionMethods[args[0]] != null) {
-        const methodName = /** @type {string} */ (args.shift());
-        action = actionMethods[methodName];
-      }
-    }
+    let options = [],
+        lastArg = /** @type {string} */ (args.at(-1)) || '';
 
-    // set options if any and not already populated (by methods)
-    if (options.length < 1 && action.options != null)
+    const action = actionMap.has(`${cmd} ${args[0]}`)
+      ? actionMap.get(`${cmd} ${args.shift()}`)
+      : actionMap.get(cmd);
+
+    // hint group actions
+    if (group != null && inputTextArray.length < 3)
+      options = Object.entries(group.actions)
+        .map( ([name, action]) => option(name, action.desc, 'action') );
+
+    // hint action options
+    else if (action != null && action.options != null && args.length > 0)
       options = await action.options(lastArg, args);
 
-    return this.#list.populate(options, item => this.#createElement(item, leadingAction), 
-      action.customFilter ? action.customFilter(lastArg) : standardFilter(lastArg) );
-  }
+    const leadingAction = inputTextArray
+      .slice(0, inputTextArray.length > 1 ? -1 : undefined);
 
-  /**
-   * Hint history plus root actions.
-   * @param {import('../../actions/componentActions.js').ActionSet} actions 
-   * @param {String} inputQuery 
-   */
-  #defaultHints(actions, inputQuery) {
-    const cmdList = Object.keys(actions)
-      .map( key => option(key, actions[key].desc, 'action') );
-    const histList = this.#actionStack.items
-      .map( key => option(key, '', 'history') );
-
-    this.#list.populate( histList.concat(cmdList), 
-      item => this.#createElement(item, [], true), standardFilter(inputQuery || '') );
+    return this.#list.populate(options, 
+      item => this.#createElement(item, leadingAction), 
+      action != null && action.customFilter
+        ? action.customFilter(lastArg)
+        : standardFilter(lastArg)
+    );
   }
 
   #initEvents() {
@@ -263,7 +279,8 @@ class ActionPalette extends HTMLElement {
         e.preventDefault();
         const next = e.key === 'ArrowDown' || e.key === 'Tab' && !e.shiftKey;
         const element = this.#list.navItems(next);
-        if (element) element.scrollIntoView(false);
+        if (element)
+          element.scrollIntoView(false);
       }
 
       // close when prompt is fully erased
@@ -279,7 +296,8 @@ class ActionPalette extends HTMLElement {
           e.preventDefault();
 
           const element = this.#list.navItems();
-          if (element) element.scrollIntoView(false);
+          if (element)
+            element.scrollIntoView(false);
 
           selection.onForget();
           selection.remove();
@@ -307,35 +325,48 @@ class ActionPalette extends HTMLElement {
 
 /**
  * Returns rich option object to be displayed by ActionPalette.
- * @param {String} name Option name.
- * @param {String} [desc] Option description.
- * @param {'action'|'history'|'generic'} [type='generic'] Option type.
+ * @param {string} name Option name.
+ * @param {string} [desc] Option description.
+ * @param {OptionObjectType} [type='generic'] Option type.
+ * @param {string[]} [keys] Option keys.
  * @returns {OptionObject}
  */
-export function option(name, desc = '', type = 'generic') {
-  return {
-    name: name,
-    desc: desc,
-    type: type
-  };
-}
+export const option = (name, desc = '', type = 'argument', keys) => ({
+  name: name,
+  desc: desc,
+  type: type,
+  keys
+});
 
 /**
- * Returns an ItemList filter function for standart options context.
- * @param {String} query ItemList filter query.
- * @returns {(item:String|OptionObject)=>boolean} Filter function.
+ * Returns an ItemList filter function for standard options context.
+ * @param {string} query ItemList filter query.
+ * @returns {(item:string|OptionObject)=>boolean} Filter function.
  */
 export function standardFilter(query) {
   return (item) => {
-    if (typeof item !== 'string') item = item.name;
-    const itemIsDot = item[0] === '.', queryIsDot = query[0] === '.';
+    let keys;
+    if (typeof item !== 'string') {
+      keys = item.keys;
+      item = item.name;
+    }
+
+    const itemIsDot = item[0] === '.',
+          queryIsDot = query[0] === '.';
 
     // empty query, show all non-dot-files
-    if ( !query.trim() ) return !itemIsDot;
+    if ( !query.trim() )
+      return !itemIsDot;
 
     // only show matches if for same item-query category
-    const match = item.toLowerCase().includes( query.toLowerCase() );
-    return itemIsDot ? match && queryIsDot : match;
+    const lowerCaseQuery = query.toLowerCase();
+    const match = keys == null || keys.length < 1
+      ? item.toLowerCase().includes(lowerCaseQuery)
+      : keys.some( str => str.includes(lowerCaseQuery) );
+
+    return itemIsDot 
+      ? match && queryIsDot 
+      : match;
   }
 }
 

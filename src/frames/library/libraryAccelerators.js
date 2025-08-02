@@ -5,7 +5,7 @@ acceleratorService.setComponentDefaults('library', {
   'o'   : ['addToLibrary'],
   'r'   : ['random'],
   'F5'  : ['watchlist', 'sync'],
-  'Escape' : ['watchlist', 'close'],
+  'Escape' : ['watchlist', 'panel', 'close'],
 
   'Space'         : ['book', 'open'],
   'Shift+Space'   : ['book', 'open', 'newTab'],
