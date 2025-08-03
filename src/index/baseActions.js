@@ -68,11 +68,12 @@ setBaseActions({
       },
       'rename': {
         desc : 'rename current tab',
-        run  : (name) => {
+        run  : (name = '') => {
           const validName = name.trim();
 
-          if (validName != '')
-            TAB?.rename(validName);
+          validName != ''
+            ? TAB?.rename(validName)
+            : notify('tab name can\'t be empty', 'tabRename');
         }
       },
       'visibility': {
@@ -93,8 +94,13 @@ setBaseActions({
     actions: {
       'load': {
         desc: 'load session profile',
-        run: (name, clearSession = 'default') => sessionProfiles
-          .load(name, clearSession !== 'keepSession'),
+        run: (name = '', clearSession = 'default') => {
+          const treatedName = name.trim();
+
+          treatedName !== ''
+            ? sessionProfiles.load(treatedName, clearSession !== 'keepSession')
+            : notify('session name can\'t be empty', 'proLoad');
+        },
         options: (_query, args) => args.length > 2
           ? []
           : args.length < 2
@@ -106,14 +112,26 @@ setBaseActions({
       },
       'store': {
         desc: 'store current session as profile',
-        run: (name) => sessionProfiles.store(name),
+        run: (name = '') => {
+          const treatedName = name.trim();
+
+          treatedName !== ''
+            ? sessionProfiles.store(treatedName)
+            : notify('session name can\'t be empty', 'proStore');
+        },
         options: (_query, allArgs) => allArgs.length < 2
           ? sessionProfiles.list()
           : []
       },
       'erase': {
         desc: 'erase a session profile',
-        run: (name) => sessionProfiles.erase(name),
+        run: (name = '') => {
+          const treatedName = name.trim();
+
+          treatedName !== ''
+            ? sessionProfiles.erase(treatedName)
+            : notify('session name can\'t be empty', 'proErase');
+        },
         options: (_query, allArgs) => allArgs.length < 2
           ? sessionProfiles.list()
           : []
@@ -141,8 +159,14 @@ setBaseActions({
     actions: {
       'set': {
         desc: 'accelerate action with a hotkey : <component> <key/combo> <action...>',
-        run: (component, keycombo, ...args) => {
-          if (component && keycombo) {
+        run: (component = '', keycombo = '', ...args) => {
+          if ( !isFrameType(component) )
+            notify(`${component} is not a valid component`);
+          else if (keycombo === '')
+            notify('hotkey can\'t be empty');
+          else if ( args.filter( i => i.trim() ).length < 1 )
+            notify('action can\'t be empty');
+          else {
             setUserAccelerators(component, { [keycombo]: args });
             notify(`user accelerator updated`);
           }
