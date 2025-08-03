@@ -1,68 +1,73 @@
+// @ts-check
+
 /**
  * @typedef StatusObjectType
- * @property {String} title Title to display on application window.
- * @property {String} infoLeft Information to display on the left.
- * @property {String} infoRight Information to display on the right.
- * @property {(()=>void)?} infoLeftFunc Function to run on right-click on the left.
+ * @property {string} title Title to display on application window.
+ * @property {string} infoLeft Information to display on the left.
+ * @property {string} infoRight Information to display on the right.
+ * @property {()=>void} [infoLeftFunc] Function to run on right-click on the left.
  */
+
+
+const barElement  = /** @type {HTMLDivElement}   */ (document.getElementById('bar'));
+const nameElement = /** @type {HTMLLabelElement} */ (document.getElementById('barName'));
+const infoElement = /** @type {HTMLLabelElement} */ (document.getElementById('barInfo'));
+
+/**
+ * Application name shown as window suffix.
+ */
+const titleSuffix = 'MXIV';
+
+/**
+ * Old visibility value before fullscreen.
+ */
+let wasVisible = statusVisibility();
+
+
+/** 
+ * Either status bar is visible.
+ */
+export function statusVisibility() {
+  return barElement.style.fontSize === '';
+}
+
+/**
+ * Toggle status bar visibility.
+ * @param {boolean} [force] Either to force on and off instead.
+ */
+export function toggleStatus( force = !statusVisibility() ) {
+  // animation transition in css
+  barElement.style.fontSize = force ? '' : '0px';
+}
+
+/**
+ * Update status info with current tab data.
+ * @param {StatusObjectType} statusObject 
+ */
+export function updateStatus(statusObject) {
+  const { title, infoLeft, infoRight, infoLeftFunc = null } = statusObject;
+
+  document.title = title
+    ? `${title} — ${titleSuffix}`
+    : titleSuffix;
+
+  nameElement.title = infoLeft;
+  nameElement.textContent = infoLeft;
+  nameElement.oncontextmenu = infoLeftFunc;
+  infoElement.textContent = infoRight;
+}
 
 
 /**
- * Display contextual information and update window title.
+ * Toggle visibility on fullscreen.
  */
-export const statusBar = new class {
+function initialize() {
+  elecAPI.onFullscreen( function onFullscreenChange(e, /** @type boolean */ isFullscreen) {
+    if (isFullscreen)
+      wasVisible = statusVisibility();
 
-  /**
-   * Application name.
-   */
-  #titleSuffix = 'MXIV';
-
-  #barElement  = /** @type {HTMLDivElement}   */ (document.getElementById('bar'));
-  #nameElement = /** @type {HTMLLabelElement} */ (document.getElementById('barName'));
-  #infoElement = /** @type {HTMLLabelElement} */ (document.getElementById('barInfo'));
-
-  /**
-   * Old visibility value before fullscreen.
-   */
-  #wasVisible = this.isVisible();
-
-
-  // toggle visibility on fullscreen
-  static {
-    elecAPI.onFullscreen( function onFullscreenChange(e, isFullscreen) {
-      if (isFullscreen) statusBar.#wasVisible = statusBar.isVisible();
-      statusBar.toggle(isFullscreen ? false : statusBar.#wasVisible);
-    });
-  }
-
-  /** 
-   * Either status bar is visible.
-   */
-  isVisible() {
-    return this.#barElement.style.fontSize === '';
-  }
-
-  /**
-   * Toggle status bar visibility.
-   * @param {Boolean} [force] Either to force on and off instead.
-   */
-  toggle(force) {
-    if (force === undefined) force = !this.isVisible();
-    this.#barElement.style.fontSize = force ? '' : '0px'; // smooth animation
-  }
-
-  /**
-   * Force update status info with current tab data.
-   * @param {StatusObjectType} statusObject 
-   */
-  updateStatus(statusObject) {
-    const { title, infoLeft, infoRight, infoLeftFunc } = statusObject;
-
-    document.title = title ? `${title} — ${this.#titleSuffix}` : this.#titleSuffix;
-
-    this.#nameElement.title = infoLeft;
-    this.#nameElement.textContent = infoLeft;
-    this.#nameElement.oncontextmenu = infoLeftFunc;
-    this.#infoElement.textContent = infoRight;
-  }
+    toggleStatus(isFullscreen ? false : wasVisible);
+  });
 }
+
+initialize();

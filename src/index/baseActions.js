@@ -1,6 +1,6 @@
 import { setBaseActions } from "../actions/actionService.js";
 import { TAB, cycleTabs, newFileViewer, newTab } from "../tabs/tab.js";
-import { statusBar } from "../components/statusBar.js";
+import { toggleStatus } from "../components/statusBar.js";
 import * as sessionProfiles from "../tabs/profiles.js";
 import { actionPalette, option } from "../components/actionPalette/actionPalette.js";
 import { getUserAccelerators, setUserAccelerators } from "../actions/userAccelerators.js";
@@ -141,7 +141,7 @@ setBaseActions({
 
   'statusVisibility': {
     desc : 'toggle status bar visibility',
-    run  : () => statusBar.toggle()
+    run  : () => toggleStatus()
   },
 
   'newWindow': {

@@ -99,8 +99,7 @@ export class Library extends GenericFrame {
     return {
       title: 'Library',
       infoLeft: this.#taskStatus || 'Library',
-      infoRight: `${itemsPerPage} @ ${coverSize} [${itemCount}]`,
-      infoLeftFunc: null
+      infoRight: `${itemsPerPage} @ ${coverSize} [${itemCount}]`
     }
   }
 

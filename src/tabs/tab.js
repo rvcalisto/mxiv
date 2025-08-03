@@ -1,6 +1,6 @@
 // @ts-check
 import { TabHeader } from "./tabHeader.js";
-import { statusBar } from "../components/statusBar.js";
+import { updateStatus } from "../components/statusBar.js";
 import { getFramePolicy, createFrame } from "../frames/frameRegistry.js";
 import { NotificationChannel } from "../components/notifier.js";
 
@@ -16,7 +16,7 @@ import { NotificationChannel } from "../components/notifier.js";
 /**
  * @typedef TabProfileType
  * @property {FrameType} type Tab frame type.
- * @property {object} state Tab frame state.
+ * @property {Object} state Tab frame state.
  */
 
 /**
@@ -97,7 +97,7 @@ class Tab {
 
     frame.events.observe('frame:statusChange', () => {
       if (frame === FRAME)
-        statusBar.updateStatus( frame.status() );
+        updateStatus( frame.status() );
     });
 
     const contentContainer = /** @type HTMLDivElement */ (document.getElementById('contents'));
@@ -122,7 +122,7 @@ class Tab {
     FRAME = this.frame;
     this.frame.focus();
 
-    statusBar.updateStatus( this.frame.status() );
+    updateStatus( this.frame.status() );
     this.channel.displayChannel();
     this.frame.onSelected();
   }

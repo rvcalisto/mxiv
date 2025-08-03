@@ -426,13 +426,14 @@ export class Viewer extends GenericFrame {
     });
   }
 
-  /** @override */
+  /**
+   * @override
+   */
   status() {
     const status = {
       title: '',
       infoLeft: 'None',
-      infoRight: '[0/0]',
-      infoLeftFunc: () => {}
+      infoRight: '[0/0]'
     };
 
     const { files, page, currentFile } = this.fileBook;
