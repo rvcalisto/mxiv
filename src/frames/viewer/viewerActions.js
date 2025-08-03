@@ -191,7 +191,7 @@ setComponentActions('viewer', {
       const options = { on: true, off: false };
       FRAME.viewComponent.toggleAutoScrollAnimation(options[value]);
     },
-    options: (_query, allArgs) => allArgs < 2
+    options: (_query, allArgs) => allArgs.length < 2
       ? [option('toggle', 'default'), 'on', 'off']
       : []
   },
