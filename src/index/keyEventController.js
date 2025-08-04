@@ -1,5 +1,5 @@
 // @ts-check
-import { actionPalette } from "../components/actionPalette/actionPalette.js";
+import palette from "../components/actionPalette/actionPalette.js";
 import { getCurrentActions } from "../actions/actionService.js";
 import { getCurrentAccelerators } from "../actions/acceleratorService.js";
 
@@ -10,8 +10,8 @@ import { getCurrentAccelerators } from "../actions/acceleratorService.js";
  */
 export function frameKeyEvHandler(e) {
   // focus actionPalette if open (until Escape is pressed)
-  if (actionPalette.active)
-    return actionPalette.toggle(e.key !== 'Escape');
+  if (palette.paletteIsVisible)
+    return palette.togglePalette(e.key !== 'Escape');
 
   const action = getCurrentAccelerators().byEvent(e);
   if (action != null) {

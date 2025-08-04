@@ -695,7 +695,7 @@
         color: var(--theme-icon-run);
       }
 
-      #cmdOverlay {
+      #wrapper {
         display: flex;
         flex-direction: column;
         justify-content: flex-end;
@@ -850,7 +850,7 @@
         background: var(--theme-scrollbar-fg);
       }
     </style>
-    <div id="cmdOverlay" style="display: none;">
+    <div id="wrapper">
       <div id="box">
         <item-list id="itemList"></item-list>
         <div id="inputBox">
@@ -1189,7 +1189,7 @@
     </header>
     <main>
       <div id="contents"></div>
-      <action-palette></action-palette>
+      <action-palette style="display: none;"></action-palette>
       <div id="notifier"></div>
     </main>
     <footer id="bar">

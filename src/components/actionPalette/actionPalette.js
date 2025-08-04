@@ -24,142 +24,78 @@ import { GenericStorage } from "../genericStorage.js";
 
 
 /**
- * Display hints, methods and execute actions for current component.
+ * Prompt action history stack.
+ * @type {PriorityStack<string>}
+ */
+const actionStack = new PriorityStack();
+
+/**
+ * Prompt action history storage.
+ * @type {GenericStorage<string[]>}
+ */
+const actionStorage = new GenericStorage('actionHistory');
+
+/**
+ * Action palette visibility.
+ * @returns {boolean}
+ */
+export let paletteIsVisible = false;
+
+/**
+ * Returns rich option object to be displayed by ActionPalette.
+ * @param {string} name Option name.
+ * @param {string} [desc] Option description.
+ * @param {OptionType} [type='generic'] Option type.
+ * @param {string[]} [keys] Option keys.
+ * @returns {OptionObject}
+ */
+export const option = (name, desc = '', type = 'argument', keys) => ({
+  name: name,
+  desc: desc,
+  type: type,
+  keys
+});
+
+
+/**
+ * Palette element, display available groups, actions and options.
  */
 class ActionPalette extends HTMLElement {
 
   static tagName = 'action-palette';
 
   /**
+   * Single instance element reference.
+   * @type {ActionPalette}
+   */
+  static element;
+
+  /**
    * Hint element list.
    * @type {ItemList<?, OptionElement>}
    */
-  #list;
+  list;
 
   /**
    * Prompt element.
    * @type {InputPrompt}
    */
-  #prompt;
+  prompt;
 
-  /**
-   * Prompt action history stack.
-   * @type {PriorityStack<string>}
-   */
-  #actionStack = new PriorityStack();
-
-  /**
-   * Prompt action history storage.
-   * @type {GenericStorage<string[]>}
-   */
-  #store = new GenericStorage('actionHistory');
-
-  /**
-   * Background overlay.
-   * @type {HTMLDivElement}
-   */
-  #background;
-
-  /**
-   * Visibility state.
-   */
-  active = false;
+  static {
+    customElements.define(this.tagName, this);
+    this.element = /** @type {ActionPalette} */ (document.querySelector(this.tagName));
+  }
 
   connectedCallback() {
     const template = /** @type HTMLTemplateElement */ (document.getElementById('actionPaletteTemplate'));
     const shadowRoot = this.attachShadow({ mode: 'open' });
     shadowRoot.append( template.content.cloneNode(true) );
 
-    this.#list = /** @type ItemList */ (shadowRoot.getElementById('itemList'));
-    this.#prompt = new InputPrompt( /** @type HTMLInputElement */ (shadowRoot.getElementById('cmdInput')) );
-    this.#background = /** @type HTMLDivElement */ (shadowRoot.getElementById('cmdOverlay'));
+    this.list = /** @type ItemList */ (shadowRoot.getElementById('itemList'));
+    this.prompt = new InputPrompt( /** @type HTMLInputElement */ (shadowRoot.getElementById('cmdInput')) );
 
     this.#initEvents();
-  }
-
-  /**
-   * Toggle visibility. Focus prompt if opening while already open.
-   * @param {boolean} open Open or close action palette.
-   * @param {string} [optionalStr] Open on custom string.
-   */
-  toggle(open, optionalStr = '') {
-    // make elements visible and focusable
-    this.#background.style.display = '';
-
-    // focus prompt, sync action history between windows, set text & list hints.
-    if (open) {
-      this.#prompt.focus();
-      if (this.active)
-        return;
-
-      const historyStack = this.#store.get('stack');
-      if (historyStack)
-        this.#actionStack.items = historyStack;
-      
-      this.#prompt.setText(optionalStr);
-      this.#displayHints();
-    } 
-
-    // set state, play fade-in/out animation and clear list on close
-    this.active = open;
-    this.#background.animate(
-      [{ opacity : open ? 0 : 1 }, { opacity : open ? 1 : 0 }],
-       { duration: 150}
-    ).onfinish = () => {
-      if (!open) {
-        this.#list.populate([], this.#createElement);
-        this.#background.style.display = 'none';
-      }
-    };
-  }
-
-  /**
-   * Run given action text, otherwise get it from input.
-   * @param {string} [actionText] Optional action text.
-   */
-  #runAction(actionText) {
-    actionText = actionText || this.#prompt.getText();
-    const action = InputPrompt.unescapeIntoArray(actionText);
-
-    if (action.length < 1)
-      return; 
-
-    const frameActions = getCurrentActions();
-    if ( frameActions.run(action) ) {
-      const textItem = actionText.trim();
-
-      if (textItem !== 'palette repeatLast')
-        this.#actionStack.insert(textItem);
-
-      return;
-    }
-
-    frameActions.getGroups().has(action[0])
-      ? notify(`"${action[1]}" isn't a "${action[0]}" action in current context`, 'runAct')
-      : notify(`"${action[0]}" isn't an action nor group in current context`, 'runAct');
-  }
-
-  /**
-   * Erase past executed action or actions from history.
-   * @param {string} [historyItem] If given, remove only this item from history.
-   */
-  clearActionHistory(historyItem) {
-    if (historyItem == null) {
-      this.#actionStack.clearAll();
-      notify('history cleared', 'actionPalette:clear');
-    } else {
-      this.#actionStack.remove(historyItem);
-      notify('history item removed', 'actionPalette:forget');
-      this.toggle(true); // recapture focus from 'forget' button click
-    }
-  }
-
-  /**
-   * Repeat last executed action.
-   */
-  repeatAction() {
-    if (this.#actionStack.items.length > 0)
-      this.#runAction(this.#actionStack.items[0]);
   }
 
   /**
@@ -169,7 +105,7 @@ class ActionPalette extends HTMLElement {
    * @param {boolean} [replace=false] Either option replaces input prompt.
    * @returns {OptionElement}
    */
-  #createElement(item, leadingAction = [], replace = false) {
+  createElement(item, leadingAction = [], replace = false) {
     let name = '', desc = '', type = /** @type OptionType */ ('argument');
     typeof item !== 'string'
       ? (name = item.name, desc = item.desc, type = item.type)
@@ -184,32 +120,32 @@ class ActionPalette extends HTMLElement {
       : frameAccelerators.byAction([...leadingAction, name]);
 
     if (type === 'history') {
-      element.onForget = () => this.clearActionHistory(name);
+      element.onForget = () => clearActionHistory(name);
     }
 
     element.onclick = () => {
-      this.#list.selectIntoFocus(element, { block: 'nearest' });
-      this.#prompt.focus();
+      this.list.selectIntoFocus(element, { block: 'nearest' });
+      this.prompt.focus();
     };
 
     element.onAccess = () => {
-      this.#prompt.setText(name, replace);
+      this.prompt.setText(name, replace);
     };
 
     element.ondblclick = () => {
       element.onAccess();
-      this.#displayHints();
+      this.displayHints();
     };
 
     return element;
   }
 
   /**
-   * Generate hint list based on current this.#prompt text.
+   * Generate hint list based on current this.prompt text.
    */
-  async #displayHints() {
+  async displayHints() {
     const currentActions = getCurrentActions(),
-          inputTextArray = this.#prompt.getTextArray(),
+          inputTextArray = this.prompt.getTextArray(),
           [cmd = '', ...args] = inputTextArray;
 
     const actionMap = currentActions.getActions(),
@@ -218,7 +154,7 @@ class ActionPalette extends HTMLElement {
 
     // hint history, groups, actions
     if (group == null && args.length < 1) {
-      const history = this.#actionStack.items
+      const history = actionStack.items
         .map( key => option(key, '', 'history') );
 
       const groups = [...groupMap]
@@ -232,8 +168,8 @@ class ActionPalette extends HTMLElement {
           actions.push( option(key, action.desc, 'action') );
       });
 
-      return this.#list.populate( history.concat(groups, actions), 
-        item => this.#createElement(item, [], true), 
+      return this.list.populate( history.concat(groups, actions), 
+        item => this.createElement(item, [], true), 
         standardFilter(cmd)
       );
     }
@@ -257,8 +193,8 @@ class ActionPalette extends HTMLElement {
     const leadingAction = inputTextArray
       .slice(0, inputTextArray.length > 1 ? -1 : undefined);
 
-    return this.#list.populate(options, 
-      item => this.#createElement(item, leadingAction), 
+    return this.list.populate(options, 
+      item => this.createElement(item, leadingAction), 
       action != null && action.customFilter
         ? action.customFilter(lastArg)
         : standardFilter(lastArg)
@@ -267,41 +203,43 @@ class ActionPalette extends HTMLElement {
 
   #initEvents() {
     // store action history on stack changes
-    this.#actionStack.events.observe('stackChange', () => {
-      this.#store.set('stack', this.#actionStack.items);
+    actionStack.events.observe('stackChange', () => {
+      actionStorage.set('stack', actionStack.items);
     });
 
-    // close action palette if clicking out of focus
-    this.#background.onclick = (e) => this.toggle(e.target !== this.#background);
+    // close action palette if clicking outside content
+    const shadowRoot = /** @type ShadowRoot */ (this.shadowRoot);
+    const wrapper = /** @type HTMLDivElement */ (shadowRoot.getElementById('wrapper'));
+    wrapper.onclick = (e) => togglePalette(e.target !== wrapper);
 
     // display hints on value input
-    this.#prompt.oninput = () => this.#displayHints();
+    this.prompt.oninput = () => this.displayHints();
 
     // control inputs
-    this.#prompt.onkeydown = (e) => {
+    this.prompt.onkeydown = (e) => {
 
       // navigate hints
       if (e.key === 'Tab' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         e.preventDefault();
         const next = e.key === 'ArrowDown' || e.key === 'Tab' && !e.shiftKey;
-        const element = this.#list.navItems(next);
+        const element = this.list.navItems(next);
         if (element)
           element.scrollIntoView(false);
       }
 
       // close when prompt is fully erased
-      else if (e.key === 'Backspace' && this.#prompt.getText().length < 1) {
+      else if (e.key === 'Backspace' && this.prompt.getText().length < 1) {
         e.stopImmediatePropagation();
-        this.toggle(false);
+        togglePalette(false);
       }
 
       // delete history-type hint
       else if (e.key === 'Delete') {
-        const selection = this.#list.getSelectedElement();
+        const selection = this.list.getSelectedElement();
         if (selection && selection.onForget != null) {
           e.preventDefault();
 
-          const element = this.#list.navItems();
+          const element = this.list.navItems();
           if (element)
             element.scrollIntoView(false);
 
@@ -314,14 +252,14 @@ class ActionPalette extends HTMLElement {
       else if (e.key === 'Enter' || e.key === ' ' && e.shiftKey) {
         e.preventDefault();
         e.stopImmediatePropagation();
-        
-        const selection = this.#list.getSelectedElement();
+
+        const selection = this.list.getSelectedElement();
         if (selection) {
           selection.onAccess();
-          this.#displayHints();
+          this.displayHints();
         } else {
-          this.toggle(false);
-          this.#runAction();
+          togglePalette(false);
+          runAction( this.prompt.getText() );
         }
       }
     };
@@ -330,19 +268,29 @@ class ActionPalette extends HTMLElement {
 
 
 /**
- * Returns rich option object to be displayed by ActionPalette.
- * @param {string} name Option name.
- * @param {string} [desc] Option description.
- * @param {OptionType} [type='generic'] Option type.
- * @param {string[]} [keys] Option keys.
- * @returns {OptionObject}
+ * Run action in current context.
+ * @param {string} actionText Action string.
  */
-export const option = (name, desc = '', type = 'argument', keys) => ({
-  name: name,
-  desc: desc,
-  type: type,
-  keys
-});
+function runAction(actionText) {
+  const action = InputPrompt.unescapeIntoArray(actionText);
+
+  if (action.length < 1)
+    return;
+
+  const frameActions = getCurrentActions();
+  if ( frameActions.run(action) ) {
+    const textItem = actionText.trim();
+
+    if (textItem !== 'palette repeatLast')
+      actionStack.insert(textItem);
+
+    return;
+  }
+
+  frameActions.getGroups().has(action[0])
+    ? notify(`"${action[1]}" isn't a "${action[0]}" action in current context`, 'runAct')
+    : notify(`"${action[0]}" isn't an action nor group in current context`, 'runAct');
+}
 
 /**
  * Returns an ItemList filter function for standard options context.
@@ -376,11 +324,71 @@ export function standardFilter(query) {
   }
 }
 
+/**
+ * Toggle palette visibility. Focus prompt if opening while open.
+ * @param {boolean} open Open or close palette.
+ * @param {string} [text] Optional prompt text.
+ */
+export function togglePalette(open, text = '') {
+  const palette = ActionPalette.element;
+  palette.style.display = ''; // make visible and focusable
+
+  if (open) {
+    palette.prompt.focus();
+    // already visible, stop at focus
+    if (paletteIsVisible)
+      return;
+
+    // sync potential changes from other windows
+    const stack = actionStorage.get('stack');
+    if (stack != null)
+      actionStack.items = stack;
+
+    palette.prompt.setText(text);
+    palette.displayHints();
+  }
+
+  // play fade-in/out animation, clear list on close
+  paletteIsVisible = open;
+  palette.animate(
+    [{ opacity : open ? 0 : 1 }, { opacity : open ? 1 : 0 }],
+    { duration: 150}
+  ).onfinish = () => {
+    if (!open) {
+      palette.list.populate([], palette.createElement);
+      palette.style.display = 'none';
+    }
+  };
+}
 
 /**
- * Action palette for current context.
- * @type {ActionPalette}
+ * Repeat last executed action, if any.
  */
-export const actionPalette = /** @type {ActionPalette} */ (document.querySelector(ActionPalette.tagName));
+export function repeatLastAction() {
+  actionStack.items.length > 0
+    ? runAction(actionStack.items[0])
+    : notify('no recent actions to repeat', 'repeatLast');
+}
 
-customElements.define(ActionPalette.tagName, ActionPalette);
+/**
+ * Clear recently executed action history.
+ * @param {string} [historyItem] If given, remove only matching item.
+ */
+export function clearActionHistory(historyItem) {
+  if (historyItem == null) {
+    actionStack.clearAll();
+    notify('history cleared', 'clearHistory');
+  } else {
+    actionStack.remove(historyItem);
+    notify('history item removed', 'clearAction');
+    togglePalette(true); // recapture focus from 'forget' button click
+  }
+}
+
+/**
+ * Action palette methods.
+ */
+export default {
+  get paletteIsVisible() { return paletteIsVisible },
+  togglePalette, repeatLastAction, clearActionHistory
+};

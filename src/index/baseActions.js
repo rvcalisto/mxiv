@@ -2,7 +2,7 @@ import { setBaseActions } from "../actions/actionService.js";
 import { TAB, cycleTabs, newFileViewer, newTab } from "../tabs/tab.js";
 import { toggleStatus } from "../components/statusBar.js";
 import * as sessionProfiles from "../tabs/profiles.js";
-import { actionPalette, option } from "../components/actionPalette/actionPalette.js";
+import palette, { option } from "../components/actionPalette/actionPalette.js";
 import { getUserAccelerators, setUserAccelerators } from "../actions/userAccelerators.js";
 import { notify } from "../components/notifier.js";
 import { isFrameType, frameDescriptors } from "../frames/frameRegistry.js";
@@ -17,15 +17,15 @@ setBaseActions({
     actions: {
       'show': {
         desc: 'show action palette, optionally with a given string',
-        run: (customStr) => actionPalette.toggle(true, customStr)
+        run: (customStr) => palette.togglePalette(true, customStr)
       },
       'repeatLast': {
         desc: 'repeat last executed action',
-        run: () => actionPalette.repeatAction()
+        run: () => palette.repeatLastAction()
       },
       'clear': {
         desc: 'clear previously executed actions from history',
-        run: () => actionPalette.clearActionHistory()
+        run: () => palette.clearActionHistory()
       }
     }
   },
