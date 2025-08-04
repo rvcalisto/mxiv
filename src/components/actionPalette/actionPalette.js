@@ -1,12 +1,11 @@
 // @ts-check
 import { ItemList } from "../itemList.js";
 import { InputPrompt } from "./inputPrompt.js";
-import { PriorityStack } from "./priorityStack.js";
+import actionHistory from "./actionHistory.js";
 import { OptionElement } from "./optionElement.js";
 import { getCurrentActions } from "../../actions/actionService.js";
 import { getCurrentAccelerators } from "../../actions/acceleratorService.js";
 import { notify } from "../notifier.js";
-import { GenericStorage } from "../genericStorage.js";
 
 
 /**
@@ -22,18 +21,6 @@ import { GenericStorage } from "../genericStorage.js";
  * @property {string[]} [keys] Filter key overrides.
  */
 
-
-/**
- * Prompt action history stack.
- * @type {PriorityStack<string>}
- */
-const actionStack = new PriorityStack();
-
-/**
- * Prompt action history storage.
- * @type {GenericStorage<string[]>}
- */
-const actionStorage = new GenericStorage('actionHistory');
 
 /**
  * Action palette visibility.
@@ -120,7 +107,10 @@ class ActionPalette extends HTMLElement {
       : frameAccelerators.byAction([...leadingAction, name]);
 
     if (type === 'history') {
-      element.onForget = () => clearActionHistory(name);
+      element.onForget = () => {
+        clearActionHistory(name);
+        togglePalette(true); // recapture focus after click
+      }
     }
 
     element.onclick = () => {
@@ -154,7 +144,7 @@ class ActionPalette extends HTMLElement {
 
     // hint history, groups, actions
     if (group == null && args.length < 1) {
-      const history = actionStack.items
+      const history = actionHistory.items
         .map( key => option(key, '', 'history') );
 
       const groups = [...groupMap]
@@ -202,11 +192,6 @@ class ActionPalette extends HTMLElement {
   }
 
   #initEvents() {
-    // store action history on stack changes
-    actionStack.events.observe('stackChange', () => {
-      actionStorage.set('stack', actionStack.items);
-    });
-
     // close action palette if clicking outside content
     const shadowRoot = /** @type ShadowRoot */ (this.shadowRoot);
     const wrapper = /** @type HTMLDivElement */ (shadowRoot.getElementById('wrapper'));
@@ -282,7 +267,7 @@ function runAction(actionText) {
     const textItem = actionText.trim();
 
     if (textItem !== 'palette repeatLast')
-      actionStack.insert(textItem);
+      actionHistory.insert(textItem);
 
     return;
   }
@@ -340,9 +325,7 @@ export function togglePalette(open, text = '') {
       return;
 
     // sync potential changes from other windows
-    const stack = actionStorage.get('stack');
-    if (stack != null)
-      actionStack.items = stack;
+    actionHistory.reload();
 
     palette.prompt.setText(text);
     palette.displayHints();
@@ -365,8 +348,8 @@ export function togglePalette(open, text = '') {
  * Repeat last executed action, if any.
  */
 export function repeatLastAction() {
-  actionStack.items.length > 0
-    ? runAction(actionStack.items[0])
+  actionHistory.items.length > 0
+    ? runAction(actionHistory.items[0])
     : notify('no recent actions to repeat', 'repeatLast');
 }
 
@@ -376,12 +359,12 @@ export function repeatLastAction() {
  */
 export function clearActionHistory(historyItem) {
   if (historyItem == null) {
-    actionStack.clearAll();
+    actionHistory.clearAll();
     notify('history cleared', 'clearHistory');
   } else {
-    actionStack.remove(historyItem);
-    notify('history item removed', 'clearAction');
-    togglePalette(true); // recapture focus from 'forget' button click
+    actionHistory.remove(historyItem)
+      ? notify('history item removed', 'clearAction')
+      : notify('failed to remove history item', 'clearAction');
   }
 }
 
