@@ -174,7 +174,7 @@ export class TagState extends Map {
 
   /**
    * Returns iterable filepaths.
-   * @returns {IterableIterator<string>}
+   * @returns {MapIterator<string>}
    * @override
    */
   keys() {
@@ -184,7 +184,7 @@ export class TagState extends Map {
 
   /**
    * Returns iterable file tag-sets.
-   * @returns {IterableIterator<string[]>}
+   * @returns {MapIterator<string[]>}
    * @override
    */
   values() {
@@ -194,7 +194,7 @@ export class TagState extends Map {
   /**
    * Returns iterable filepath, tag-set tuples.
    * - Prefer this over `[Symbol.iterator]` for regular consumption.
-   * @returns {IterableIterator<[string, string[]]>}
+   * @returns {MapIterator<[string, string[]]>}
    * @override
    */
   entries() {
@@ -282,27 +282,19 @@ export class TagStorage extends JsonStorage {
    * @param {String} storageFile Custom persistence file.
    */
   constructor(storageFile = tagDBFile) {
-    super(storageFile, TagState);
+    super(storageFile, TagState, (state) => {
+      if (state instanceof TagState)
+        state.deleteOrphanedTags();
+    });
+
     this.#storageFile = storageFile;
-  }
-
-  /**
-   * @override
-   * Clean orphaned tags before persisting.
-   * @param {Map<string>|TagState} state 
-   */
-  async setState(state) {
-    if (state instanceof TagState)
-      state.deleteOrphanedTags();
-
-    return await super.setState(state);
   }
 
   /**
    * Return information about current tag storage state.
    */
   async info() {
-    const state = await this.getState(true);
+    const state = await this.getState();
     const fileCount = Object.keys( state.get(TagState.meta.files) ).length;
     const tagCount = Object.keys( state.get(TagState.meta.tags) ).length;
 
@@ -320,7 +312,7 @@ export class TagStorage extends JsonStorage {
    */
   async listOrphans(deleteOrphans = false) {
     const taskPromises = [], orphans = [];
-    const state = await this.getState(true);
+    const state = await this.getState();
 
     for ( const filepath of state.keys() ) {
       taskPromises.push( new Promise(resolve => {

@@ -72,7 +72,7 @@ class LibraryStorage extends JsonStorage {
     const lastModified = await this.getLastModified();
 
     if (!this.#cache.state || this.#cache.lastModified !== lastModified) {
-      this.#cache.state = await this.getState(true);
+      this.#cache.state = await this.getState();
       this.#cache.lastModified = lastModified || Date.now();
     }
 
