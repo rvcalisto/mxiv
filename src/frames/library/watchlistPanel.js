@@ -1,3 +1,4 @@
+// @ts-check
 import { GenericStorage } from "../../components/genericStorage.js";
 
 
@@ -32,8 +33,10 @@ export class WatchlistPanel {
    * @param {import("./library.js").Library} library Host component.
    */
   constructor(library) {
-    this.#componentRoot = /** @type {ShadowRoot} */ (library.shadowRoot);
-    this.#overlay = library.shadowRoot.querySelector('#wrapper .overlay');
+    const shadowRoot = /** @type {ShadowRoot} */ (library.shadowRoot);
+    this.#componentRoot = shadowRoot;
+    this.#overlay = /** @type {HTMLElement} */ (shadowRoot.querySelector('#wrapper .overlay'));
+
     this.#initEvents();
   }
 
@@ -99,13 +102,16 @@ export class WatchlistPanel {
    * Draw list of folders to add to library on sync.
    */
   #drawList() {
-    const folderList = this.#componentRoot.getElementById('folderList');
-    folderList.textContent = ''; // clean list
+    // clear list
+    const shadowRoot = this.#componentRoot;
+    const folderList = /** @type HTMLElement */ (shadowRoot.getElementById('folderList'));
+    folderList.textContent = '';
 
     // populate list
     for ( const item of this.#storage.values() ) {
       const div = document.createElement('div');
-      div.className = 'folderItem'
+      div.className = 'folderItem';
+
       div.innerHTML = `
         <p>${item.path}</p>
         <label title="evaluate subfolders"><input type="checkbox"">recursive</label>
@@ -131,8 +137,8 @@ export class WatchlistPanel {
 
   /**
    * Toggle watch list visibilty.
-   * @param {boolean} show Either to force visibilit on or off.
-   * @param {number} duration Animation duration in ms.
+   * @param {boolean} [show] Either to force visibilit on or off.
+   * @param {number} [duration=150] Animation duration in ms.
    */
   toggleVisibility(show = !this.isVisible, duration = 150) {
     if (show === this.isVisible)
@@ -143,17 +149,17 @@ export class WatchlistPanel {
 
     this.#overlay.style.display = '';
     this.#overlay.animate([
-      { opacity: show ? 0 : 1 },
-      { opacity: show ? 1 : 0 }
+      { opacity: 0 }, { opacity: 1 }
     ], {
-      duration: duration
+      duration, direction: show ? 'normal' : 'reverse'
     }).onfinish = () => {
-      this.#overlay.style.opacity = show ? '1' : '0';
       this.#overlay.style.display = show ? '' : 'none';
     };
   }
 
   #initEvents() {
+    const shadowRoot = this.#componentRoot;
+  
     // exit folder management
     this.#overlay.onclick = (e) => {
       if (e.target == this.#overlay)
@@ -161,9 +167,11 @@ export class WatchlistPanel {
     };
 
     // add new folder to watchlist, open dialog
-    const addtoBtn = this.#componentRoot.getElementById('addToWatch');
+    const addtoBtn = /** @type HTMLElement */ (shadowRoot.getElementById('addToWatch'));
     addtoBtn.onclick = async () => {
-      /** @type {string[]|undefined} */
+      /**
+       * @type {string[]|undefined}
+       */
       const files = await elecAPI.dialog('open', {
         title: "Add Folders to Watchlist",
         properties: ['openDirectory'],
@@ -176,7 +184,7 @@ export class WatchlistPanel {
       }
     };
 
-    const closeBtn = this.#componentRoot.getElementById('closeWatchlist');
+    const closeBtn = /** @type HTMLElement */ (shadowRoot.getElementById('closeWatchlist'));
     closeBtn.onclick = () => this.toggleVisibility(false);
   }
 }

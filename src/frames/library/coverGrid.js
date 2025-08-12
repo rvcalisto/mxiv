@@ -1,5 +1,5 @@
 // @ts-check
-import { ItemList } from "../../components/itemList.js"
+import { ItemList } from "../../components/itemList.js";
 import { Cover } from "./coverElement.js";
 import { newTab, TAB } from "../../tabs/tab.js";
 import { ObservableEvents } from "../../components/observableEvents.js";
@@ -9,7 +9,8 @@ import { userPreferences } from "../../components/userPreferences.js";
 
 
 /**
- * @typedef {import('../../APIs/library/libraryStorage.js').LibraryEntry} LibraryEntry
+ * @import { LibraryEntry } from "../../APIs/library/libraryStorage.js"
+ * @import { Viewer } from "../viewer/viewer.js"
  */
 
 /**
@@ -23,22 +24,22 @@ import { userPreferences } from "../../components/userPreferences.js";
 export class CoverGrid {
 
   /**
-   * Cached library entry collection.
+   * Cached library entries.
    * @type {LibraryEntry[]}
    */
-  static #libraryCache = []
+  static #cachedEntries = [];
 
   /**
    * Cached library entry Map, for direct lookup.
    * @type {Map<string, LibraryEntry>}
    */
-  static #libraryCacheMap = new Map();
+  static #cachedEntryMap = new Map();
 
   /**
    * Either library entry cache needs to be rebuilt on next draw.
    */
-  static #dirtyCache = true
-  
+  static #cacheIsDirty = true;
+
   /**
    * Tracks rendered elements for live thumbnail updates.
    * @type {Map<string, Cover>}
@@ -49,49 +50,52 @@ export class CoverGrid {
    * Last known cover selection.
    * @type {Cover?}
    */
-  static selection = null
+  static selection = null;
 
   /**
    * List as cover grid.
    * @type {ItemList<LibraryEntry, Cover>}
    */
-  #list
+  #list;
 
   /**
    * @type {ObservableEvents<CoverGridEvents>}
    */
-  events = new ObservableEvents()
-  
+  events = new ObservableEvents();
+
   /**
    * @param {ItemList} hostList Host component.
    */
   constructor(hostList) {
-    this.#list = hostList
+    this.#list = hostList;
+
+    // apply preferences
     this.#list.itemsPerPage = userPreferences.libraryItemsPerPage;
-    document.body.style.setProperty('--cover-height', `${userPreferences.libraryCoverSize}px`);
+    document.body.style
+      .setProperty('--cover-height', `${userPreferences.libraryCoverSize}px`);
   }
 
   /**
-   * Cache sorted library entry collection.
+   * Retrieve and cache library entries.
    */
   static async #buildCache() {
-    this.#libraryCache = await elecAPI.getLibraryEntries()
+    this.#cachedEntries = await elecAPI.getLibraryEntries();
 
-    this.#libraryCacheMap.clear();
-    this.#libraryCache
-      .forEach( entry => this.#libraryCacheMap.set(entry.path, entry) );
+    this.#cachedEntryMap.clear();
+    this.#cachedEntries
+      .forEach( entry => this.#cachedEntryMap.set(entry.path, entry) );
 
-    this.#dirtyCache = false
+    this.#cacheIsDirty = false;
     console.log('Library cache (re)built.');
   }
-  
+
   /**
    * Update cover entry in place.
    * @param {{key: string, entry: LibraryEntry}[]} entries
    */
   updateCovers(entries) {
     entries.forEach(({ key, entry }) => {
-      const cacheItem = CoverGrid.#libraryCacheMap.get(key);
+      const cacheItem = CoverGrid.#cachedEntryMap.get(key);
 
       if (cacheItem != null) {
         cacheItem.coverPath = entry.coverPath;
@@ -102,7 +106,7 @@ export class CoverGrid {
       }
     });
   }
-  
+
   /**
    * Set how many items to display per page. Reload covers.
    * @param {number} count
@@ -112,7 +116,7 @@ export class CoverGrid {
     this.#list.itemsPerPage = count;
     this.drawCovers();
   }
-  
+
   /**
    * Set cover height size in pixels.
    * @param {number} size
@@ -121,9 +125,8 @@ export class CoverGrid {
     userPreferences.libraryCoverSize = size;
     document.body.style.setProperty('--cover-height', `${size}px`);
     this.events.fire('grid:coverUpdate');
-    
-    const cover = CoverGrid.selection;
-    if (cover) cover.scrollIntoView({ block: 'center' });
+
+    CoverGrid.selection?.scrollIntoView({ block: 'center' });
   }
 
   /**
@@ -131,20 +134,26 @@ export class CoverGrid {
    * @param {string[]} [queries] Filter covers.
    */
   async drawCovers(queries) {
-    if (CoverGrid.#dirtyCache)
+    if (CoverGrid.#cacheIsDirty)
       await CoverGrid.#buildCache();
 
     // all queries must match either path or a tag. Exclusive.
-    const filterFunc = !queries ? undefined :
-      (/** @type {LibraryEntry} */ file) => matchNameOrTags(file, queries);
+    const filterFunc = !queries
+      ? undefined
+      : (/** @type {LibraryEntry} */ file) => matchNameOrTags(file, queries);
 
     CoverGrid.#drawnCovers.clear();
-    
-    this.#list.populate(CoverGrid.#libraryCache, (entry) => {
+
+    this.#list.populate(CoverGrid.#cachedEntries, (entry) => {
       const cover = Cover.from(entry);
 
-      cover.onclick = () => this.selectCover(cover);
-      cover.onauxclick = () => this.selectCover(cover, true);
+      cover.onclick = () => {
+        CoverGrid.selection !== cover
+          ? this.selectCover(cover)
+          : this.openCoverBook(cover);
+      };
+
+      cover.onauxclick = () => this.openCoverBook(cover, true);
       cover.onClickRemove = () => this.removeCover(cover);
 
       CoverGrid.#drawnCovers.set(entry.path, cover);
@@ -154,10 +163,11 @@ export class CoverGrid {
 
     // recover last selection
     const lastPath = generalState.librarySelection;
+
     if (lastPath !== '') {
       const cover = this.#list
         .findItemElement(item => item.path === lastPath);
-      
+
       if (cover != null)
         this.selectCover(cover);
     }
@@ -174,68 +184,71 @@ export class CoverGrid {
       itemsPerPage: this.#list.itemsPerPage,
       coverSize: document.body.style.getPropertyValue('--cover-height')
     };
-  } 
+  }
 
   /**
    * Force build cache and draw covers.
    */
   async reloadCovers() {
-    CoverGrid.#dirtyCache = true
-    await this.drawCovers()
+    CoverGrid.#cacheIsDirty = true;
+    await this.drawCovers();
   }
 
   /**
    * Select cover into focus and remember selection. 
    * @param {Cover} cover
-   * @param {boolean} [keepOpen=false] Keep Library open after openning book.
    */
-  selectCover(cover, keepOpen = false) {
-    if (CoverGrid.selection !== cover) {
-      this.#list.selectIntoFocus(cover);
+  selectCover(cover) {
+    this.#list.selectIntoFocus(cover);
 
+    if (CoverGrid.selection !== cover) {
       CoverGrid.selection = cover;
       generalState.librarySelection = cover.bookPath;
-      return;
     }
-
-    const libraryTab = keepOpen ? null : TAB;
-
-    newTab('viewer', viewer => {
-      /** @type {import('../viewer/viewer.js').Viewer} */ 
-      (viewer).open(cover.bookPath)
-    });
-
-    libraryTab?.close();
   }
 
   /**
    * Delist cover and remove it from library.
    * @param {Cover} cover
-   * @returns {Promise<Boolean>} Success.
+   * @returns {Promise<boolean>} Success.
    */
   async removeCover(cover) {
-    if ( !await elecAPI.requestLock('library') ) return false
+    if ( !await elecAPI.requestLock('library') )
+      return false;
 
-    const success = await elecAPI.removeFromLibrary(cover.bookPath)
+    const success = await elecAPI.removeFromLibrary(cover.bookPath);
+
     if (success) {
-      if (CoverGrid.selection === cover) this.nextCoverHorizontal()
-      cover.remove()
-  
-      CoverGrid.#dirtyCache = true
-      this.events.fire('grid:coverUpdate')
+      if (CoverGrid.selection === cover)
+        this.nextCoverHorizontal();
+
+      cover.remove();
+
+      CoverGrid.#cacheIsDirty = true;
+      this.events.fire('grid:coverUpdate');
     }
-  
-    await elecAPI.releaseLock('library')
-    return success
+
+    await elecAPI.releaseLock('library');
+    return success;
   }
 
   /**
    * Open book in Viewer tab.
+   * @param {Cover} cover Custom cover to open.
    * @param {boolean} [keepOpen=false] Either to keep Library open.
    */
-  openCoverBook(keepOpen = false) {
-    const selectedBook = CoverGrid.selection
-    if (selectedBook) this.selectCover(selectedBook, keepOpen)
+  openCoverBook(cover, keepOpen = false) {
+    const selection = cover ?? CoverGrid.selection;
+    if (selection == null)
+      return;
+
+    const libraryTab = keepOpen ? null : TAB
+
+    newTab('viewer', viewer => {
+     /** @type Viewer */ (viewer).open(selection.bookPath);
+    });
+
+    libraryTab?.close();
   }
 
   /**
@@ -243,8 +256,10 @@ export class CoverGrid {
    * @param {boolean} [right=true] 
    */
   nextCoverHorizontal(right = true) {
-    const element = this.#list.navItems(right)
-    if (element) this.selectCover(element)
+    const element = this.#list.navItems(right);
+
+    if (element)
+      this.selectCover(element);
   }
 
   /**
@@ -252,30 +267,36 @@ export class CoverGrid {
    * @param {boolean} [down=true] 
    */
   nextCoverVertical(down = true) {
-    const grid = this.#list.currentPageDiv
-    if (!grid) return // empty #list
+    const grid = this.#list.currentPageDiv;
+    if (grid == null)
+      return;
 
     // big brain stackOverflow jutsu
     const gridColumnCount = getComputedStyle(grid)
-      .getPropertyValue("grid-template-columns").split(" ").length
+      .getPropertyValue("grid-template-columns").split(" ").length;
 
-    let element
-    // if none selected, move only 1 item, else the whole column
-    if (!CoverGrid.selection) element = this.#list.navItems(down)
-    else for (let i = 0; i < gridColumnCount; i++) element = this.#list.navItems(down)
-    
+    let element;
+
+    // if none selected, walk one item, else the whole column
+    if (CoverGrid.selection == null)
+      element = this.#list.navItems(down);
+    else {
+      for (let i = 0; i < gridColumnCount; i++)
+        element = this.#list.navItems(down);
+    }
+
     if (element != null)
-      this.selectCover(element)
+      this.selectCover(element);
   }
 
   /**
    * Select a random cover.
    */
   randomCover() {
-    const rndIdx = Math.floor( Math.random() * this.#list.itemCount )
-    const cover = this.#list.findItemElement( (_item, idx) => idx === rndIdx )
+    const rndIdx = Math.floor( Math.random() * this.#list.itemCount );
+    const cover = this.#list.findItemElement( (_item, idx) => idx === rndIdx );
 
     if (cover != null)
-      this.selectCover(cover)
+      this.selectCover(cover);
   }
 }

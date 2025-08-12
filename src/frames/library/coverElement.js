@@ -1,5 +1,7 @@
+// @ts-check
+
 /**
- * @typedef {import('../../APIs/library/libraryStorage.js').LibraryEntry} LibraryEntry
+ * @import { LibraryEntry } from "../../APIs/library/libraryStorage.js"
  */
 
 
@@ -21,12 +23,8 @@ export class Cover extends HTMLElement {
   bookPath = '';
 
   /**
-   * Absolute path to cover thumbnail.
-   */
-  coverPath = '';
-
-  /**
-   * @type {string?} Encoded `coverPath` (for HTML `src` attribute).
+   * HTML url encoded file thumbnail path.
+   * @type {string?}
    */
   coverURL = null;
 
@@ -56,7 +54,9 @@ export class Cover extends HTMLElement {
 
     removeBtn.onclick = (e) => {
       e.stopImmediatePropagation();
-      if (this.onClickRemove) this.onClickRemove();
+
+      if (this.onClickRemove)
+        this.onClickRemove();
     };
 
     this.append(title, removeBtn);
@@ -67,9 +67,8 @@ export class Cover extends HTMLElement {
    * @param {string?} thumbnail
    */
   updateCover(thumbnail) {
-    this.style.backgroundImage = `url(${
-      thumbnail != null ? thumbnail : '../icons/libraryIconPlaceholder.jpg'
-    })`;
+    const path = thumbnail ?? '../icons/libraryIconPlaceholder.jpg';
+    this.style.backgroundImage = `url(${path})`;
   }
 
   /**
@@ -82,7 +81,6 @@ export class Cover extends HTMLElement {
 
     cover.bookName = entry.name;
     cover.bookPath = entry.path;
-    cover.coverPath = entry.coverPath;
     cover.coverURL = entry.coverURL;
 
     return cover;

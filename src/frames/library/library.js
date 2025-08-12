@@ -1,13 +1,15 @@
-import { GenericFrame } from "../genericFrame.js"
-import { CoverGrid } from "./coverGrid.js"
-import { WatchlistPanel } from "./watchlistPanel.js"
+// @ts-check
+import { GenericFrame } from "../genericFrame.js";
+import { CoverGrid } from "./coverGrid.js";
+import { WatchlistPanel } from "./watchlistPanel.js";
 
-import "./libraryActions.js"
-import "./libraryAccelerators.js"
+import "./libraryActions.js";
+import "./libraryAccelerators.js";
 
 
 /**
- * @typedef {import('../../APIs/library/main.js').LibraryUpdate} LibraryUpdate
+ * @import { LibraryUpdate } from "../../APIs/library/main.js"
+ * @import { ItemList } from "../../components/itemList.js"
  */
 
 
@@ -21,7 +23,7 @@ export class Library extends GenericFrame {
    * @type {Library?}
    */
   static #singleInstanceRef = null;
-  
+
   /**
    * Task status descriptor.
    */
@@ -39,15 +41,14 @@ export class Library extends GenericFrame {
 
   // setup library progress listener
   static {
-    elecAPI.onLibraryNew(async function handleUpdate(_e, /** @type {LibraryUpdate} */ msg) {
+    elecAPI.onLibraryNew(async function handleUpdate(_e, /** @type {LibraryUpdate} */ update) {
       const library = Library.#singleInstanceRef;
-    
       if (library == null)
         return;
 
-      const { current, total, entries } = msg;
+      const { current, total, entries } = update;
 
-      if (msg.task === 'scan')
+      if (entries == null)
         library.#taskStatus = `Sync watchlist [${current}/${total}]`;
       else {
         library.coverGrid.updateCovers(entries);
@@ -62,40 +63,43 @@ export class Library extends GenericFrame {
   }
 
   connectedCallback() {
-    const fragment = document.getElementById('libraryTemplate').content
-    this.attachShadow({ mode: 'open' })
-    this.shadowRoot.append( fragment.cloneNode(true) )
+    const template = /** @type HTMLTemplateElement */ (document.getElementById('libraryTemplate'));
+    const fragment = template.content;
+    
+    const shadowRoot = this.attachShadow({ mode: 'open' });
+    shadowRoot.append( fragment.cloneNode(true) );
 
-    const list = this.shadowRoot.getElementById('library')
-    this.watchlistPanel = new WatchlistPanel(this)
-    this.coverGrid = new CoverGrid(list)
+    const list = /** @type ItemList */ (shadowRoot.getElementById('library'));
+    this.watchlistPanel = new WatchlistPanel(this);
+    this.coverGrid = new CoverGrid(list);
 
-    this.tabName = 'Library'
-    this.#initEvents()
+    this.tabName = 'Library';
+    this.#initEvents();
 
-    Library.#singleInstanceRef = this
+    Library.#singleInstanceRef = this;
   }
 
   disconnectedCallback() {
-    Library.#singleInstanceRef = null
-    CoverGrid.selection = null
+    Library.#singleInstanceRef = null;
+    CoverGrid.selection = null;
   }
 
   /**
-   * @inheritdoc
+   * @override
    */
   onSelected() {
-    // scroll selected cover into view
     const cover = CoverGrid.selection;
-    if (cover) cover.scrollIntoView({ block: 'center' });
+
+    if (cover)
+      cover.scrollIntoView({ block: 'center' });
   }
 
   /**
-   * @inheritdoc
+   * @override
    */
   status() {
     const { itemCount, itemsPerPage, coverSize } = this.coverGrid.getInfo();
-    
+
     return {
       title: 'Library',
       infoLeft: this.#taskStatus || 'Library',
@@ -137,7 +141,7 @@ export class Library extends GenericFrame {
   /**
    * Add files to library. Not recursive. 
    * - Spawns file-dialog window if no files are given.
-   * @param {string[]} [files] Filepaths to add to library
+   * @param {string[]} files Filepaths to add to library
    */
   async addToLibrary(...files) {
     if ( !await elecAPI.requestLock('library') )
@@ -161,7 +165,7 @@ export class Library extends GenericFrame {
       console.timeEnd(`addToLibrary`);
 
       this.notify(`${addedPaths} new book(s) added`, 'addToLibrary');
-      
+
       // reload entries & generate thumbnails
       if (addedPaths > 0) {
         await this.coverGrid.reloadCovers();
@@ -177,38 +181,42 @@ export class Library extends GenericFrame {
   }
 
   #initEvents() {
+    const shadowRoot = /** @type ShadowRoot */ (this.shadowRoot);
+
     // add file to library using file-dialog
-    const addBtn = this.shadowRoot.getElementById('addBtn')
-    addBtn.onclick = () => this.addToLibrary()
+    const addBtn = /** @type HTMLElement */ (shadowRoot.getElementById('addBtn'));
+    addBtn.onclick = () => this.addToLibrary();
 
     // open folder management
-    const manageWatchlistBtn = this.shadowRoot.getElementById('watchBtn')
-    manageWatchlistBtn.onclick = () => this.watchlistPanel.toggleVisibility(true)
+    const manageWatchlistBtn = /** @type HTMLElement */ (shadowRoot.getElementById('watchBtn'));
+    manageWatchlistBtn.onclick = () => this.watchlistPanel.toggleVisibility(true);
 
     // sync watch folders
-    const syncBtn = this.shadowRoot.getElementById('syncBtn')
-    syncBtn.onclick = () => this.syncToWatchlist()
+    const syncBtn = /** @type HTMLElement */ (shadowRoot.getElementById('syncBtn'));
+    syncBtn.onclick = () => this.syncToWatchlist();
 
     // drag'n'drop into library
-    const wrapper = this.shadowRoot.getElementById('wrapper')
+    const wrapper = /** @type HTMLElement */ (shadowRoot.getElementById('wrapper'));
     wrapper.ondrop = async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      
-      const filepaths = Object.values(e.dataTransfer.files)
-        .map( file => elecAPI.getPathForFile(file) );
-      
-      await this.addToLibrary(...filepaths);
-    }
-    
+
+      if (e.dataTransfer != null) {
+        const filepaths = Object.values(e.dataTransfer.files)
+          .map( file => elecAPI.getPathForFile(file) );
+
+        await this.addToLibrary(...filepaths);
+      }
+    };
+
     wrapper.ondragover = (e) => {
       e.preventDefault();
       e.stopPropagation();
-    }
+    };
 
     // update cover count in status
-    this.coverGrid.events.observe('grid:coverUpdate', () => this.refreshStatus())
-    
+    this.coverGrid.events.observe('grid:coverUpdate', () => this.refreshStatus());
+
     // populate cover grid
     this.coverGrid.reloadCovers();
   }

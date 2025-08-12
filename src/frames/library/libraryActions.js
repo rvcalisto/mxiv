@@ -1,7 +1,7 @@
 import { setComponentActions } from "../../actions/actionService.js";
 import { CoverGrid } from "./coverGrid.js";
 import { option, standardFilter } from "../../components/actionPalette/actionPalette.js";
-import { FRAME as Library }  from "../../tabs/tab.js";
+import { FRAME }  from "../../tabs/tab.js";
 import { runScript, tag } from "../../components/fileMethods.js";
 
 
@@ -22,11 +22,11 @@ setComponentActions('library', {
 
       // display 'clear filter' on single empty arg, show filter otherwise
       if (allArgs.length === 1 && query === '')
-        Library.notify('clear filter', 'filter');
+        FRAME.notify('clear filter', 'filter');
       else if (query !== '')
-        Library.notify(`filter: ${query}`, 'filter');
+        FRAME.notify(`filter: ${query}`, 'filter');
 
-      Library.coverGrid.drawCovers(queries);
+      FRAME.coverGrid.drawCovers(queries);
       return [];
     },
     customFilter: (query) => {
@@ -57,7 +57,7 @@ setComponentActions('library', {
 
   'addToLibrary': {
     desc: 'add folders/archives to library',
-    run: async (...paths) => await Library.addToLibrary(...paths),
+    run: async (...paths) => await FRAME.addToLibrary(...paths),
     options: async (query) => await elecAPI.queryPath(query)
   },
 
@@ -69,10 +69,10 @@ setComponentActions('library', {
         run: (path = '') => {
           const treatedPath = path.trim();
           if (treatedPath === '')
-            Library.notify(`"${treatedPath}" is not a valid path`);
+            FRAME.notify(`"${treatedPath}" is not a valid path`, 'watchAdd');
           else {
-            Library.watchlistPanel.addItem(treatedPath);
-            Library.notify(`added "${treatedPath}" to Watchlist`);
+            FRAME.watchlistPanel.addItem(treatedPath);
+            FRAME.notify(`added "${treatedPath}" to Watchlist`, 'watchAdd');
           }
         },
         options: async (query, allArgs) => allArgs.length < 2
@@ -84,26 +84,26 @@ setComponentActions('library', {
         run: (path = '') => {
           const treatedPath = path.trim()
           if (treatedPath === '')
-            Library.notify(`"${treatedPath}" is not a valid path`);
+            FRAME.notify(`"${treatedPath}" is not a valid path`);
           else {
-            Library.watchlistPanel.removeItem(treatedPath)
-              ? Library.notify(`removed ${treatedPath} from Watchlist`)
-              : Library.notify(`no "${treatedPath}" in watchlist to remove`);
+            FRAME.watchlistPanel.removeItem(treatedPath)
+              ? FRAME.notify(`removed ${treatedPath} from Watchlist`, 'watchRemove')
+              : FRAME.notify(`no "${treatedPath}" in watchlist to remove`, 'watchRemove');
           }
         },
         options: (_query, allArgs) => allArgs.length < 2
-          ? Library.watchlistPanel.getItems().map(i => i.path)
+          ? FRAME.watchlistPanel.getItems().map(i => i.path)
           : []
       },
       'sync': {
         desc: 'synchronize books with Watchlist entries',
-        run: async () => await Library.syncToWatchlist()
+        run: async () => await FRAME.syncToWatchlist()
       },
       'panel': {
         desc: 'open or close Watchlist panel',
         run: (option) => {
           const values = { 'open': true, 'close': false };
-          Library.watchlistPanel.toggleVisibility(values[option]);
+          FRAME.watchlistPanel.toggleVisibility(values[option]);
         },
         options: (_query, allArgs) => allArgs.length < 2 
           ? [option('toggle', '(default)'), 'open', 'close']
@@ -117,7 +117,13 @@ setComponentActions('library', {
     actions: {
       'open': {
         desc: 'open currently selected book in-place or on a new tab',
-        run: (whichTab = 'inPlace') => Library.coverGrid.openCoverBook(whichTab === 'newTab'),
+        run: (whichTab = 'inPlace') => {
+          const cover = CoverGrid.selection;
+
+          cover != null
+            ? FRAME.coverGrid.openCoverBook(cover, whichTab === 'newTab')
+            : FRAME.notify('no selected cover to open', 'bookOpen');
+        },
         options: (_query, allArgs) => allArgs.length < 2 ? [
           option('newTab', 'open book in a new tab'),
           option('inPlace', 'open book on current tab (default)'),
@@ -128,12 +134,12 @@ setComponentActions('library', {
         run: async () => {
           const cover = CoverGrid.selection;
           if (cover == null) 
-            return Library.notify('no book selected ', 'bookDelist');
+            return FRAME.notify('no book selected ', 'bookDelist');
 
-          if ( await Library.coverGrid.removeCover(cover) )
-            Library.notify('book delisted', 'bookDelist');
+          if ( await FRAME.coverGrid.removeCover(cover) )
+            FRAME.notify('book delisted', 'bookDelist');
           else
-            Library.notify('failed to delist book', 'bookDelist');
+            FRAME.notify('failed to delist book', 'bookDelist');
         }
       }
     }
@@ -143,9 +149,9 @@ setComponentActions('library', {
     desc: 'move book selection',
     run: (axis, next = 'next') => {
       if (axis === 'horizontally')
-        Library.coverGrid.nextCoverHorizontal(next === 'next');
+        FRAME.coverGrid.nextCoverHorizontal(next === 'next');
       if (axis === 'vertically')
-        Library.coverGrid.nextCoverVertical(next === 'next');
+        FRAME.coverGrid.nextCoverVertical(next === 'next');
     },
     options: (_query, allArgs) => {
       if (allArgs.length < 2) return [
@@ -164,7 +170,7 @@ setComponentActions('library', {
 
   'random': {
     desc: 'select random book',
-    run: () => Library.coverGrid.randomCover()
+    run: () => FRAME.coverGrid.randomCover()
   },
 
   'coverSize': {
@@ -174,8 +180,8 @@ setComponentActions('library', {
       if ( isNaN(value) || value < 100 )
         value = 200;
 
-      Library.coverGrid.setCoverSize(value);
-      Library.notify(`cover height sized to ${value}px`, 'coverSize');
+      FRAME.coverGrid.setCoverSize(value);
+      FRAME.notify(`cover height sized to ${value}px`, 'coverSize');
     }
   },
 
@@ -186,8 +192,8 @@ setComponentActions('library', {
       if ( isNaN(value) || value < 10 )
         value = 100;
 
-      Library.coverGrid.setItemsPerPage(value);
-      Library.notify(`showing ${value} items per page`, 'itemsPerPage');
+      FRAME.coverGrid.setItemsPerPage(value);
+      FRAME.notify(`showing ${value} items per page`, 'itemsPerPage');
     }
   },
 
@@ -195,10 +201,10 @@ setComponentActions('library', {
     desc: 'completely delist entire library',
     run: async () => {
       if ( !await elecAPI.clearLibrary() )
-        Library.notify('failed to clear library book entries', 'nukeLibrary');
+        FRAME.notify('failed to clear library book entries', 'nukeLibrary');
       else {
-        Library.notify('library book entries cleared', 'nukeLibrary');
-        Library.coverGrid.reloadCovers();
+        FRAME.notify('library book entries cleared', 'nukeLibrary');
+        FRAME.coverGrid.reloadCovers();
       }
     }
   },
