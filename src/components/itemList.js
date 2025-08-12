@@ -222,8 +222,8 @@ export class ItemList extends HTMLElement {
       const nextPage = this.#goToPage(forward ? 0 : this.#virtualPages.length - 1);
       selection = forward ? nextPage.firstElementChild : nextPage.lastElementChild;
 
-      /** @type {E} */ (selection).classList.add('selected');
-      return /** @type {E} */ (selection);
+      selection?.classList.add('selected');
+      return /** @type {E?} */ (selection);
     }
 
     // has selection, remove attribute from previous item
@@ -241,8 +241,8 @@ export class ItemList extends HTMLElement {
       selection = forward ? nextPage.firstElementChild : nextPage.lastElementChild;
     }
 
-    /** @type {E} */ (selection).classList.add('selected');
-    return /** @type {E} */ (selection);
+    selection?.classList.add('selected');
+    return /** @type {E?} */ (selection);
   }
 
   /**

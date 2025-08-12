@@ -258,8 +258,9 @@ export class CoverGrid {
   nextCoverHorizontal(right = true) {
     const element = this.#list.navItems(right);
 
-    if (element)
-      this.selectCover(element);
+    element != null
+      ? this.selectCover(element)
+      : CoverGrid.selection = null;
   }
 
   /**
@@ -285,8 +286,9 @@ export class CoverGrid {
         element = this.#list.navItems(down);
     }
 
-    if (element != null)
-      this.selectCover(element);
+    element != null
+      ? this.selectCover(element)
+      : CoverGrid.selection = null;
   }
 
   /**
