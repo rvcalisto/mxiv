@@ -81,14 +81,13 @@ export class Library extends GenericFrame {
 
   disconnectedCallback() {
     Library.#singleInstanceRef = null;
-    CoverGrid.selection = null;
   }
 
   /**
    * @override
    */
   onSelected() {
-    const cover = CoverGrid.selection;
+    const cover = this.coverGrid.selectedCover;
 
     if (cover)
       cover.scrollIntoView({ block: 'center' });

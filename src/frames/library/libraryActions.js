@@ -1,5 +1,4 @@
 import { setComponentActions } from "../../actions/actionService.js";
-import { CoverGrid } from "./coverGrid.js";
 import { option, standardFilter } from "../../components/actionPalette/actionPalette.js";
 import { FRAME }  from "../../tabs/tab.js";
 import { runScript, tag } from "../../components/fileMethods.js";
@@ -42,14 +41,14 @@ setComponentActions('library', {
     actions: {
       'add': {
         desc: 'add one or more tags to current book',
-        run: (...tags) => tag(CoverGrid.selection?.bookPath, true, ...tags),
+        run: (...tags) => tag(FRAME.coverGrid.selectedCover?.bookPath, true, ...tags),
         options: () => elecAPI.uniqueTags()
       },
       'del': {
         desc: 'delete one or more tags from current book',
-        run: (...tags) => tag(CoverGrid.selection?.bookPath, false, ...tags),
-        options: () => CoverGrid.selection != null
-          ? elecAPI.getTags(CoverGrid.selection.bookPath)
+        run: (...tags) => tag(FRAME.coverGrid.selectedCover?.bookPath, false, ...tags),
+        options: () => FRAME.coverGrid.selectedCover != null
+          ? elecAPI.getTags(FRAME.coverGrid.selectedCover.bookPath)
           : []
       }
     }
@@ -82,7 +81,7 @@ setComponentActions('library', {
       'remove': {
         desc: 'remove folder to Watchlist',
         run: (path = '') => {
-          const treatedPath = path.trim()
+          const treatedPath = path.trim();
           if (treatedPath === '')
             FRAME.notify(`"${treatedPath}" is not a valid path`);
           else {
@@ -118,7 +117,7 @@ setComponentActions('library', {
       'open': {
         desc: 'open currently selected book in-place or on a new tab',
         run: (whichTab = 'inPlace') => {
-          const cover = CoverGrid.selection;
+          const cover = FRAME.coverGrid.selectedCover;
 
           cover != null
             ? FRAME.coverGrid.openCoverBook(cover, whichTab === 'newTab')
@@ -132,7 +131,7 @@ setComponentActions('library', {
       'delist': {
         desc: 'delist currently selected book from library',
         run: async () => {
-          const cover = CoverGrid.selection;
+          const cover = FRAME.coverGrid.selectedCover;
           if (cover == null) 
             return FRAME.notify('no book selected ', 'bookDelist');
 
@@ -213,7 +212,7 @@ setComponentActions('library', {
     desc: 'run user script where %F, %N, %T represent the selected file path, \
            name & type, respectively : <script> <displayMsg?>',
     run: async (script, msg) => {
-      await runScript(script, CoverGrid.selection?.bookPath, msg);
+      await runScript(script, FRAME.coverGrid.selectedCover?.bookPath, msg);
     }
   }
 });

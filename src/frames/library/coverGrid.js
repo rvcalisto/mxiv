@@ -41,22 +41,22 @@ export class CoverGrid {
   static #cacheIsDirty = true;
 
   /**
-   * Tracks rendered elements for live thumbnail updates.
-   * @type {Map<string, Cover>}
-   */
-  static #drawnCovers = new Map();
-
-  /**
-   * Last known cover selection.
-   * @type {Cover?}
-   */
-  static selection = null;
-
-  /**
    * List as cover grid.
    * @type {ItemList<LibraryEntry, Cover>}
    */
   #list;
+
+  /**
+   * Tracks rendered elements for live thumbnail updates.
+   * @type {Map<string, Cover>}
+   */
+  #drawnCovers = new Map();
+
+  /**
+   * Currently selected cover.
+   * @type {Cover?}
+   */
+  selectedCover = null;
 
   /**
    * @type {ObservableEvents<CoverGridEvents>}
@@ -101,7 +101,7 @@ export class CoverGrid {
         cacheItem.coverPath = entry.coverPath;
         cacheItem.coverURL = entry.coverURL;
 
-        const element = CoverGrid.#drawnCovers.get(key);
+        const element = this.#drawnCovers.get(key);
         element?.updateCover(entry.coverURL);
       }
     });
@@ -126,7 +126,7 @@ export class CoverGrid {
     document.body.style.setProperty('--cover-height', `${size}px`);
     this.events.fire('grid:coverUpdate');
 
-    CoverGrid.selection?.scrollIntoView({ block: 'center' });
+    this.selectedCover?.scrollIntoView({ block: 'center' });
   }
 
   /**
@@ -142,13 +142,13 @@ export class CoverGrid {
       ? undefined
       : (/** @type {LibraryEntry} */ file) => matchNameOrTags(file, queries);
 
-    CoverGrid.#drawnCovers.clear();
+    this.#drawnCovers.clear();
 
     this.#list.populate(CoverGrid.#cachedEntries, (entry) => {
       const cover = Cover.from(entry);
 
       cover.onclick = () => {
-        CoverGrid.selection !== cover
+        this.selectedCover !== cover
           ? this.selectCover(cover)
           : this.openCoverBook(cover);
       };
@@ -156,7 +156,7 @@ export class CoverGrid {
       cover.onauxclick = () => this.openCoverBook(cover, true);
       cover.onClickRemove = () => this.removeCover(cover);
 
-      CoverGrid.#drawnCovers.set(entry.path, cover);
+      this.#drawnCovers.set(entry.path, cover);
 
       return cover;
     }, filterFunc);
@@ -168,8 +168,7 @@ export class CoverGrid {
       const cover = this.#list
         .findItemElement(item => item.path === lastPath);
 
-      if (cover != null)
-        this.selectCover(cover);
+      this.selectCover(cover);
     }
 
     this.events.fire('grid:coverUpdate');
@@ -195,16 +194,18 @@ export class CoverGrid {
   }
 
   /**
-   * Select cover into focus and remember selection. 
-   * @param {Cover} cover
+   * Set or clear cover focus, remember last valid selection. 
+   * @param {Cover?} cover
    */
   selectCover(cover) {
-    this.#list.selectIntoFocus(cover);
+    if (cover != null) {
+      this.#list.selectIntoFocus(cover);
 
-    if (CoverGrid.selection !== cover) {
-      CoverGrid.selection = cover;
-      generalState.librarySelection = cover.bookPath;
+      if (this.selectedCover !== cover)
+        generalState.librarySelection = cover.bookPath;
     }
+
+    this.selectedCover = cover;
   }
 
   /**
@@ -219,7 +220,7 @@ export class CoverGrid {
     const success = await elecAPI.removeFromLibrary(cover.bookPath);
 
     if (success) {
-      if (CoverGrid.selection === cover)
+      if (this.selectedCover === cover)
         this.nextCoverHorizontal();
 
       cover.remove();
@@ -238,7 +239,7 @@ export class CoverGrid {
    * @param {boolean} [keepOpen=false] Either to keep Library open.
    */
   openCoverBook(cover, keepOpen = false) {
-    const selection = cover ?? CoverGrid.selection;
+    const selection = cover ?? this.selectedCover;
     if (selection == null)
       return;
 
@@ -257,10 +258,7 @@ export class CoverGrid {
    */
   nextCoverHorizontal(right = true) {
     const element = this.#list.navItems(right);
-
-    element != null
-      ? this.selectCover(element)
-      : CoverGrid.selection = null;
+    this.selectCover(element);
   }
 
   /**
@@ -276,19 +274,17 @@ export class CoverGrid {
     const gridColumnCount = getComputedStyle(grid)
       .getPropertyValue("grid-template-columns").split(" ").length;
 
-    let element;
+    let element = null;
 
     // if none selected, walk one item, else the whole column
-    if (CoverGrid.selection == null)
+    if (this.selectedCover == null)
       element = this.#list.navItems(down);
     else {
       for (let i = 0; i < gridColumnCount; i++)
         element = this.#list.navItems(down);
     }
 
-    element != null
-      ? this.selectCover(element)
-      : CoverGrid.selection = null;
+    this.selectCover(element)
   }
 
   /**
