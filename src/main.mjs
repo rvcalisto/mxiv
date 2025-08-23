@@ -1,6 +1,6 @@
 import { app, BrowserWindow, ipcMain, dialog, Menu, nativeTheme } from 'electron';
 import { join, isAbsolute } from 'path';
-import { initializeBase } from './APIs/tool/appPaths.js';
+import { initializeDataDirectory } from './APIs/tool/appPaths.js';
 
 
 /**
@@ -116,7 +116,7 @@ else {
   // Electron initialization complete, setup IPC handlers and create first window
   app.whenReady().then(async () => {
     Menu.setApplicationMenu(null);
-    await initializeBase();
+    initializeDataDirectory();
     ipcHandlers();
   
     newWindow().then(win => {
