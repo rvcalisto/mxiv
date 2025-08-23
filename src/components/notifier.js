@@ -72,16 +72,19 @@ export class NotificationChannel {
 
     // recycle matching typeId notification
     if (double != null) {
-      double.textContent = message;
+      // reset fade-out life cycle, bounce.
+      // catch rare animation finished before currentTime reset
+      try {
+        double.getAnimations()[0].currentTime = 0;
+        double.textContent = message;
 
-      // reset fade-out life cycle, bounce
-      double.getAnimations()[0].currentTime = 0;
-      double.animate(
-        [{ scale: 1.1 }, { scale: .9 }, { scale: 1 }],
-        { duration: 150 }
-      );
+        double.animate(
+          [{ scale: 1.1 }, { scale: .9 }, { scale: 1 }],
+          { duration: 150 }
+        );
 
-      return;
+        return;
+      } catch { /* proceed to outer scope */ }
     }
 
     // create notification element
