@@ -23,6 +23,22 @@ import { notify } from "../notifier.js";
 
 
 /**
+ * Action Palette container element.
+ */
+const containerElement = /** @type {HTMLDivElement} */ (document.querySelector('action-palette'));
+
+/**
+ * Hint element list.
+ */
+const listElement = /** @type ItemList */ (containerElement.querySelector('item-list'));
+
+/**
+ * Action Palette text prompt element.
+ */
+const inputElement = new InputPrompt( /** @type HTMLInputElement */ (containerElement.querySelector('input')) );
+
+
+/**
  * Action palette visibility.
  * @returns {boolean}
  */
@@ -45,210 +61,168 @@ export const option = (name, desc = '', type = 'argument', keys) => ({
 
 
 /**
- * Palette element, display available groups, actions and options.
+ * Returns a HTMLElement for this option.
+ * @param {OptionObject|string} item Option string or object.
+ * @param {string[]} [leadingAction] Action being evaluated.
+ * @returns {OptionElement}
  */
-class ActionPalette extends HTMLElement {
+function createElement(item, leadingAction = []) {
+  let name = '', desc = '', type = /** @type OptionType */ ('argument');
+  typeof item !== 'string'
+    ? (name = item.name, desc = item.desc, type = item.type)
+    : (name = item);
 
-  static tagName = 'action-palette';
+  const element = OptionElement.createElement(type, name, desc);
+  const frameAccelerators = getCurrentAccelerators();
 
-  /**
-   * Single instance element reference.
-   * @type {ActionPalette}
-   */
-  static element;
+  // tag accelerators keys, if any
+  element.tags = type === 'shortcut'
+    ? frameAccelerators.byAction( name.split(' ') )
+    : frameAccelerators.byAction([...leadingAction, name]);
 
-  /**
-   * Hint element list.
-   * @type {ItemList<?, OptionElement>}
-   */
-  list;
-
-  /**
-   * Prompt element.
-   * @type {InputPrompt}
-   */
-  prompt;
-
-  static {
-    customElements.define(this.tagName, this);
-    this.element = /** @type {ActionPalette} */ (document.querySelector(this.tagName));
-  }
-
-  connectedCallback() {
-    const template = /** @type HTMLTemplateElement */ (document.getElementById('actionPaletteTemplate'));
-    const shadowRoot = this.attachShadow({ mode: 'open' });
-    shadowRoot.append( template.content.cloneNode(true) );
-
-    this.list = /** @type ItemList */ (shadowRoot.getElementById('itemList'));
-    this.prompt = new InputPrompt( /** @type HTMLInputElement */ (shadowRoot.getElementById('cmdInput')) );
-
-    this.#initEvents();
-  }
-
-  /**
-   * Returns a HTMLElement for this option.
-   * @param {OptionObject|string} item Option string or object.
-   * @param {string[]} [leadingAction] Action being evaluated.
-   * @param {boolean} [replace=false] Either option replaces input prompt.
-   * @returns {OptionElement}
-   */
-  createElement(item, leadingAction = [], replace = false) {
-    let name = '', desc = '', type = /** @type OptionType */ ('argument');
-    typeof item !== 'string'
-      ? (name = item.name, desc = item.desc, type = item.type)
-      : (name = item);
-
-    const element = OptionElement.createElement(type, name, desc);
-    const frameAccelerators = getCurrentAccelerators();
-
-    // tag accelerators keys, if any
-    element.tags = type === 'shortcut'
-      ? frameAccelerators.byAction( name.split(' ') )
-      : frameAccelerators.byAction([...leadingAction, name]);
-
-    if (type === 'history') {
-      element.onForget = () => {
-        clearActionHistory(name);
-        togglePalette(true); // recapture focus after click
-      }
+  if (type === 'history') {
+    element.onForget = () => {
+      clearActionHistory(name);
+      togglePalette(true); // recapture focus after click
     }
-
-    element.onclick = () => {
-      this.list.selectIntoFocus(element, { block: 'nearest' });
-      this.prompt.focus();
-    };
-
-    element.onAccess = () => {
-      this.prompt.setText(name, replace);
-    };
-
-    element.ondblclick = () => {
-      element.onAccess();
-      this.displayHints();
-    };
-
-    return element;
   }
 
-  /**
-   * Generate hint list based on current this.prompt text.
-   */
-  async displayHints() {
-    const currentActions = getCurrentActions(),
-          inputTextArray = this.prompt.getTextArray(),
-          [cmd = '', ...args] = inputTextArray;
+  element.onclick = () => {
+    listElement.selectIntoFocus(element, { block: 'nearest' });
+    inputElement.focus();
+  };
 
-    const actionMap = currentActions.getActions(),
-          groupMap = currentActions.getGroups(),
-          group = groupMap.get(cmd);
+  element.onAccess = () => {
+    inputElement.setText(name);
+  };
 
-    // hint history, groups, actions
-    if (group == null && args.length < 1) {
-      const history = actionHistory.items
-        .map( key => option(key, '', 'history') );
+  element.ondblclick = () => {
+    element.onAccess();
+    displayHints();
+  };
 
-      const groups = [...groupMap]
-        .map( ([key, group]) => option(key, group.desc, 'group') );
+  return element;
+}
 
-      const actions = [];
-      actionMap.forEach( (action, key) => {
-        if ( key.includes(' ') ) // match group actions by name upon 2 characters
-          cmd.length > 1 && actions.push( option(key, action.desc, 'shortcut', [key.split(' ')[1]]) );
-        else // match non-group actions
-          actions.push( option(key, action.desc, 'action') );
-      });
+/**
+ * Generate hint list based on current inputElement text.
+ */
+async function displayHints() {
+  const currentActions = getCurrentActions(),
+        inputTextArray = inputElement.getTextArrayBeforeCursor(),
+        [cmd = '', ...args] = inputTextArray;
 
-      return this.list.populate( history.concat(groups, actions), 
-        item => this.createElement(item, [], true), 
-        standardFilter(cmd)
-      );
-    }
+  const actionMap = currentActions.getActions(),
+        groupMap = currentActions.getGroups(),
+        group = groupMap.get(cmd);
 
-    let options = [],
-        lastArg = /** @type {string} */ (args.at(-1)) || '';
+  // hint history, groups, actions
+  if (args.length < 1) {
+    const history = actionHistory.items
+      .map( key => option(key, '', 'history') );
 
-    const action = actionMap.has(`${cmd} ${args[0]}`)
-      ? actionMap.get(`${cmd} ${args.shift()}`)
-      : actionMap.get(cmd);
+    const groups = [...groupMap]
+      .map( ([key, group]) => option(key, group.desc, 'group') );
 
-    // hint group actions
-    if (group != null && inputTextArray.length < 3)
-      options = Object.entries(group.actions)
-        .map( ([name, action]) => option(name, action.desc, 'action') );
+    const actions = [];
+    actionMap.forEach( (action, key) => {
+      if ( key.includes(' ') ) // match group actions by name upon 2 characters
+        cmd.length > 1 && actions.push( option(key, action.desc, 'shortcut', [key.split(' ')[1]]) );
+      else // match non-group actions
+        actions.push( option(key, action.desc, 'action') );
+    });
 
-    // hint action options
-    else if (action != null && action.options != null && args.length > 0)
-      options = await action.options(lastArg, args);
-
-    const leadingAction = inputTextArray
-      .slice(0, inputTextArray.length > 1 ? -1 : undefined);
-
-    return this.list.populate(options, 
-      item => this.createElement(item, leadingAction), 
-      action != null && action.customFilter
-        ? action.customFilter(lastArg)
-        : standardFilter(lastArg)
+    return listElement.populate( history.concat(groups, actions), 
+      item => createElement(item, []), 
+      standardFilter(cmd)
     );
   }
 
-  #initEvents() {
-    // close action palette if clicking outside content
-    const shadowRoot = /** @type ShadowRoot */ (this.shadowRoot);
-    const wrapper = /** @type HTMLDivElement */ (shadowRoot.getElementById('wrapper'));
-    wrapper.onclick = (e) => togglePalette(e.target !== wrapper);
+  let options = [],
+      lastArg = /** @type {string} */ (args.at(-1)) || '';
 
-    // display hints on value input
-    this.prompt.oninput = () => this.displayHints();
+  const action = actionMap.has(`${cmd} ${args[0]}`)
+    ? actionMap.get(`${cmd} ${args.shift()}`)
+    : actionMap.get(cmd);
 
-    // control inputs
-    this.prompt.onkeydown = (e) => {
+  // hint group actions
+  if (group != null && inputTextArray.length < 3)
+    options = Object.entries(group.actions)
+      .map( ([name, action]) => option(name, action.desc, 'action') );
 
-      // navigate hints
-      if (e.key === 'Tab' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+  // hint action options
+  else if (action != null && action.options != null && args.length > 0)
+    options = await action.options(lastArg, args);
+
+  const leadingAction = inputTextArray
+    .slice(0, inputTextArray.length > 1 ? -1 : undefined);
+
+  return listElement.populate(options, 
+    item => createElement(item, leadingAction), 
+    action != null && action.customFilter
+      ? action.customFilter(lastArg)
+      : standardFilter(lastArg)
+  );
+}
+
+/**
+ * Initialize input event handlers.
+ */
+function initialize() {
+  // close action palette if clicking outside content
+  containerElement.onclick = (e) => togglePalette(e.target !== containerElement);
+
+  // display hints on value input
+  inputElement.onselectionchange = () => displayHints();
+
+  // control inputs
+  inputElement.onkeydown = (e) => {
+
+    // navigate hints
+    if (e.key === 'Tab' || e.key === 'ArrowUp' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      const next = e.key === 'ArrowDown' || e.key === 'Tab' && !e.shiftKey;
+      const element = listElement.navItems(next);
+      if (element)
+        element.scrollIntoView(false);
+    }
+
+    // close when prompt is fully erased
+    else if (e.key === 'Backspace' && inputElement.getText().length < 1) {
+      e.stopImmediatePropagation();
+      togglePalette(false);
+    }
+
+    // delete history-type hint
+    else if (e.key === 'Delete') {
+      const selection = listElement.getSelectedElement();
+      if (selection && selection.onForget != null) {
         e.preventDefault();
-        const next = e.key === 'ArrowDown' || e.key === 'Tab' && !e.shiftKey;
-        const element = this.list.navItems(next);
+
+        const element = listElement.navItems();
         if (element)
           element.scrollIntoView(false);
-      }
 
-      // close when prompt is fully erased
-      else if (e.key === 'Backspace' && this.prompt.getText().length < 1) {
-        e.stopImmediatePropagation();
+        selection.onForget();
+        selection.remove();
+      }
+    }
+
+    // complete, confirm
+    else if (e.key === 'Enter' || e.key === ' ' && e.shiftKey) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+
+      const selection = listElement.getSelectedElement();
+      if (selection) {
+        selection.onAccess();
+        displayHints();
+      } else {
         togglePalette(false);
+        runAction( inputElement.getText() );
       }
-
-      // delete history-type hint
-      else if (e.key === 'Delete') {
-        const selection = this.list.getSelectedElement();
-        if (selection && selection.onForget != null) {
-          e.preventDefault();
-
-          const element = this.list.navItems();
-          if (element)
-            element.scrollIntoView(false);
-
-          selection.onForget();
-          selection.remove();
-        }
-      }
-
-      // complete, confirm
-      else if (e.key === 'Enter' || e.key === ' ' && e.shiftKey) {
-        e.preventDefault();
-        e.stopImmediatePropagation();
-
-        const selection = this.list.getSelectedElement();
-        if (selection) {
-          selection.onAccess();
-          this.displayHints();
-        } else {
-          togglePalette(false);
-          runAction( this.prompt.getText() );
-        }
-      }
-    };
-  }
+    }
+  };
 }
 
 
@@ -315,11 +289,10 @@ export function standardFilter(query) {
  * @param {string} [text] Optional prompt text.
  */
 export function togglePalette(open, text = '') {
-  const palette = ActionPalette.element;
-  palette.style.display = ''; // make visible and focusable
+  containerElement.style.display = ''; // make visible and focusable
 
   if (open) {
-    palette.prompt.focus();
+    inputElement.focus();
     // already visible, stop at focus
     if (paletteIsVisible)
       return;
@@ -327,19 +300,19 @@ export function togglePalette(open, text = '') {
     // sync potential changes from other windows
     actionHistory.reload();
 
-    palette.prompt.setText(text);
-    palette.displayHints();
+    inputElement.setText(text, true);
+    displayHints();
   }
 
   // play fade-in/out animation, clear list on close
   paletteIsVisible = open;
-  palette.animate(
+  containerElement.animate(
     [{ opacity : open ? 0 : 1 }, { opacity : open ? 1 : 0 }],
     { duration: 150}
   ).onfinish = () => {
     if (!open) {
-      palette.list.populate([], palette.createElement);
-      palette.style.display = 'none';
+      listElement.populate([], createElement);
+      containerElement.style.display = 'none';
     }
   };
 }
@@ -367,6 +340,10 @@ export function clearActionHistory(historyItem) {
       : notify('failed to remove history item', 'clearAction');
   }
 }
+
+
+initialize();
+
 
 /**
  * Action palette methods.

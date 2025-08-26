@@ -650,225 +650,6 @@
     </div>
   </template>
 
-  <template id="actionPaletteTemplate">
-    <style>
-      * {
-        padding: 0%;
-        margin: 0%;
-        user-select: none;
-        outline: none;
-      }
-
-      [icon]::before {
-        font-family: "font-awesome";
-        padding-top: 1px;
-        padding-left: .2em;
-      }
-
-      [icon=history]::before {
-        content: "";
-        color: var(--theme-icon-history);
-      }
-
-      [icon=group]::before {
-        content: "";
-        color: var(--theme-icon-group);
-      }
-
-      [icon=action]::before {
-        content: "";
-        color: var(--theme-icon-action);
-      }
-
-      [icon=shortcut]::before {
-        content: "";
-        color: var(--theme-icon-shortcut);
-      }
-
-      [icon=argument]::before {
-        content: "";
-        color: var(--theme-icon-argument);
-      }
-
-      [icon=run]::before {
-        content: "";
-        color: var(--theme-icon-run);
-      }
-
-      #wrapper {
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-end;
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        pointer-events: bounding-box;
-      }
-
-      #box {
-        display: flex;
-        flex-direction: column;
-        background: var(--theme-palette-bg);
-        max-height: 75%;
-        margin: 0.6rem;
-        border-radius: 0.5rem;
-        overflow: hidden;
-        box-shadow: 0px 2px 5px 0px #000000ba;
-      }
-
-      #inputBox {
-        display: flex;
-        background: var(--theme-palette-input-bg);
-        align-items: center;
-        gap: 0.5em;
-        padding: 0em 0.5em;
-        border-top: solid thin #69696969;
-        pointer-events: auto;
-      }
-
-      #cmdInput {
-        font-family: var(--app-font);
-        color: var(--theme-palette-input-fg);
-        background: inherit;
-        width: 100%;
-        padding: 0em .4em;
-        border: none;
-      }
-
-      item-list {
-        display: flex;
-        flex-direction: column-reverse;
-        margin: 4px;
-        overflow: auto;
-      }
-
-      .pageContainer {
-        color: var(--theme-palette-secondary-fg);
-        max-height: 100%;
-        padding-right: 4px;
-        overflow-wrap: anywhere;
-        overflow: hidden auto;
-        pointer-events: auto;
-      }
-
-      .itemListPage > * {
-        display: flex;
-        align-items: center;
-        column-gap: 1em;
-        padding: 3px;
-        
-        &:not(.selected) > p:first-child {
-          display: flex;
-          gap: 1em;
-          white-space: nowrap;
-          
-          &[desc]:after {
-            font-family: "font-awesome";
-            content: '';
-            align-self: center;
-            padding-top: 1px;
-            opacity: .2;
-          }
-        }
-        
-        &.selected {
-          color: var(--theme-palette-primary-fg);
-          background: var(--theme-palette-primary-bg);
-          border-radius: .2em;
-
-          > p:first-child {
-            display: flex;
-            flex-direction: column;
-            gap: 0;
-            white-space: normal;
-            
-            &[desc]:after {
-              content: attr(desc);
-              opacity: .7;
-            }
-          }
-        }
-      }
-
-      .accelerators {
-        color: var(--theme-palette-tag-fg);
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: flex-end;
-        gap: .5em;
-        margin-right: 2px;
-        margin-left: auto;
-      }
-      
-      .itemTag {
-        font-family: var(--app-font);
-        font-size: x-small;
-        color: var(--theme-palette-tag-fg);
-        background: var(--theme-palette-tag-bg);
-        padding: 0em .5em;
-        border: none;
-        border-radius: .2em;
-        overflow-wrap: break-word;
-
-        button&:hover {
-          cursor: pointer;
-        }
-      }
-
-      .paginator {
-        display: flex;
-        justify-content: center;
-        gap: 2em;
-        pointer-events: auto;
-
-        * {
-          color: var(--theme-palette-input-fg);
-          background: inherit;
-          border: none;
-          user-select: auto;
-        }
-      }
-
-      /* scroll styling */
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
-      ::-webkit-scrollbar-corner {
-        background: var(--theme-scrollbar-bg);
-        border-radius: 100%;
-      }
-      ::-webkit-scrollbar-track {
-        background: transparent;
-      }
-      ::-webkit-scrollbar-thumb {
-        background: var(--theme-scrollbar-bg);
-        border-radius: 10px;
-      }
-      ::-webkit-scrollbar-thumb:hover {
-        background: var(--theme-scrollbar-fg);
-      }
-    </style>
-    <div id="wrapper">
-      <div id="box">
-        <item-list id="itemList"></item-list>
-        <div id="inputBox">
-          <p icon="run"></p>
-          <input id="cmdInput" spellcheck="false" placeholder="ex: open ~/sun.mp4 ..."></input>
-          <div class="accelerators" style="padding: .4em; flex-wrap: nowrap;">
-            <p class="itemTag">tab</p>
-            <p>next</p>
-            <p class="itemTag">shift+tab</p>
-            <p>back</p>
-            <p class="itemTag">shift+space</p>
-            <p>select</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </template>
-
   <template id="libraryTemplate">
     <style>
       * {
@@ -1189,7 +970,23 @@
     </header>
     <main>
       <div id="contents"></div>
-      <action-palette style="display: none;"></action-palette>
+      <action-palette style="display: none;">
+        <div class="paletteContainer">
+          <item-list></item-list>
+          <div class="paletteInputContainer">
+            <p icon="run"></p>
+            <input spellcheck="false" placeholder="ex: open ~/sun.mp4 ..."></input>
+            <div class="accelerators" style="padding: .4em; flex-wrap: nowrap;">
+              <p class="itemTag">tab</p>
+              <p>next</p>
+              <p class="itemTag">shift+tab</p>
+              <p>back</p>
+              <p class="itemTag">shift+space</p>
+              <p>select</p>
+            </div>
+          </div>
+        </div>
+      </action-palette>
       <div id="notifier"></div>
     </main>
     <footer id="bar">

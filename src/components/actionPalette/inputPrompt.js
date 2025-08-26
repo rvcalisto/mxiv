@@ -1,3 +1,5 @@
+// @ts-check
+
 /**
  * ActionPalette input prompt component.
  */
@@ -19,12 +21,18 @@ export class InputPrompt {
   onkeydown = () => null;
 
   /**
+   * @type {(ev: Event) => any}
+   */
+  onselectionchange = () => null;
+
+  /**
    * @param {HTMLInputElement} inputElement
    */
   constructor(inputElement) {
     this.#input = inputElement;
     this.#input.oninput = (e) => this.oninput(e);
     this.#input.onkeydown = (e) => this.onkeydown(e);
+    this.#input.onselectionchange = (e) => this.onselectionchange(e);
   }
 
   /**
@@ -33,8 +41,8 @@ export class InputPrompt {
    * // becomes: '"path/to/my \"quoted\" file.mp4"'
    * escapeQuoteSpaces('/path/to/my "quoted" file.mp4');
    * ```
-   * @param {String} text String to parse.
-   * @returns {String} Treated text
+   * @param {string} text string to parse.
+   * @returns {string} Treated text
    */
   static escapeQuoteSpaces(text) {
     text = text.trim();
@@ -69,8 +77,8 @@ export class InputPrompt {
   /**
    * Split string on whitespaces and unescape existing double quotes.
    * - Ex: `runScript "notify-send \"see you\""` => `['runScript','notify-send "see you"']`
-   * @param {String} text String to parse.
-   * @returns {String[]} Array of unescaped strings.
+   * @param {string} text string to parse.
+   * @returns {string[]} Array of unescaped strings.
    */
   static unescapeIntoArray(text) {
     let output = [], buffer = '', separateOnSpace = true;
@@ -103,7 +111,7 @@ export class InputPrompt {
       }
 
       // push buffer on separator or end of line
-      if ((char === ` ` && separateOnSpace) || isLastChar) {
+      if ( (char === ` ` && separateOnSpace) || isLastChar ) {
         if (buffer.length) {
           output.push(buffer);
           buffer = '';
@@ -114,7 +122,9 @@ export class InputPrompt {
       if (isLastChar) {
         const endInSeparator = char === ` ` && separateOnSpace;
         const endOnOpenQuote = char === `"` && prevChar === ` ` && !separateOnSpace;
-        if (endInSeparator || endOnOpenQuote) output.push('');
+
+        if (endInSeparator || endOnOpenQuote)
+          output.push('');
       }
     }
 
@@ -130,36 +140,35 @@ export class InputPrompt {
   }
 
   /**
-   * Set prompt text. Either replace whole string or only last argument.
-   * @param {String} text Content to insert.
-   * @param {Boolean} [replaceWhole=true] Either to replace whole string or only last argument.
+   * Complete and replace text at cursor position by default, replace whole string otherwise.
+   * @param {string} text Content to insert.
+   * @param {boolean} [replaceWhole=false] Either to replace whole string instead.
    */
-  setText(text, replaceWhole = true) {
+  setText(text = '', replaceWhole = false) {
     let newText = text;
 
-    // correct last string into given text
-    if (!replaceWhole && text) {
-      const [cmd, ...args] = this.getTextArray();
-      args.pop();
+    if (!replaceWhole) {
+      const beforeCursorArray = this.getTextArrayBeforeCursor(),
+            afterCursorArray = this.getTextArray().slice(beforeCursorArray.length);
 
-      newText = `${cmd}`;
-      for (const arg of [...args, text]) {
-        newText += ` ${InputPrompt.escapeQuoteSpaces(arg)}`;
-      }
+      newText = beforeCursorArray.slice(0, -1).concat(text, afterCursorArray)
+        .reduce( (sum, chunk) => `${sum} ${InputPrompt.escapeQuoteSpaces(chunk)}` );
     }
-    
+
     // append trailing whitespace when applicable to trigger next suggestions
     const lastChar = newText.at(-1);
-    if (lastChar != null && lastChar !== '/' && lastChar !== '\\')
+    if (lastChar != null && lastChar !== '/' && lastChar !== '\\' && lastChar !== ' ')
       newText += ' ';
 
+    // set new value, move cursor and scroll to end of text
     this.#input.value = newText;
-    this.#input.scrollLeft = 9999; // scroll to end of text (hopefully)
+    this.#input.scrollLeft = this.#input.scrollWidth; 
+    this.#input.setSelectionRange(newText.length, newText.length);
   }
 
   /**
    * Returns raw input string.
-   * @returns {String}
+   * @returns {string}
    */
   getText() {
     return this.#input.value;
@@ -167,9 +176,20 @@ export class InputPrompt {
 
   /**
    * Returns unescaped input string array.
-   * @returns {String[]}
+   * @returns {string[]}
    */
   getTextArray() {
     return InputPrompt.unescapeIntoArray(this.#input.value);
+  }
+
+  /**
+   * Returns unescaped input string array up to cursor position.
+   * @returns {string[]}
+   */
+  getTextArrayBeforeCursor() {
+    const cursorIdx = this.#input.selectionEnd ?? undefined;
+    const text = this.#input.value.slice(0, cursorIdx);
+
+    return InputPrompt.unescapeIntoArray(text);
   }
 }
