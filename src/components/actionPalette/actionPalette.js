@@ -222,6 +222,12 @@ function initialize() {
         runAction( inputElement.getText() );
       }
     }
+
+    // select word at cursor position
+    else if ( e.key.toLocaleLowerCase() === 'd' && e.ctrlKey ) {
+      e.preventDefault();
+      inputElement.expandSelection();
+    }
   };
 }
 

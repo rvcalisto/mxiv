@@ -37,81 +37,85 @@ export class InputPrompt {
 
   /**
    * Enclose white-spaced words in double-quotes, escape inner ones.
-   * ```
-   * // becomes: '"path/to/my \"quoted\" file.mp4"'
+   * @example
+   * // outputs: '"path/to/my \"quoted\" file.mp4"'
    * escapeQuoteSpaces('/path/to/my "quoted" file.mp4');
-   * ```
-   * @param {string} text string to parse.
+   * @param {string} text String to parse.
    * @returns {string} Treated text
    */
   static escapeQuoteSpaces(text) {
     text = text.trim();
     if ( !text.includes(' ') )
       return text;
-    
+
     // identify path separators, get words
-    let pathSep = '', /** @type {string[]} */ words =  [];
+    let pathSep = '',
+        words = /** @type {string[]} */ ([]);
+
     for (const sep of ['/', '\\']) {
       words = text.split(sep);
+
       if (words.length > 1) {
         pathSep = sep;
         break;
       }
     }
-    
+
     let treatedText = '';
     for (let i = 0; i < words.length; i++) {
       const word = words[i];
+
       if ( word.includes(' ') )
         treatedText += `"${word.replaceAll('"', '\\"')}"`;
       else
         treatedText += word;
-      
+
       if (i < words.length -1)
         treatedText += pathSep;
     }
-    
+
     return treatedText;
   }
 
   /**
    * Split string on whitespaces and unescape existing double quotes.
-   * - Ex: `runScript "notify-send \"see you\""` => `['runScript','notify-send "see you"']`
-   * @param {string} text string to parse.
+   * @example
+   * // outputs: ['runScript','notify-send "see you"']
+   * unescapeIntoArray('runScript "notify-send \"see you\""')
+   * @param {string} text String to parse.
    * @returns {string[]} Array of unescaped strings.
    */
   static unescapeIntoArray(text) {
     let output = [], buffer = '', separateOnSpace = true;
 
     for (let i = 0; i < text.length; i++) {
-      const char = text[i], prevChar = text[i - 1], 
-      nextChar = text[i + 1], isLastChar = i + 1 === text.length;
+      const char = text[i],
+            prevChar = text[i - 1], 
+            nextChar = text[i + 1],
+            isLastChar = i + 1 === text.length;
 
       let addToBuffer = true;
 
       // handle unescaped quotes
-      if (char === `"` && prevChar !== `\\`) {
+      if (char === '"' && prevChar !== '\\') {
         addToBuffer = false;
         separateOnSpace = !separateOnSpace;
       }
 
       // handle escaped quotes
-      if (char === `\\` && nextChar === `"`) {
+      if (char === '\\' && nextChar === '"')
         addToBuffer = false;
-      }
 
       // ignore separators
-      if (char === ` ` && separateOnSpace) {
+      if (char === ' ' && separateOnSpace)
         addToBuffer = false;
-      }
 
       // normal char, add
-      if (addToBuffer) {
+      if (addToBuffer)
         buffer += char;
-      }
 
       // push buffer on separator or end of line
-      if ( (char === ` ` && separateOnSpace) || isLastChar ) {
+      if ( (char === ' ' && separateOnSpace) || isLastChar ) {
         if (buffer.length) {
           output.push(buffer);
           buffer = '';
@@ -120,15 +124,14 @@ export class InputPrompt {
 
       // append empty string if signaling new arg
       if (isLastChar) {
-        const endInSeparator = char === ` ` && separateOnSpace;
-        const endOnOpenQuote = char === `"` && prevChar === ` ` && !separateOnSpace;
+        const endInSeparator = char === ' ' && separateOnSpace;
+        const endOnOpenQuote = char === '"' && prevChar === ' ' && !separateOnSpace;
 
         if (endInSeparator || endOnOpenQuote)
           output.push('');
       }
     }
 
-    // console.log(output)
     return output;
   }
 
@@ -191,5 +194,28 @@ export class InputPrompt {
     const text = this.#input.value.slice(0, cursorIdx);
 
     return InputPrompt.unescapeIntoArray(text);
+  }
+
+  /**
+   * Select entire word at cursor position.
+   */
+  expandSelection() {
+    const cusorIdx = this.#input.selectionEnd ?? 0;
+
+    const getWordRangeIdx = (/** @type number */ from, /** @type number */ step) => {
+      let char = this.#input.value[from];
+
+      while (char != null && char !== ' ' && char !== '"' )
+        char = this.#input.value[from += step];
+
+      return Math.max(0, from);
+    }
+
+    // correct separator characters as start idx
+    let start = getWordRangeIdx(cusorIdx -1, -1);
+    if ( [' ', '"'].includes(this.#input.value[start]) )
+      start++;
+
+    this.#input.setSelectionRange( start, getWordRangeIdx(cusorIdx, 1), 'forward' );
   }
 }
