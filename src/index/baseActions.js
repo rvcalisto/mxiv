@@ -160,7 +160,7 @@ setBaseActions({
       'set': {
         desc: 'accelerate action with a hotkey : <component> <key/combo> <action...>',
         run: (component = '', keycombo = '', ...args) => {
-          if ( !isFrameType(component) )
+          if ( !isFrameType(component) && component !== 'base' )
             notify(`${component} is not a valid component`);
           else if (keycombo === '')
             notify('hotkey can\'t be empty');
