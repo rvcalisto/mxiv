@@ -2,19 +2,15 @@
 import { ItemList } from "../../components/itemList.js";
 import { Cover } from "./coverElement.js";
 import { newTab, TAB } from "../../tabs/tab.js";
-import { ObservableEvents } from "../../components/observableEvents.js";
 import { generalState } from "../../tabs/profiles.js";
 import { matchNameOrTags } from '../../components/fileMethods.js';
 import { userPreferences } from "../../components/userPreferences.js";
 
 
 /**
+ * @import { Library } from "./library.js"
  * @import { LibraryEntry } from "../../APIs/library/libraryStorage.js"
  * @import { Viewer } from "../viewer/viewer.js"
- */
-
-/**
- * @typedef {'grid:coverUpdate'} CoverGridEvents
  */
 
 
@@ -41,6 +37,12 @@ export class CoverGrid {
   static #cacheIsDirty = true;
 
   /**
+   * Host library.
+   * @type {Library}
+   */
+  #library;
+
+  /**
    * List as cover grid.
    * @type {ItemList<LibraryEntry, Cover>}
    */
@@ -58,16 +60,24 @@ export class CoverGrid {
    */
   selectedCover = null;
 
-  /**
-   * @type {ObservableEvents<CoverGridEvents>}
-   */
-  events = new ObservableEvents();
+  // invalidate cache on external updates
+  static {
+    elecAPI.onBroadcast(function onLibrarySync(_e, /** @type string */ message, ..._args) {
+      if (message === 'library:sync') {
+        CoverGrid.#cacheIsDirty = true;
+        console.log('MXIV::broadcast: library:sync');
+      }
+    });
+  }
 
   /**
-   * @param {ItemList} hostList Host component.
+   * @param {Library} library Host component.
    */
-  constructor(hostList) {
-    this.#list = hostList;
+  constructor(library) {
+    this.#library = library;
+
+    const shadowRoot = /** @type ShadowRoot */ (library.shadowRoot);
+    this.#list =  /** @type ItemList */ (shadowRoot.getElementById('library'));
 
     // apply preferences
     this.#list.itemsPerPage = userPreferences.libraryItemsPerPage;
@@ -124,7 +134,7 @@ export class CoverGrid {
   setCoverSize(size) {
     userPreferences.libraryCoverSize = size;
     document.body.style.setProperty('--cover-height', `${size}px`);
-    this.events.fire('grid:coverUpdate');
+    this.#library.refreshStatus();
 
     this.selectedCover?.scrollIntoView({ block: 'center' });
   }
@@ -171,7 +181,7 @@ export class CoverGrid {
       this.selectCover(cover);
     }
 
-    this.events.fire('grid:coverUpdate');
+    this.#library.refreshStatus();
   }
 
   /**
@@ -214,10 +224,7 @@ export class CoverGrid {
    * @returns {Promise<boolean>} Success.
    */
   async removeCover(cover) {
-    if ( !await elecAPI.requestLock('library') )
-      return false;
-
-    const success = await elecAPI.removeFromLibrary(cover.bookPath);
+    const success = await this.#library.removeFromLibrary(cover.bookPath);
 
     if (success) {
       if (this.selectedCover === cover)
@@ -226,10 +233,9 @@ export class CoverGrid {
       cover.remove();
 
       CoverGrid.#cacheIsDirty = true;
-      this.events.fire('grid:coverUpdate');
+      this.#library.refreshStatus();
     }
 
-    await elecAPI.releaseLock('library');
     return success;
   }
 

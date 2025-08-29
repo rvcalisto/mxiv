@@ -199,12 +199,10 @@ setComponentActions('library', {
   'nukeLibrary' : {
     desc: 'completely delist entire library',
     run: async () => {
-      if ( !await elecAPI.clearLibrary() )
-        FRAME.notify('failed to clear library book entries', 'nukeLibrary');
-      else {
+      if ( await FRAME.nukeLibrary() )
         FRAME.notify('library book entries cleared', 'nukeLibrary');
-        FRAME.coverGrid.reloadCovers();
-      }
+      else
+        FRAME.notify('failed to clear library book entries', 'nukeLibrary');
     }
   },
 

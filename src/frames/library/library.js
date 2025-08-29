@@ -9,7 +9,6 @@ import "./libraryAccelerators.js";
 
 /**
  * @import { LibraryUpdate } from "../../APIs/library/main.js"
- * @import { ItemList } from "../../components/itemList.js"
  */
 
 
@@ -69,9 +68,8 @@ export class Library extends GenericFrame {
     const shadowRoot = this.attachShadow({ mode: 'open' });
     shadowRoot.append( fragment.cloneNode(true) );
 
-    const list = /** @type ItemList */ (shadowRoot.getElementById('library'));
     this.watchlistPanel = new WatchlistPanel(this);
-    this.coverGrid = new CoverGrid(list);
+    this.coverGrid = new CoverGrid(this);
 
     this.tabName = 'Library';
     this.#initEvents();
@@ -127,10 +125,13 @@ export class Library extends GenericFrame {
     // reload entries & generate thumbnails
     if (addedPaths > 0) {
       await this.coverGrid.reloadCovers();
+      elecAPI.broadcast('library:sync');
 
       console.time('generateThumbnails');
       await elecAPI.updateLibraryThumbnails();
       console.timeEnd('generateThumbnails'); 
+
+      elecAPI.broadcast('library:sync');
     }
 
     this.hold(false);
@@ -146,6 +147,8 @@ export class Library extends GenericFrame {
     if ( !await elecAPI.requestLock('library') )
       return;
 
+    this.hold(true);
+
     if (files.length < 1) {
       files = await elecAPI.dialog('open', {
         title: "Add Folder to Library",
@@ -155,9 +158,6 @@ export class Library extends GenericFrame {
     }
 
     if (files != null && files.length > 0) {
-      // prevent closing window while async population happens
-      this.hold(true);
-
       console.time(`addToLibrary`);
       const items = files.map(file => ({ path: file, recursive: false }));
       let addedPaths = await elecAPI.addToLibrary(items);
@@ -168,15 +168,61 @@ export class Library extends GenericFrame {
       // reload entries & generate thumbnails
       if (addedPaths > 0) {
         await this.coverGrid.reloadCovers();
+        elecAPI.broadcast('library:sync');
 
         console.time('generateThumbnails');
         await elecAPI.updateLibraryThumbnails();
         console.timeEnd('generateThumbnails'); 
-      }
 
-      this.hold(false);
-      await elecAPI.releaseLock('library');
+        elecAPI.broadcast('library:sync');
+      }
     }
+
+    this.hold(false);
+    await elecAPI.releaseLock('library');
+  }
+
+  /**
+   * Remove entry from library.
+   * @param {string} bookPath Entry path to remove.
+   * @returns {Promise<boolean>} Success.
+   */
+  async removeFromLibrary(bookPath) {
+    if ( !await elecAPI.requestLock('library') )
+      return false;
+
+    this.hold(true);
+    const success = await elecAPI.removeFromLibrary(bookPath);
+
+    if (success)
+      elecAPI.broadcast('library:sync');
+
+    this.hold(false);
+    await elecAPI.releaseLock('library');
+
+    return success;
+  }
+
+  /**
+   * Remove all entries from library.
+   * @returns {Promise<boolean>} Success.
+   */
+  async nukeLibrary() {
+    if ( !await elecAPI.requestLock('library') )
+      return false;
+
+    this.hold(true);
+    const success = await elecAPI.clearLibrary();
+
+    if (success) {
+      this.coverGrid.reloadCovers();
+      elecAPI.broadcast('library:sync');
+    }
+
+    this.hold(false);
+    await elecAPI.releaseLock('library');
+
+    return success;
   }
 
   #initEvents() {
@@ -213,10 +259,7 @@ export class Library extends GenericFrame {
       e.stopPropagation();
     };
 
-    // update cover count in status
-    this.coverGrid.events.observe('grid:coverUpdate', () => this.refreshStatus());
-
     // populate cover grid
-    this.coverGrid.reloadCovers();
+    this.coverGrid.drawCovers();
   }
 }
