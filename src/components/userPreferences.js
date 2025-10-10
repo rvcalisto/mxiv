@@ -22,7 +22,8 @@ export const events = new ObservableEvents();
 const values = {
   libraryItemsPerPage: 100,
   libraryCoverSize: 200,
-  themeOverride: /** @type ThemeOverride */ ('system')
+  themeOverride: /** @type ThemeOverride */ ('system'),
+  paletteHistorySize: 10
 };
 
 

@@ -249,6 +249,17 @@ setBaseActions({
           userPreferences.set('libraryItemsPerPage', value);
           notify(`showing ${value} items per page`, 'itemsPerPage');
         }
+      },
+      'paletteHistorySize': {
+        desc: 'set palette action history size (default: 10)',
+        run: (limit = '10') => {
+          let value = parseInt( limit.trim() );
+          if ( isNaN(value) || value < 0 )
+            value = 10;
+
+          userPreferences.set('paletteHistorySize', value);
+          notify(`set palette history size to ${value}`, 'historySize');
+        }
       }
     }
   }

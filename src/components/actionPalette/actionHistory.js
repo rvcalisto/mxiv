@@ -1,5 +1,6 @@
 // @ts-check
 import { GenericStorage } from "../genericStorage.js";
+import userPreferences from "../userPreferences.js";
 
 
 /**
@@ -11,7 +12,7 @@ let actionStack = [];
 /**
  * Action history limit.
  */
-let stackLimit = 10;
+let stackLimit = userPreferences.get('paletteHistorySize');
 
 /**
  * Prompt action history storage.
@@ -74,6 +75,22 @@ function clearAll() {
   actionStack = [];
   actionStorage.set('stack', actionStack);
 }
+
+/**
+ * Update history stack limit on user preference changes.
+ */
+function initialize() {
+  userPreferences.events.observe('paletteHistorySize', (/** @type number */ limit) => {
+    stackLimit = limit;
+
+    if (actionStack.length > stackLimit)
+      actionStack.length = stackLimit;
+  });
+}
+
+
+initialize();
+
 
 /**
  * Recent actions history.
