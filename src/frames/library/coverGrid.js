@@ -4,7 +4,7 @@ import { Cover } from "./coverElement.js";
 import { newTab, TAB } from "../../tabs/tab.js";
 import { generalState } from "../../tabs/profiles.js";
 import { matchNameOrTags } from '../../components/fileMethods.js';
-import { userPreferences } from "../../components/userPreferences.js";
+import userPreferences from "../../components/userPreferences.js";
 
 
 /**
@@ -80,9 +80,8 @@ export class CoverGrid {
     this.#list =  /** @type ItemList */ (shadowRoot.getElementById('library'));
 
     // apply preferences
-    this.#list.itemsPerPage = userPreferences.libraryItemsPerPage;
-    document.body.style
-      .setProperty('--cover-height', `${userPreferences.libraryCoverSize}px`);
+    this.setItemsPerPage( userPreferences.get('libraryItemsPerPage') );
+    this.setCoverSize( userPreferences.get('libraryCoverSize') );
   }
 
   /**
@@ -118,11 +117,10 @@ export class CoverGrid {
   }
 
   /**
-   * Set how many items to display per page. Reload covers.
+   * Set how many items to display per page and reload covers.
    * @param {number} count
    */
   setItemsPerPage(count) {
-    userPreferences.libraryItemsPerPage = count;
     this.#list.itemsPerPage = count;
     this.drawCovers();
   }
@@ -132,7 +130,6 @@ export class CoverGrid {
    * @param {number} size
    */
   setCoverSize(size) {
-    userPreferences.libraryCoverSize = size;
     document.body.style.setProperty('--cover-height', `${size}px`);
     this.#library.refreshStatus();
 

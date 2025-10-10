@@ -172,30 +172,6 @@ setComponentActions('library', {
     run: () => FRAME.coverGrid.randomCover()
   },
 
-  'coverSize': {
-    desc: 'set cover height size in pixels (default: 200)',
-    run: (size = '200') => {
-      let value = parseInt( size.trim() );
-      if ( isNaN(value) || value < 100 )
-        value = 200;
-
-      FRAME.coverGrid.setCoverSize(value);
-      FRAME.notify(`cover height sized to ${value}px`, 'coverSize');
-    }
-  },
-
-  'itemsPerPage': {
-    desc: 'set how many items are displayed per page (default: 100)',
-    run: (count = '100') => {
-      let value = parseInt( count.trim() );
-      if ( isNaN(value) || value < 10 )
-        value = 100;
-
-      FRAME.coverGrid.setItemsPerPage(value);
-      FRAME.notify(`showing ${value} items per page`, 'itemsPerPage');
-    }
-  },
-
   'nukeLibrary' : {
     desc: 'completely delist entire library',
     run: async () => {

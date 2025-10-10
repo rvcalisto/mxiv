@@ -6,7 +6,7 @@ import palette, { option } from "../components/actionPalette/actionPalette.js";
 import { getUserAccelerators, setUserAccelerators } from "../actions/userAccelerators.js";
 import { notify } from "../components/notifier.js";
 import { isFrameType, frameDescriptors } from "../frames/frameRegistry.js";
-import { userPreferences } from "../components/userPreferences.js";
+import userPreferences from "../components/userPreferences.js";
 import * as headerPanel from "../tabs/tabHeaderPanel.js";
 
 
@@ -208,21 +208,48 @@ setBaseActions({
     }
   },
 
-  'setTheme': {
-    desc: 'set application theme',
-    run: (theme, ..._args) => {
-      // toggle theme if argument unknown
-      if ( !['light', 'dark', 'system'].includes(theme) ) {
-        const isLightTheme = matchMedia('(prefers-color-scheme: light)').matches;
-        theme = isLightTheme ? 'dark' : 'light';
-      }
+  'preferences': {
+    desc: 'set user preferences',
+    actions: {
+      'theme': {
+        desc: 'set application theme',
+        run: (theme, ..._args) => {
+          // toggle theme if argument unknown
+          if ( !['light', 'dark', 'system'].includes(theme) ) {
+            const isLightTheme = matchMedia('(prefers-color-scheme: light)').matches;
+            theme = isLightTheme ? 'dark' : 'light';
+          }
 
-      elecAPI.setTheme(theme);
-      userPreferences.themeOverride = theme;
-      notify(`set theme to "${theme}"`, 'setTheme');
-    },
-    options: (_, args) => args.length < 2
-      ? ['light', 'dark', 'system']
-      : []
+          elecAPI.setTheme(theme);
+          userPreferences.set('themeOverride', theme);
+          notify(`set theme to "${theme}"`, 'setTheme');
+        },
+        options: (_, args) => args.length < 2
+          ? ['light', 'dark', 'system']
+          : []
+      },
+      'libraryCoverSize': {
+        desc: 'set cover height size in pixels (default: 200)',
+        run: (size = '200') => {
+          let value = parseInt( size.trim() );
+          if ( isNaN(value) || value < 100 )
+            value = 200;
+
+          userPreferences.set('libraryCoverSize', value);
+          notify(`cover height sized to ${value}px`, 'coverSize');
+        }
+      },
+      'libraryItemsPerPage': {
+        desc: 'set how many items are displayed per page (default: 100)',
+        run: (count = '100') => {
+          let value = parseInt( count.trim() );
+          if ( isNaN(value) || value < 10 )
+            value = 100;
+
+          userPreferences.set('libraryItemsPerPage', value);
+          notify(`showing ${value} items per page`, 'itemsPerPage');
+        }
+      }
+    }
   }
 });

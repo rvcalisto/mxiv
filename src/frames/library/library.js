@@ -2,6 +2,7 @@
 import { GenericFrame } from "../genericFrame.js";
 import { CoverGrid } from "./coverGrid.js";
 import { WatchlistPanel } from "./watchlistPanel.js";
+import userPreferences from "../../components/userPreferences.js";
 
 import "./libraryActions.js";
 import "./libraryAccelerators.js";
@@ -40,6 +41,20 @@ export class Library extends GenericFrame {
 
   // setup library progress listener
   static {
+    userPreferences.events.observe('libraryItemsPerPage', (/** @type number */ value) => {
+      const library = Library.#singleInstanceRef;
+
+      if (library != null)
+        library.coverGrid.setItemsPerPage(value);
+    });
+
+    userPreferences.events.observe('libraryCoverSize', (/** @type number */ size) => {
+      const library = Library.#singleInstanceRef;
+
+      if (library != null)
+        library.coverGrid.setCoverSize(size);
+    });
+
     elecAPI.onLibraryNew(async function handleUpdate(_e, /** @type {LibraryUpdate} */ update) {
       const library = Library.#singleInstanceRef;
       if (library == null)
