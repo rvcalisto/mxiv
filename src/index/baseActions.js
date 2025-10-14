@@ -213,7 +213,7 @@ setBaseActions({
     actions: {
       'theme': {
         desc: 'set application theme',
-        run: (theme, ..._args) => {
+        run: (theme = 'system', ..._args) => {
           // toggle theme if argument unknown
           if ( !['light', 'dark', 'system'].includes(theme) ) {
             const isLightTheme = matchMedia('(prefers-color-scheme: light)').matches;
@@ -224,12 +224,20 @@ setBaseActions({
           userPreferences.set('themeOverride', theme);
           notify(`set theme to "${theme}"`, 'setTheme');
         },
-        options: (_, args) => args.length < 2
-          ? ['light', 'dark', 'system']
-          : []
+        options: (_, args) => {
+          const currentValue = userPreferences.get('themeOverride');
+
+          return args.length < 2
+            ? [
+              option('system', currentValue === 'system' ? 'default (current)' : 'default'),
+              option('light', currentValue === 'light' ? 'current' : undefined),
+              option('dark', currentValue === 'dark' ? 'current' : undefined)
+            ] 
+            : [];
+        }
       },
       'libraryCoverSize': {
-        desc: 'set cover height size in pixels (default: 200)',
+        desc: 'set cover height size in pixels',
         run: (size = '200') => {
           let value = parseInt( size.trim() );
           if ( isNaN(value) || value < 100 )
@@ -237,10 +245,19 @@ setBaseActions({
 
           userPreferences.set('libraryCoverSize', value);
           notify(`cover height sized to ${value}px`, 'coverSize');
+        },
+        options: (_, args) => {
+          const currentValue = userPreferences.get('libraryCoverSize');
+
+          return args.length < 2
+            ? currentValue === 200
+              ? [option('200', 'default (current)')]
+              : [option('200', 'default'), option(`${currentValue}`, 'current')]
+            : [];
         }
       },
       'libraryItemsPerPage': {
-        desc: 'set how many items are displayed per page (default: 100)',
+        desc: 'set how many items are displayed per page',
         run: (count = '100') => {
           let value = parseInt( count.trim() );
           if ( isNaN(value) || value < 10 )
@@ -248,10 +265,19 @@ setBaseActions({
 
           userPreferences.set('libraryItemsPerPage', value);
           notify(`showing ${value} items per page`, 'itemsPerPage');
+        },
+        options: (_, args) => {
+          const currentValue = userPreferences.get('libraryItemsPerPage');
+
+          return args.length < 2
+            ? currentValue === 100
+              ? [option('100', 'default (current)')]
+              : [option('100', 'default'), option(`${currentValue}`, 'current')]
+            : [];
         }
       },
       'paletteHistorySize': {
-        desc: 'set palette action history size (default: 10)',
+        desc: 'set palette action history size',
         run: (limit = '10') => {
           let value = parseInt( limit.trim() );
           if ( isNaN(value) || value < 0 )
@@ -259,6 +285,15 @@ setBaseActions({
 
           userPreferences.set('paletteHistorySize', value);
           notify(`set palette history size to ${value}`, 'historySize');
+        },
+        options: (_, args) => {
+          const currentValue = userPreferences.get('paletteHistorySize');
+
+          return args.length < 2
+            ? currentValue === 10
+              ? [option('10', 'default (current)')]
+              : [option('10', 'default'), option(`${currentValue}`, 'current')]
+            : [];
         }
       }
     }
