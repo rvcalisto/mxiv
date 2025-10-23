@@ -9,7 +9,7 @@ import { reloadUserAccelerators } from "../actions/userAccelerators.js";
 /**
  * Open paths passed as arguments.
  */
-elecAPI.onOpen(function openInViewer(_, /** @type {string[][]} */ tabs) {
+elecAPI.onOpen(function openInViewer(/** @type {string[][]} */ tabs) {
   for (const paths of tabs)
     newTab( 'viewer', (viewer) => viewer.open(...paths) );
 });

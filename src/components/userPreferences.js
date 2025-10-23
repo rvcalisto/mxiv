@@ -81,7 +81,7 @@ function reload() {
 function initialize() {
   reload();
 
-  elecAPI.onBroadcast((_e, /** @type string */ message, property, value, ..._args) => {
+  elecAPI.onBroadcast((/** @type string */ message, property, value) => {
     if (message === 'userPref:sync') {
       values[property] = value;
       events.fire(property, value);

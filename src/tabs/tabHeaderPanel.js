@@ -198,7 +198,7 @@ function treatOverflow() {
  */
 function initialize() {
   // toggle tab bar visibility on fullscreen
-  elecAPI.onFullscreen((_e, /** @type {boolean} */ isFullscreen) => {
+  elecAPI.onFullscreen((/** @type {boolean} */ isFullscreen) => {
     if (isFullscreen)
       preFSVisibility = isVisible();
 

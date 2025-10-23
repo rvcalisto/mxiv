@@ -54,7 +54,7 @@ async function updateTagCache() {
  * Listen for main process tag controller sync requests.
  * Sync tag storage state to persistent JSON file.
  */
-ipcRenderer.on('coord:onbroadcast', async (e, message) => {
+ipcRenderer.on('coord:onbroadcast', async (_e, message) => {
   if (message === 'tags:sync') {
     updateTagCache();
     console.log('MXIV::broadcast: tags:sync');

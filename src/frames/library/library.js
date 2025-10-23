@@ -55,7 +55,7 @@ export class Library extends GenericFrame {
         library.coverGrid.setCoverSize(size);
     });
 
-    elecAPI.onLibraryNew(async function handleUpdate(_e, /** @type {LibraryUpdate} */ update) {
+    elecAPI.onLibraryNew(async function handleUpdate(/** @type {LibraryUpdate} */ update) {
       const library = Library.#singleInstanceRef;
       if (library == null)
         return;

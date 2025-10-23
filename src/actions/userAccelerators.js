@@ -101,7 +101,7 @@ function updateActionPaletteAcceleratorCSSvar() {
  * Reload accelerators on broadcast.
  */
 function initialize() {
-  elecAPI.onBroadcast( (e, /** @type string */ message, ...args) => {
+  elecAPI.onBroadcast((/** @type string */ message) => {
     if (message === 'accel:sync') {
       console.log('MXIV::broadcast: accel:sync');
       reloadUserAccelerators();

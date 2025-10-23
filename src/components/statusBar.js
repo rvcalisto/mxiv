@@ -62,7 +62,7 @@ export function updateStatus(statusObject) {
  * Toggle visibility on fullscreen.
  */
 function initialize() {
-  elecAPI.onFullscreen( function onFullscreenChange(e, /** @type boolean */ isFullscreen) {
+  elecAPI.onFullscreen( function onFullscreenChange(/** @type boolean */ isFullscreen) {
     if (isFullscreen)
       wasVisible = statusVisibility();
 

@@ -9,7 +9,7 @@ contextBridge.exposeInMainWorld('elecAPI', {
   requestLock: async () => ipcRenderer.invoke('coord:lock'),
   releaseLock: async () => ipcRenderer.invoke('coord:unlock'),
   broadcast: async (message, ...args) => ipcRenderer.invoke('coord:broadcast', message, ...args),
-  onBroadcast: (message, ...args) => ipcRenderer.on('coord:onbroadcast', message, ...args),
+  onBroadcast: (callback) => ipcRenderer.on('coord:onbroadcast', (_e, msg, ...args) => callback(msg, ...args)),
 
   // library
   addToLibrary: async (path, recursively) => ipcRenderer.invoke('library:add', path, recursively),
@@ -17,7 +17,7 @@ contextBridge.exposeInMainWorld('elecAPI', {
   getLibraryEntries: () => ipcRenderer.invoke('library:get'),
   removeFromLibrary: async (path) => ipcRenderer.invoke('library:remove', path),
   clearLibrary: async () => ipcRenderer.invoke('library:clear'),
-  onLibraryNew: (infoObj) => ipcRenderer.on('library:new', infoObj),
+  onLibraryNew: (callback) => ipcRenderer.on('library:new', (_e, infoObj) => callback(infoObj)),
 
   // open files
   openFile: async (path, ownerID) => ipcRenderer.invoke('file:open', path, ownerID),
@@ -43,8 +43,8 @@ contextBridge.exposeInMainWorld('elecAPI', {
   // app window
   newWindow: async () => ipcRenderer.invoke('window:new'),
   dialog: (type, options) => ipcRenderer.invoke('window:dialog', type, options),
-  onOpen: (details) => ipcRenderer.on('window:open', details),
+  onOpen: (callback) => ipcRenderer.on('window:open', (_e, details) => callback(details)),
   toggleFullscreen: async () => ipcRenderer.invoke('window:fullscreen'),
-  onFullscreen: (isFullscreen) => ipcRenderer.on('window:onFullscreen', isFullscreen),
+  onFullscreen: (callback) => ipcRenderer.on('window:onFullscreen', (_e, isFullscreen) => callback(isFullscreen)),
   setTheme: async (theme) => ipcRenderer.invoke('window:theme', theme)
 });

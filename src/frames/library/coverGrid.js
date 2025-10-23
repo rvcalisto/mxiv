@@ -62,7 +62,7 @@ export class CoverGrid {
 
   // invalidate cache on external updates
   static {
-    elecAPI.onBroadcast(function onLibrarySync(_e, /** @type string */ message, ..._args) {
+    elecAPI.onBroadcast(function onLibrarySync(/** @type string */ message) {
       if (message === 'library:sync') {
         CoverGrid.#cacheIsDirty = true;
         console.log('MXIV::broadcast: library:sync');
