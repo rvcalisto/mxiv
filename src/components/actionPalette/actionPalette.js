@@ -281,7 +281,7 @@ export function standardFilter(query) {
     const lowerCaseQuery = query.toLowerCase();
     const match = keys == null || keys.length < 1
       ? item.toLowerCase().includes(lowerCaseQuery)
-      : keys.some( str => str.includes(lowerCaseQuery) );
+      : keys.some( str => str.toLowerCase().includes(lowerCaseQuery) );
 
     return itemIsDot 
       ? match && queryIsDot 
