@@ -212,7 +212,7 @@ function initialize() {
   tabsContainer.onscroll = () => updateOverflowIndicators();
 
   // smooth scroll tabs horizontally on default wheel
-  headerPanel.onwheel = (e) => {
+  headerPanel.addEventListener('wheel', (e) => {
     if (tabsContainer.offsetWidth === tabsContainer.scrollWidth)
       return;
 
@@ -238,7 +238,7 @@ function initialize() {
         wheelScroll.interval = undefined;
       }
     }, 10);
-  }
+  }, { passive: true });
 
   // smooth scroll tab overflow on button press
   scrollHeaderL.onmousedown = () => {
