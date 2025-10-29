@@ -211,31 +211,6 @@ export class FileBook {
       this.#pageIdx = randomIdx;
   }
 
-  /** 
-   * Returns index of first file whose predicate is true. 
-   * - Searches from following page, then from the start if not found. 
-   * @param {(file:FileObject)=>boolean} predicate Substrings to search for.
-   * @returns {number} Index position. `-1` if unmatched.
-   */
-  getIdxOf(predicate) {
-    if (this.files.length < 1)
-      return -1;
-
-    // search from next page till end of array
-    for (let i = this.#pageIdx + 1; i < this.files.length; i++) {
-      if ( predicate(this.files[i]) )
-        return i;
-    }
-
-    // search from beginning till current page
-    for (let i = 0; i <= this.#pageIdx; i++) {
-      if ( predicate(this.files[i]) )
-        return i;
-    }
-
-    return -1;
-  }
-
   /**
    * Delist file from inner listings and update page index if necessary.
    * - Clear any active filter if target is the sole element.

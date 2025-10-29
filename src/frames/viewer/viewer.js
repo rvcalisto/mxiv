@@ -159,19 +159,33 @@ export class Viewer extends GenericFrame {
   }
 
   /**
-   * Find and present file with matching name substrings. 
+   * Find and present next file with matching name substrings. 
    * @param {string[]} queries File name or substring to find.
    */
   find(...queries) {
-    queries = queries.map( query => query.toLowerCase().trim() )
+    const treatedQueries = queries
+      .map( query => query.toLowerCase().trim() )
       .filter(query => query !== '');
 
-    const idx = this.fileBook.getIdxOf(file => {
+    /** @param {import('../../APIs/file/fileSearch.js').FileObject} file */
+    const matchFile = (file) => {
       const name = file.name.toLowerCase();
-      return queries.every( query => name.includes(query) );
-    });
+      return treatedQueries.every( query => name.includes(query) );
+    };
 
-    idx < 0 ? this.notify('no matches') : this.gotoPage(idx);
+    const nextFiles = this.fileBook.files.slice(this.fileBook.page);
+    let idx = nextFiles.findIndex(matchFile);
+
+    if (idx > -1)
+      idx += this.fileBook.page; // correct offset
+    else {
+      const previousFiles = this.fileBook.files.slice(0, this.fileBook.page);
+      idx = previousFiles.findIndex(matchFile);
+    }
+
+    idx < 0
+      ? this.notify('no matches', 'find')
+      : this.gotoPage(idx);
   }
 
   /**
@@ -403,9 +417,11 @@ export class Viewer extends GenericFrame {
     // fileBook events
     this.addEventListener('fileExplorer:open', (e) => {
       const filepath = /** @type CustomEvent */ (e).detail;
-      const fileIdx = this.fileBook.getIdxOf(file => file.path === filepath);
+      const fileIdx = this.fileBook.files.findIndex(file => file.path === filepath);
 
-      fileIdx > -1 ? this.gotoPage(fileIdx) : this.open(filepath);
+      fileIdx > -1
+        ? this.gotoPage(fileIdx)
+        : this.open(filepath);
     });
 
     // view events
