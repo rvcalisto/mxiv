@@ -173,13 +173,14 @@ export class Viewer extends GenericFrame {
       return treatedQueries.every( query => name.includes(query) );
     };
 
-    const nextFiles = this.fileBook.files.slice(this.fileBook.page);
+    const startIdx = this.fileBook.page + 1;
+    const nextFiles = this.fileBook.files.slice(startIdx);
     let idx = nextFiles.findIndex(matchFile);
 
     if (idx > -1)
-      idx += this.fileBook.page; // correct offset
+      idx += startIdx; // correct offset
     else {
-      const previousFiles = this.fileBook.files.slice(0, this.fileBook.page);
+      const previousFiles = this.fileBook.files.slice(0, startIdx);
       idx = previousFiles.findIndex(matchFile);
     }
 
