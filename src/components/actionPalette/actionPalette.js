@@ -33,6 +33,11 @@ const containerElement = /** @type {HTMLDivElement} */ (document.querySelector('
 const listElement = /** @type ItemList */ (containerElement.querySelector('item-list'));
 
 /**
+ * Info paragraph element.
+ */
+const infoElement = /** @type ItemList */ (containerElement.querySelector('.paletteInfo'));
+
+/**
  * Action Palette text prompt element.
  */
 const inputElement = new InputPrompt( /** @type HTMLInputElement */ (containerElement.querySelector('input')) );
@@ -108,6 +113,8 @@ function createElement(item, leadingAction = []) {
  * Generate hint list based on current inputElement text.
  */
 async function displayHints() {
+  setPaletteInfo('');
+
   const currentActions = getCurrentActions(),
         inputTextArray = inputElement.getTextArrayBeforeCursor(),
         [cmd = '', ...args] = inputTextArray;
@@ -126,10 +133,12 @@ async function displayHints() {
 
     const actions = [];
     actionMap.forEach( (action, key) => {
+      const words = action.desc.split(' ');
+
       if ( key.includes(' ') ) // match group actions by name upon 2 characters
-        cmd.length > 1 && actions.push( option(key, action.desc, 'shortcut', [key.split(' ')[1]]) );
+        cmd.length > 1 && actions.push( option(key, action.desc, 'shortcut', [key.split(' ')[1], ...words]) );
       else // match non-group actions
-        actions.push( option(key, action.desc, 'action') );
+        actions.push( option(key, action.desc, 'action', [key, ...words]) );
     });
 
     return listElement.populate( history.concat(groups, actions), 
@@ -163,6 +172,17 @@ async function displayHints() {
       ? action.customFilter(lastArg)
       : standardFilter(lastArg)
   );
+}
+
+/**
+ * Set argument information paragraph.
+ * @param {string} message Message to display.
+ */
+export function setPaletteInfo(message) {
+  infoElement.textContent = message;
+
+  /** @type {HTMLDivElement} */ (infoElement.parentElement)
+    .style.display = message === '' ? 'none' : '';
 }
 
 /**
@@ -356,5 +376,5 @@ initialize();
  */
 export default {
   get paletteIsVisible() { return paletteIsVisible },
-  togglePalette, repeatLastAction, clearActionHistory
+  togglePalette, repeatLastAction, clearActionHistory, setPaletteInfo
 };

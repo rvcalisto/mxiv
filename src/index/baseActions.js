@@ -2,7 +2,7 @@ import { setBaseActions } from "../actions/actionService.js";
 import { TAB, cycleTabs, newFileViewer, newTab } from "../tabs/tab.js";
 import { toggleStatus } from "../components/statusBar.js";
 import * as sessionProfiles from "../tabs/profiles.js";
-import palette, { option } from "../components/actionPalette/actionPalette.js";
+import palette, { option, setPaletteInfo } from "../components/actionPalette/actionPalette.js";
 import { getUserAccelerators, setUserAccelerators } from "../actions/userAccelerators.js";
 import { notify } from "../components/notifier.js";
 import { isFrameType, frameDescriptors } from "../frames/frameRegistry.js";
@@ -17,7 +17,13 @@ setBaseActions({
     actions: {
       'show': {
         desc: 'show action palette, optionally with a given string',
-        run: (customStr) => palette.togglePalette(true, customStr)
+        run: (customStr) => palette.togglePalette(true, customStr),
+        options: (_query, allArgs) => {
+          if (allArgs.length < 2)
+            setPaletteInfo('arguments: <string>');
+
+          return [];
+        }
       },
       'repeatLast': {
         desc: 'repeat last executed action',
@@ -74,6 +80,12 @@ setBaseActions({
           validName != ''
             ? TAB?.rename(validName)
             : notify('tab name can\'t be empty', 'tabRename');
+        },
+        options: (_query, allArgs) => {
+          if (allArgs.length < 2)
+            setPaletteInfo('arguments: <name>');
+
+          return [];
         }
       },
       'visibility': {
@@ -172,15 +184,20 @@ setBaseActions({
           }
         },
         options: (_query, allArgs) => {
-          if (allArgs.length > 3)
+          if (allArgs.length > 3) {
+            setPaletteInfo('arguments: <action...>');
             return [];
+          }
 
           // hint erasure and masking options
-          if (allArgs.length > 2)
+          if (allArgs.length > 2) {
+            setPaletteInfo('arguments: default | mask | <action...>');
+
             return [
               option('default', 'revert accelerator to default'),
               option('mask', 'neutralize default action')
             ];
+          }
 
           // hint available components
           if (allArgs.length < 2)

@@ -1,5 +1,5 @@
 import { setComponentActions } from "../../actions/actionService.js";
-import { option, standardFilter } from "../../components/actionPalette/actionPalette.js";
+import { option, standardFilter, setPaletteInfo } from "../../components/actionPalette/actionPalette.js";
 import { FRAME }  from "../../tabs/tab.js";
 import { runScript, tag } from "../../components/fileMethods.js";
 
@@ -26,6 +26,7 @@ setComponentActions('library', {
         FRAME.notify(`filter: ${query}`, 'filter');
 
       FRAME.coverGrid.drawCovers(queries);
+      setPaletteInfo('arguments: [[-]string...], ?: list tags');
       return [];
     },
     customFilter: (query) => {
@@ -184,9 +185,15 @@ setComponentActions('library', {
 
   'runScript': {
     desc: 'run user script where %F, %N, %T represent the selected file path, \
-           name & type, respectively : <script> <displayMsg?>',
+           name & type, respectively',
     run: async (script, msg) => {
       await runScript(script, FRAME.coverGrid.selectedCover?.bookPath, msg);
+    },
+    options: (_query, allArgs) => {
+      if (allArgs.length < 3)
+        setPaletteInfo('arguments: <script, %F: filepath, %N: basename, %T: filetype> [notification]');
+
+      return [];
     }
   }
 });

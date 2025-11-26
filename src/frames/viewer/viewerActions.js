@@ -1,6 +1,6 @@
 import { setComponentActions } from "../../actions/actionService.js";
 import { FRAME } from "../../tabs/tab.js";
-import { option, standardFilter } from "../../components/actionPalette/actionPalette.js";
+import { option, setPaletteInfo, standardFilter } from "../../components/actionPalette/actionPalette.js";
 import { runScript, tag } from "../../components/fileMethods.js";
 
 
@@ -22,30 +22,54 @@ setComponentActions('viewer', {
   },
 
   'navigate': {
-    desc: 'scroll media by pixels if zoomed in, skip seconds if video, flip page otherwise',
+    desc: 'scroll, flip or seek content depending on type and context',
     actions: {
       'up': {
-        desc : 'up: <pixels?> <seconds?>',
+        desc : 'scroll up, otherwise skip track forward',
         run  : (pixelDelta = 6, secsDelta = 60) => {
           FRAME.viewComponent.navigate('y', Number(pixelDelta), Number(secsDelta))
+        },
+        options: (_query, allArgs) => {
+          if (allArgs.length < 3)
+            setPaletteInfo('arguments: [pixels] [seconds]');
+
+          return [];
         }
       },
       'down': {
-        desc : 'down: <pixels?> <seconds?>',
+        desc : 'scroll down, otherwise skip track backward',
         run  : (pixelDelta = 6, secsDelta = 60) => {
           FRAME.viewComponent.navigate('y', -Number(pixelDelta), -Number(secsDelta))
+        },
+        options: (_query, allArgs) => {
+          if (allArgs.length < 3)
+            setPaletteInfo('arguments: [pixels] [seconds]');
+
+          return [];
         }
       },
       'left': {
-        desc : 'left: <pixels?> <seconds?>',
+        desc : 'scroll left, go to next image or skip track backward',
         run  : (pixelDelta = 6, secsDelta = 5) => {
           FRAME.viewComponent.navigate('x', -Number(pixelDelta), -Number(secsDelta))
+        },
+        options: (_query, allArgs) => {
+          if (allArgs.length < 3)
+            setPaletteInfo('arguments: [pixels] [seconds]');
+
+          return [];
         }
       },
       'right': {
-        desc : 'right: <pixels?> <seconds?>',
+        desc : 'scroll right, go to previous image or skip track forward',
         run  : (pixelDelta = 6, secsDelta = 5) => {
           FRAME.viewComponent.navigate('x', Number(pixelDelta), Number(secsDelta))
+        },
+        options: (_query, allArgs) => {
+          if (allArgs.length < 3)
+            setPaletteInfo('arguments: [pixels] [seconds]');
+
+          return [];
         }
       }
     }
@@ -91,7 +115,13 @@ setComponentActions('viewer', {
 
   'zoom': {
     desc : 'set zoom to value, prepend +/- to increment or decrement',
-    run  : (value = '100') => FRAME.viewComponent.screen.zoom(value)
+    run  : (value = '100') => FRAME.viewComponent.screen.zoom(value),
+    options: (_query, allArgs) => {
+      if (allArgs.length < 2)
+        setPaletteInfo('arguments: <[+|-]zoom>');
+
+      return [];
+    }
   },
 
   'pause': {
@@ -108,8 +138,14 @@ setComponentActions('viewer', {
   },
 
   'setVolume': {
-    desc : 'set new volume, prepend +/- to increment or decrement',
-    run  : (volume) => FRAME.viewComponent.media.setVolume(volume)
+    desc : 'increase, decrease or set new volume',
+    run  : (volume) => FRAME.viewComponent.media.setVolume(volume),
+    options: (_query, args) => {
+      if (args.length < 2)
+        setPaletteInfo('arguments: <[+|-]volume>');
+
+      return [];
+    }
   },
 
   'mute': {
@@ -123,8 +159,14 @@ setComponentActions('viewer', {
   },
 
   'loop': {
-    desc : 'set AB loop at track time, takes optional [hh:][mm:][ss] range',
-    run  : (aTime, bTime) => FRAME.viewComponent.media.abLoop(aTime, bTime)
+    desc : 'set AB loop at track time',
+    run  : (aTime, bTime) => FRAME.viewComponent.media.abLoop(aTime, bTime),
+    options: (_query, allArgs) => {
+      if (allArgs.length < 3)
+        setPaletteInfo('arguments: [hh:mm:ss] [hh:mm:ss]');
+
+      return [];
+    }
   },
 
   'endRepeat': {
@@ -142,9 +184,13 @@ setComponentActions('viewer', {
 
   'speed': {
     desc : 'change video playback rate, prepend +/- to increment or decrement',
-    run  : (speed = '1') => {
-      FRAME.viewComponent.media.playbackRate(speed);
-    } 
+    run  : (speed = '1') => FRAME.viewComponent.media.playbackRate(speed),
+    options: (_query, allArgs) => {
+      if (allArgs.length < 2)
+        setPaletteInfo('arguments: <[+|-]speed>');
+
+      return [];
+    }
   },
 
   'preservePitch': {
@@ -182,6 +228,12 @@ setComponentActions('viewer', {
       !isNaN(page)
         ? FRAME.gotoPage(page -1)
         : FRAME.notify('invalid page number');
+    },
+    options: (_query, allArgs) => {
+      if (allArgs.length < 2)
+        setPaletteInfo('arguments: <number>');
+      
+      return [];
     }
   },
 
@@ -215,11 +267,16 @@ setComponentActions('viewer', {
       else
         FRAME.viewComponent.slideshow.toggle();
     },
-    options: (_query, allArgs) => allArgs.length < 2
-      ? [
-        option('toggle', 'toggle slideshow on or off (default)'),
-        option('delay', 'set slideshow delay in seconds'),
-      ] : []
+    options: (_query, allArgs) => {
+      if (allArgs.length === 2 && allArgs[0] === 'delay')
+        setPaletteInfo('arguments: <seconds>');
+
+      return allArgs.length < 2
+        ? [
+          option('toggle', 'toggle slideshow on or off (default)'),
+          option('delay', 'set slideshow delay in seconds'),
+        ] : [];
+    }
   },
 
   'fileExplorer': {
@@ -256,6 +313,8 @@ setComponentActions('viewer', {
     desc : 'filter files by name or tags, list tags with ?, prepend - to exclude it',
     run  : (...queries) => FRAME.filter(...queries),
     options: (query) => {
+      setPaletteInfo('arguments: [[-]string...], ?: list tags');
+
       return query[0] === '?'
         ? elecAPI.uniqueTags()
         : FRAME.fileBook.files.map(i => i.name);
@@ -275,9 +334,15 @@ setComponentActions('viewer', {
 
   'runScript': {
     desc : 'run user script where %F, %N, %T represent the selected file path, \
-            name & type, respectively : <script> <displayMsg?>',
+            name & type, respectively',
     run  : async (script, msg) => {
       await runScript(script, FRAME.fileBook.currentFile?.path, msg);
+    },
+    options: (_query, allArgs) => {
+      if (allArgs.length < 3)
+        setPaletteInfo('arguments: <script, %F: filepath, %N: basename, %T: filetype> [notification]');
+
+      return [];
     }
   },
 

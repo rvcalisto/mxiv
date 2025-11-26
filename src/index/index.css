@@ -271,6 +271,11 @@ action-palette {
     content: "";
     color: var(--theme-icon-argument);
   }
+
+  [icon=info]::before {
+    content: "";
+    color: var(--theme-icon-history);
+  }
   
   [icon=run]::before {
     content: "";
@@ -290,14 +295,35 @@ action-palette {
   
   .paletteInputContainer {
     display: flex;
+    flex-direction: column;
     background: var(--theme-palette-input-bg);
     align-items: center;
-    gap: 0.5em;
     padding: 0em 0.5em;
     border-top: solid thin #69696969;
     pointer-events: auto;
   }
-  
+
+  .info {
+    color: var(--theme-palette-secondary-fg);
+    display: flex;
+    align-items: center;
+    gap: .5em;
+    width: 100%;
+    margin-top: 2px;
+    opacity: .5;
+
+    .paletteInfo {
+      padding: 0em .4em;
+    }
+  }
+
+  .inputLine {
+    display: flex;
+    width: 100%;
+    gap: .5em;
+    align-items: center;
+  }
+
   input {
     font-family: var(--app-font);
     color: var(--theme-palette-input-fg);
