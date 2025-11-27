@@ -155,6 +155,40 @@ export class ViewMedia {
 
     this.#view.trackBar.peek();
   }
+
+  /**
+   * Seek track to given time. `10%` seeks to 10% of total duration, 
+   * while prefixing +/- applies change to current time.
+   * @param {number|string} value Time in seconds, percent or `HH:MM:SS` format.
+   */
+  seek(value) {
+    const vid = this.#vid;
+    if (!vid)
+      return;
+
+    const seekString = String(value),
+          relative = seekString[0] === '+' || seekString[0] === '-',
+          sign = seekString[0] === '-' ? -1 : 1;
+
+    const newValue = seekString.includes(':')
+      ? HMStoSec(seekString.replace('+', '')
+                           .replace('-', '')
+                           .replace('%', '')) * sign
+      : parseFloat(seekString);
+
+    if ( isNaN(newValue) )
+      return;
+
+    const seconds = seekString.includes('%') && !seekString.includes(':')
+      ? vid.duration * (newValue * .01) // relative to track duration
+      : newValue;
+
+    relative
+      ? vid.currentTime += seconds
+      : vid.currentTime = seconds;
+
+    this.#view.trackBar.peek();
+  }
   
   /**
    * Set video playback speed or increment/decrement with +/-.

@@ -21,6 +21,17 @@ setComponentActions('viewer', {
       : []
   },
 
+  'seek': {
+    desc: 'seek or skip track to specified time',
+    run: (time = '0') => FRAME.viewComponent.media.seek(time),
+    options: (_query, allArgs) => {
+      if (allArgs.length < 2)
+        setPaletteInfo('arguments: <[+|-][hh:mm:ss|number%]>');
+
+      return [];
+    }
+  },
+
   'navigate': {
     desc: 'scroll, flip or seek content depending on type and context',
     actions: {
@@ -49,7 +60,7 @@ setComponentActions('viewer', {
         }
       },
       'left': {
-        desc : 'scroll left, go to next image or skip track backward',
+        desc : 'scroll left, go to previous image or skip track backward',
         run  : (pixelDelta = 6, secsDelta = 5) => {
           FRAME.viewComponent.navigate('x', -Number(pixelDelta), -Number(secsDelta))
         },
@@ -61,7 +72,7 @@ setComponentActions('viewer', {
         }
       },
       'right': {
-        desc : 'scroll right, go to previous image or skip track forward',
+        desc : 'scroll right, go to next image or skip track forward',
         run  : (pixelDelta = 6, secsDelta = 5) => {
           FRAME.viewComponent.navigate('x', Number(pixelDelta), Number(secsDelta))
         },
