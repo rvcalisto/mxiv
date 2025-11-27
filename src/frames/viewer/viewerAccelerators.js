@@ -31,8 +31,8 @@ setComponentAccelerators('viewer', {
 	'a+Shift' : ['flipPage', 'back'],
   '0' : ['setVolume', '+5'],
   '9' : ['setVolume', '-5'],
-  '.' : ['navigate', 'right', '0', '.05'], // poor man's frame-by-frame :P
-  ',' : ['navigate', 'left', '0', '.05'],
+  '.' : ['seek', '+.05'], // poor man's frame-by-frame :P
+  ',' : ['seek', '-.05'],
 
 	// app
 	'f' : ['window', 'toggleFullscreen'],
