@@ -35,7 +35,7 @@ const listElement = /** @type ItemList */ (containerElement.querySelector('item-
 /**
  * Info paragraph element.
  */
-const infoElement = /** @type ItemList */ (containerElement.querySelector('.paletteInfo'));
+const infoElement = /** @type HTMLParagraphElement */ (containerElement.querySelector('.paletteInfo'));
 
 /**
  * Action Palette text prompt element.
