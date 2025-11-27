@@ -193,7 +193,7 @@ setBaseActions({
 
       // hint stored user accelerators for component
       if (allArgs.length === 2) {
-        setPaletteInfo('argument: <accelerator hotkey>');
+        setPaletteInfo('argument: <[control+][shift+]key>');
 
         const accelObject = getUserAccelerators(allArgs[0]);
         const options = [];
