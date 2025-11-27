@@ -87,16 +87,6 @@ setBaseActions({
 
           return [];
         }
-      },
-      'visibility': {
-        desc : 'toggle or set tab header bar visibility',
-        run  : (value) => {
-          const options = { on: true, off: false };
-          headerPanel.toggleVisibility(options[value]);
-        },
-        options: (_query, args) => args.length < 2
-          ? [option('toggle', 'default'), 'on', 'off']
-          : []
       }
     }
   },
@@ -151,19 +141,26 @@ setBaseActions({
     }
   },
 
-  'statusVisibility': {
-    desc : 'toggle status bar visibility',
-    run  : () => toggleStatus()
-  },
-
-  'newWindow': {
-    desc : 'open a new window instance',
-    run  : () => elecAPI.newWindow()
-  },
-
-  'fullscreen': {
-    desc: 'toggle fullscreen',
-    run: () => elecAPI.toggleFullscreen()
+  'window': {
+    desc: 'window methods',
+    actions: {
+      'new': {
+        desc: 'spawn a new window instance',
+        run: () => elecAPI.newWindow()
+      },
+      'toggleTabs': {
+        desc: 'show/hide tabs bar',
+        run: () => headerPanel.toggleVisibility()
+      },
+      'toggleStatus': {
+        desc: 'show/hide status bar',
+        run: () => toggleStatus()
+      },
+      'toggleFullscreen': {
+        desc: 'enter/exit fullscreen',
+        run: () => elecAPI.toggleFullscreen()
+      }
+    }
   },
 
   'accel': {

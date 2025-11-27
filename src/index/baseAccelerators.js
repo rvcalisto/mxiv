@@ -10,10 +10,11 @@ setBaseAccelerators({
   'f+Control': ['palette', 'show', 'filter'],
 
   // app
-  'h': ['statusVisibility'],
   'g': ['tab', 'new', 'library'],
-  'n': ['newWindow'],
-  'f11': ['fullscreen'],
+  'n': ['window', 'new'],
+  't': ['window', 'toggleTabs'],
+  'h': ['window', 'toggleStatus'],
+  'f11': ['window', 'toggleFullscreen'],
 
   // tab control
   't+Control': ['tab', 'new'],
@@ -21,7 +22,6 @@ setBaseAccelerators({
   'Tab+Control+Shift': ['tab', 'cycle', 'back'],
   'd+Control': ['tab', 'close'],
   't+Shift': ['tab', 'duplicate'],
-  't': ['tab', 'visibility'],
   'w+Shift': ['tab', 'move'],
   's+Shift': ['tab', 'move', 'left']
 });

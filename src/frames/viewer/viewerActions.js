@@ -108,11 +108,6 @@ setComponentActions('viewer', {
     }
   },
 
-  'fullscreen': {
-    desc : 'toggle fullscreen',
-    run  : () => FRAME.toggleFullscreen()
-  },
-
   'zoom': {
     desc : 'set zoom to value, prepend +/- to increment or decrement',
     run  : (value = '100') => FRAME.viewComponent.screen.zoom(value),

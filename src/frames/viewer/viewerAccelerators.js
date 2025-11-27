@@ -35,7 +35,7 @@ setComponentAccelerators('viewer', {
   ',' : ['navigate', 'left', '0', '.05'],
 
 	// app
-	'f' : ['fullscreen'],
+	'f' : ['window', 'toggleFullscreen'],
 	'F5' : ['reload'],
   'j' : ['fileExplorer', 'mode', 'playlist'],
   'o' : ['fileExplorer', 'mode', 'explorer'],
