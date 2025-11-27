@@ -167,61 +167,68 @@ setBaseActions({
   },
 
   'accel': {
-    desc: 'manage user accelerators',
-    actions: {
-      'set': {
-        desc: 'accelerate action with a hotkey : <component> <key/combo> <action...>',
-        run: (component = '', keycombo = '', ...args) => {
-          if ( !isFrameType(component) && component !== 'base' )
-            notify(`${component} is not a valid component`);
-          else if (keycombo === '')
-            notify('hotkey can\'t be empty');
-          else if ( args.filter( i => i.trim() ).length < 1 )
-            notify('action can\'t be empty');
-          else {
-            setUserAccelerators(component, { [keycombo]: args });
-            notify(`user accelerator updated`);
-          }
-        },
-        options: (_query, allArgs) => {
-          if (allArgs.length > 3) {
-            setPaletteInfo('arguments: <action...>');
-            return [];
-          }
+    desc: 'accelerate action with a hotkey',
+    run: (component = '', keycombo = '', ...args) => {
+      if ( !isFrameType(component) && component !== 'base' )
+        notify(`${component} is not a valid component`);
+      else if (keycombo === '')
+        notify('hotkey can\'t be empty');
+      else if ( args.filter( i => i.trim() ).length < 1 )
+        notify('action can\'t be empty');
+      else {
+        setUserAccelerators(component, { [keycombo]: args });
+        notify(`user accelerator updated`);
+      }
+    },
+    options: (_query, allArgs) => {
+      // hint available components
+      if (allArgs.length < 2) {
+        setPaletteInfo('argument: <component>');
 
-          // hint erasure and masking options
-          if (allArgs.length > 2) {
-            setPaletteInfo('arguments: default | mask | <action...>');
+        const frameComponents = frameDescriptors()
+          .map( ([name, _desc]) => option(name, `set/overwrite ${name} accelerators`));
 
-            return [
-              option('default', 'revert accelerator to default'),
-              option('mask', 'neutralize default action')
-            ];
-          }
+        return [
+          option('base', 'on all components, but overruled on concurrency'),
+          ...frameComponents
+        ];
+      }
 
-          // hint available components
-          if (allArgs.length < 2)
-            return [
-              option('base', 'on all components, but overruled on concurrency'),
-              ...frameDescriptors().map( ([name, _desc]) => 
-                option(name, `set/overwrite ${name} accelerators`))
-            ];
+      // hint stored user accelerators for component
+      if (allArgs.length === 2) {
+        setPaletteInfo('argument: <accelerator hotkey>');
 
-          // hint stored user accelerators for component
-          const accelObject = getUserAccelerators(allArgs[0]);
-          const options = [];
+        const accelObject = getUserAccelerators(allArgs[0]);
+        const options = [];
 
-          for ( const [keycombo, actionArg] of Object.entries(accelObject) ) {
-            let actionArgStr = actionArg.length > 0 ? '' : 'nothing';
+        for ( const [keycombo, actionArg] of Object.entries(accelObject) ) {
+          let actionArgStr = actionArg.length > 0 ? '' : 'nothing';
 
-            actionArg.forEach(chunk => actionArgStr += `"${chunk}" `);
-            options.push( option(keycombo, actionArgStr) );
-          }
-
-          const coll = new Intl.Collator();
-          return options.sort( (a, b) => coll.compare(a.name, b.name) );
+          actionArg.forEach(chunk => actionArgStr += `"${chunk}" `);
+          options.push( option(keycombo, actionArgStr) );
         }
-      },
+
+        const coll = new Intl.Collator();
+        return options.sort( (a, b) => coll.compare(a.name, b.name) );
+      }
+
+      // hint erasure and masking options
+      if (
+        allArgs.length === 3
+        && ('default'.includes(allArgs[2]) || 'mask'.includes(allArgs[2])) 
+      ) {
+        setPaletteInfo('argument: default | mask | <action...>');
+
+        return [
+          option('default', 'revert accelerator to default'),
+          option('mask', 'neutralize default action')
+        ];
+      }
+
+      if ( !['default', 'mask'].includes(allArgs[2]) )
+        setPaletteInfo('argument: <action...>');
+
+      return [];
     }
   },
 
