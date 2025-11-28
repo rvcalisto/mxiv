@@ -10,6 +10,8 @@ setComponentActions('library', {
     desc: 'filter books by name or tags, list tags with ?, prepend - to exclude it',
     run : () => {},
     options: (query, allArgs) => {
+      setPaletteInfo('arguments: [[-]string...], ?: list tags');
+
       // inject tag completion if query begins with '?'
       if (query[0] === '?')
         return elecAPI.uniqueTags();
@@ -26,7 +28,6 @@ setComponentActions('library', {
         FRAME.notify(`filter: ${query}`, 'filter');
 
       FRAME.coverGrid.drawCovers(queries);
-      setPaletteInfo('arguments: [[-]string...], ?: list tags');
       return [];
     },
     customFilter: (query) => {
