@@ -214,9 +214,14 @@ main {
   min-height: 0px;
   display: flex;
 
-  /* remove explorer top margin when tabs are visible for and even gap */
+  /* remove explorer top margin when tabs are visible */
   header:not([style*="display: none;"]) + & viewer-component::part(explorer) {
     margin-top: 0;
+  }
+
+  /* remove explorer bottom margin when status bar is visible */
+  &:has(+ footer:not([hidden])) viewer-component::part(explorer) {
+    margin-bottom: 0;
   }
 }
 
@@ -477,25 +482,29 @@ action-palette {
   }
 }
 
-#bar {
+footer {
   background: var(--theme-status-bg);
   color: var(--theme-status-fr);
   
   display: flex;
   justify-content: space-between;
   transition: .1s;
-  padding: 0em .2em;
+  padding: 0em var(--small-gap);
   gap: 2em;
 
-  & > * {
+  p {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     width: fit-content;
     font-size: inherit;
 
-    &#barInfo {
+    &:last-child {
       min-width: fit-content;
     }
-  } 
+  }
+
+  &[hidden] {
+    font-size: 0px;
+  }
 }

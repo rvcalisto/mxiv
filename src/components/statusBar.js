@@ -9,9 +9,9 @@
  */
 
 
-const barElement  = /** @type {HTMLDivElement}   */ (document.getElementById('bar'));
-const nameElement = /** @type {HTMLLabelElement} */ (document.getElementById('barName'));
-const infoElement = /** @type {HTMLLabelElement} */ (document.getElementById('barInfo'));
+const barElement  = /** @type {HTMLDivElement}       */ (document.querySelector('footer'));
+const nameElement = /** @type {HTMLParagraphElement} */ (barElement.querySelector(':first-child'));
+const infoElement = /** @type {HTMLParagraphElement} */ (barElement.querySelector(':last-child'));
 
 /**
  * Application name shown as window suffix.
@@ -28,7 +28,7 @@ let wasVisible = statusVisibility();
  * Either status bar is visible.
  */
 export function statusVisibility() {
-  return barElement.style.fontSize === '';
+  return !barElement.hasAttribute('hidden');
 }
 
 /**
@@ -37,7 +37,7 @@ export function statusVisibility() {
  */
 export function toggleStatus( force = !statusVisibility() ) {
   // animation transition in css
-  barElement.style.fontSize = force ? '' : '0px';
+  barElement.toggleAttribute('hidden', !force);
 }
 
 /**

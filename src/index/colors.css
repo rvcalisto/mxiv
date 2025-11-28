@@ -20,7 +20,7 @@
    * Dark theme (default).
    */
   @media (prefers-color-scheme: dark) {
-    --theme-main-bg: radial-gradient(#1a1a1a, #101010);
+    --theme-main-bg: #151515;
     --theme-scrollbar-fg: #5f5f5f;
     --theme-scrollbar-bg: #484848;
 
@@ -100,7 +100,7 @@
 
     /* status */
     --theme-status-fr: silver;
-    --theme-status-bg: linear-gradient(90deg, #1b1b1b, transparent);
+    --theme-status-bg: none;
 
     /* notification */
     --theme-notification-bg: whitesmoke;
@@ -120,7 +120,7 @@
    * Light theme overrides.
    */
   @media (prefers-color-scheme: light) {
-    --theme-main-bg: linear-gradient(-90deg, white, silver);
+    --theme-main-bg: #e0e0e0;
     --theme-scrollbar-fg: gray;
     --theme-scrollbar-bg: darkgray;
 
@@ -204,7 +204,7 @@
 
     /* status */
     --theme-status-fr: #242424;
-    --theme-status-bg: white;
+    --theme-status-bg: none;
 
     /* notification */
     --theme-notification-fg: #242424;
