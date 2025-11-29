@@ -151,8 +151,8 @@ export class TrackBar {
     const muteIco = /** @type HTMLParagraphElement */ (shadowRoot.getElementById('trackMute'));
     muteIco.setAttribute('icon', vid.muted ? 'vol-mute' : 'vol');
 
-    const muteContainer = /** @type HTMLDivElement */ (muteIco.parentElement);
-    muteContainer.setAttribute('info', `${(vid.volume*100).toFixed(0)}%`);
+    const muteVolume = /** @type HTMLParagraphElement */ (shadowRoot.getElementById('trackVolume'));
+    muteVolume.textContent = `${(vid.volume*100).toFixed(0)}%`;
 
     // sync pause
     const pauseIco = /** @type HTMLParagraphElement */ (shadowRoot.getElementById('trackPause'));
@@ -166,8 +166,8 @@ export class TrackBar {
     const pitchIco = /** @type HTMLParagraphElement */ (shadowRoot.getElementById('trackPitch'));
     pitchIco.setAttribute('icon', vid.preservesPitch ? 'speed' : 'speed-pitch');
 
-    const pitchContainer = /** @type HTMLDivElement */ (pitchIco.parentElement);
-    pitchContainer.setAttribute('info', `x${vid.playbackRate.toFixed(2)}`);
+    const pitchRate = /** @type HTMLParagraphElement */ (shadowRoot.getElementById('trackSpeed'));
+    pitchRate.textContent = `x${vid.playbackRate.toFixed(2)}`;
 
     // sync ab loop button
     const abLoopBtn = /** @type HTMLParagraphElement */ (shadowRoot.querySelector('.abLoop'));

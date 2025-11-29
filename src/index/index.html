@@ -418,14 +418,13 @@
         height: fit-content;
         gap: 2px;
         margin: 8px;
-        transition: all .4s;
+        transition: all .2s;
         pointer-events: visible;
         
         &[hidden] {
           opacity: 0;
           visibility: hidden;
-          height: 0px;
-          margin: 0px;
+          transform: scale(1.25);
         }
       }
 
@@ -502,7 +501,11 @@
       }
 
       .trackButtons {
+        --padding-x: .5em;
+        --border-radius: .3em;
+
         display: flex;
+        flex-wrap:wrap;
         gap: .5em;
 
         & > div {
@@ -510,13 +513,38 @@
           align-items: center;
           justify-content: center;
           min-width: fit-content;
-          padding: 0 .5em;
+          padding: 0 var(--padding-x);
           gap: .3em;
 
-          border-radius: .3em;
+          border-radius: var(--border-radius);
           color: var(--theme-view-track-button-fg);
           background: var(--theme-view-track-button-bg);
           box-shadow: var(--theme-view-track-shadow);
+
+          &.meter {
+            padding: 0;
+            gap: 0;
+            background: none;
+            
+            & > * {
+              height: 100%;
+              align-content: center;
+              background: var(--theme-view-track-button-bg);
+
+              &:first-child {
+                padding: 0 var(--padding-x);
+                border-radius: var(--border-radius) 0 0 var(--border-radius);
+              }
+
+              &:last-child {
+                font-size: smaller;
+                text-rendering:geometricPrecision;
+                padding: 0 .3em;
+                border-radius: 0 var(--border-radius) var(--border-radius) 0;
+                opacity: .6;
+              }
+            }
+          }
 
           &.square {
             --size: round(up, 1.5em, 1px);
@@ -538,22 +566,6 @@
               filter: brightness(.5);
             }
           }
-        }
-
-        [info]::after {
-          opacity: .5;
-          content: attr(info);
-          position: absolute;
-          transform: translateY(120%);
-          pointer-events: none;
-
-          padding: 0 .25em;
-          font-weight: bold;
-          font-size: smaller;
-          border-radius: .3em;
-
-          color: var(--theme-view-track-button-fg);
-          background: var(--theme-view-track-button-bg);
         }
 
         .abLoop {
@@ -631,11 +643,13 @@
             <div class="passive">
               <p id="trackText"></p>
             </div>
-            <div style="transform-origin: left;" title="volume">
+            <div class="meter" style="transform-origin: left;" title="volume">
               <p id="trackMute"></p>
+              <p id="trackVolume">100%</p>
             </div>
-            <div style="transform-origin: right; margin-left: auto;" title="playback rate">
+            <div class="meter" style="transform-origin: right; margin-left: auto;" title="playback rate">
               <p id="trackPitch" icon="speed"></p>
+              <p id="trackSpeed">x1.0</p>
             </div>
             <div class="abLoop" style="gap: 0" title="A/B loop">
               <p>A</p>
