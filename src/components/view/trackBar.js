@@ -12,6 +12,20 @@ export class TrackBar {
    */
   static peekDuration = 1.5;
 
+  /** @type {HTMLDivElement}       */ #panelElement;
+  /** @type {HTMLDivElement}       */ #trackBar;
+  /** @type {HTMLDivElement}       */ #trackTimeBar;
+  /** @type {HTMLDivElement}       */ #trackLoopBar;
+  /** @type {HTMLParagraphElement} */ #timestamp;
+  /** @type {HTMLParagraphElement} */ #pauseIcon;
+  /** @type {HTMLParagraphElement} */ #timeLabel;
+  /** @type {HTMLParagraphElement} */ #volumeIcon;
+  /** @type {HTMLParagraphElement} */ #volumeLabel;
+  /** @type {HTMLParagraphElement} */ #playbackIcon;
+  /** @type {HTMLParagraphElement} */ #playbackLabel;
+  /** @type {HTMLDivElement}       */ #abLoopButton;
+  /** @type {HTMLParagraphElement} */ #loopIcon;
+
   /**
    * Track peek timeout timer.
    * @type {NodeJS.Timeout|undefined}
@@ -23,12 +37,6 @@ export class TrackBar {
    * @type {import('./view.js').View}
    */
   #view;
-
-  /**
-   * Track root HTML element contained in View.
-   * @type {HTMLDivElement}
-   */
-  #panelElement;
  
   /**
    * HTML Video element to represent.
@@ -46,8 +54,22 @@ export class TrackBar {
    */
   constructor(view) {
     this.#view = view;
-    const shadowRoot = /** @type ShadowRoot */ (this.#view.shadowRoot);
-    this.#panelElement = /** @type HTMLDivElement */ (shadowRoot.getElementById('trackPanel'));
+    const shadowRoot    = /** @type {ShadowRoot} */ (this.#view.shadowRoot);
+
+    // set references for track elements
+    this.#panelElement  = /** @type {HTMLDivElement}       */ (shadowRoot.querySelector('#trackPanel'));
+    this.#trackBar      = /** @type {HTMLDivElement}       */ (shadowRoot.querySelector('#vidTrack'));
+    this.#trackTimeBar  = /** @type {HTMLDivElement}       */ (shadowRoot.querySelector('#vidTime'));
+    this.#trackLoopBar  = /** @type {HTMLDivElement}       */ (shadowRoot.querySelector('#vidLoop'));
+    this.#timestamp     = /** @type {HTMLParagraphElement} */ (shadowRoot.querySelector('.timestamp'));
+    this.#pauseIcon     = /** @type {HTMLParagraphElement} */ (shadowRoot.querySelector('#trackPause'));
+    this.#timeLabel     = /** @type {HTMLParagraphElement} */ (shadowRoot.querySelector('#trackText'));
+    this.#volumeIcon    = /** @type {HTMLParagraphElement} */ (shadowRoot.querySelector('#trackMute'));
+    this.#volumeLabel   = /** @type {HTMLParagraphElement} */ (shadowRoot.querySelector('#trackVolume'));
+    this.#playbackIcon  = /** @type {HTMLParagraphElement} */ (shadowRoot.querySelector('#trackPitch'));
+    this.#playbackLabel = /** @type {HTMLParagraphElement} */ (shadowRoot.querySelector('#trackSpeed'));
+    this.#abLoopButton  = /** @type {HTMLDivElement}       */ (shadowRoot.querySelector('.abLoop'));
+    this.#loopIcon      = /** @type {HTMLParagraphElement} */ (shadowRoot.querySelector('#trackLoop'));
 
     this.#initEvents();
     this.#panelElement.toggleAttribute('hidden', true);
@@ -115,26 +137,23 @@ export class TrackBar {
     if (!vid)
       return;
 
-    const shadowRoot = /** @type ShadowRoot */ (this.#view.shadowRoot);
-    const trackCurrentTime = /** @type HTMLDivElement */ (shadowRoot.getElementById('vidTime'));
-    const trackTimeLabel = /** @type HTMLParagraphElement */ (shadowRoot.getElementById('trackText'));
     const vidDuration = vid.duration;
 
     // loading . . .
     if ( isNaN(vidDuration) ) {
-      trackCurrentTime.style.width = '0%';
-      trackTimeLabel.textContent = '●●●';
+      this.#trackTimeBar.style.width = '0%';
+      this.#timeLabel.textContent = '●●●';
       return;
     }
 
     // track label
-    let duration = secToHMS(vidDuration).slice(this.#HMScharsToDiscard);
-    let time = secToHMS(vid.currentTime).slice(this.#HMScharsToDiscard);
-    trackTimeLabel.textContent = `${time} / ${duration}`;
-  
+    const duration = secToHMS(vidDuration).slice(this.#HMScharsToDiscard);
+    const time = secToHMS(vid.currentTime).slice(this.#HMScharsToDiscard);
+    this.#timeLabel.textContent = `${time} / ${duration}`;
+
     // bar progress
     const value = (vid.currentTime / vidDuration) * 100;
-    trackCurrentTime.style.width = `${value.toFixed(2)}%`;
+    this.#trackTimeBar.style.width = `${value.toFixed(2)}%`;
   }
 
   /**
@@ -145,39 +164,28 @@ export class TrackBar {
     if (!vid)
       return;
 
-    const shadowRoot = /** @type ShadowRoot */ (this.#view.shadowRoot);
-
     // sync mute status and volume
-    const muteIco = /** @type HTMLParagraphElement */ (shadowRoot.getElementById('trackMute'));
-    muteIco.setAttribute('icon', vid.muted ? 'vol-mute' : 'vol');
-
-    const muteVolume = /** @type HTMLParagraphElement */ (shadowRoot.getElementById('trackVolume'));
-    muteVolume.textContent = `${(vid.volume*100).toFixed(0)}%`;
+    this.#volumeIcon.setAttribute('icon', vid.muted ? 'vol-mute' : 'vol');
+    this.#volumeLabel.textContent = `${(vid.volume*100).toFixed(0)}%`;
 
     // sync pause
-    const pauseIco = /** @type HTMLParagraphElement */ (shadowRoot.getElementById('trackPause'));
-    pauseIco.setAttribute('icon', vid.paused ? 'play' : 'pause');
+    this.#pauseIcon.setAttribute('icon', vid.paused ? 'play' : 'pause');
 
     // sync loop
-    const loopIco = /** @type HTMLParagraphElement */ (shadowRoot.getElementById('trackLoop'));
-    loopIco.setAttribute('icon', this.#view.onEnd);
+    this.#loopIcon.setAttribute('icon', this.#view.onEnd);
 
     // sync pitch and speed
-    const pitchIco = /** @type HTMLParagraphElement */ (shadowRoot.getElementById('trackPitch'));
-    pitchIco.setAttribute('icon', vid.preservesPitch ? 'speed' : 'speed-pitch');
-
-    const pitchRate = /** @type HTMLParagraphElement */ (shadowRoot.getElementById('trackSpeed'));
-    pitchRate.textContent = `x${vid.playbackRate.toFixed(2)}`;
+    this.#playbackIcon.setAttribute('icon', vid.preservesPitch ? 'speed' : 'speed-pitch');
+    this.#playbackLabel.textContent = `x${vid.playbackRate.toFixed(2)}`;
 
     // sync ab loop button
-    const abLoopBtn = /** @type HTMLParagraphElement */ (shadowRoot.querySelector('.abLoop'));
-    abLoopBtn.setAttribute('state', 
+    this.#abLoopButton.setAttribute('state', 
       this.#view.bLoop < Infinity ? 'ab' :
       this.#view.aLoop < Infinity ? 'a' : ''
     );
 
     // sync ab loop section
-    const trackLoopBar = /** @type HTMLParagraphElement */ (shadowRoot.getElementById('vidLoop'));
+    const trackLoopBar = this.#trackLoopBar;
     if (this.#view.aLoop === Infinity) {
       trackLoopBar.style.marginLeft = '0%';
       trackLoopBar.style.width = '0%';
@@ -199,9 +207,7 @@ export class TrackBar {
    * @returns {number} Video position.
    */
   #seekTo(e) {
-    const shadowRoot = /** @type ShadowRoot */ (this.#view.shadowRoot);
-    const trackBar = /** @type HTMLDivElement */ (shadowRoot.getElementById('vidTrack'));
-    const barPosition = e.offsetX / trackBar.clientWidth;
+    const barPosition = e.offsetX / this.#trackBar.clientWidth;
 
     // outer scope videoElement validation expected
     return /** @type HTMLVideoElement */ (this.#videoElement).duration * barPosition;
@@ -238,13 +244,12 @@ export class TrackBar {
     }
 
     // show cursor position timestamp, don't go out-bounds
-    const timestamp = /** @type {HTMLParagraphElement}*/ (this.#panelElement.querySelector('.timestamp'));
+    const timestamp = this.#timestamp;
     timestamp.textContent = secToHMS( this.#seekTo(e), true );
     timestamp.style.transform = `translateX(-50%) translateX(${e.offsetX}px)`;
 
-    const track = /** @type {HTMLDivElement}*/ (this.#panelElement.querySelector('#vidTrack'));
     const stampRect = timestamp.getBoundingClientRect();
-    const trackRect = track.getBoundingClientRect();
+    const trackRect = this.#trackBar.getBoundingClientRect();
 
     if (stampRect.left < trackRect.left)
       timestamp.style.transform += ` translateX(${trackRect.left - stampRect.left}px)`;
@@ -256,56 +261,50 @@ export class TrackBar {
     const shadowRoot = /** @type ShadowRoot */ (this.#view.shadowRoot);
 
     // mute toggle
-    const muteIco = /** @type HTMLParagraphElement */ (shadowRoot.getElementById('trackMute'));
-    const muteContainer = /** @type HTMLDivElement */ (muteIco.parentElement);
-    muteContainer.onclick = () => this.#view.media.muteToggle();
+    const volumeContainer = /** @type HTMLDivElement */ (this.#volumeIcon.parentElement);
+    volumeContainer.onclick = () => this.#view.media.muteToggle();
 
     // volume wheel
-    muteContainer.addEventListener('wheel', (e) => {
+    volumeContainer.addEventListener('wheel', (e) => {
       this.#view.media.setVolume(e.deltaY > 0 ? '-5' : '+5');
     }, { passive: true });
 
     // pitch toggle
-    const speedIco = /** @type HTMLParagraphElement */ (shadowRoot.getElementById('trackPitch'));
-    const speedContainer = /** @type HTMLDivElement */ (speedIco.parentElement);
-    speedContainer.onclick = () => this.#view.media.preservePitch();
+    const playbackContainer = /** @type HTMLDivElement */ (this.#playbackIcon.parentElement);
+    playbackContainer.onclick = () => this.#view.media.preservePitch();
 
     // speed wheel
-    speedContainer.addEventListener('wheel', (e) => {
+    playbackContainer.addEventListener('wheel', (e) => {
       this.#view.media.playbackRate(e.deltaY > 0 ? '-.25' : '+.25');
     }, { passive: true });
 
     // ab loop
-    const abLoopBtn = /** @type HTMLDivElement */ (shadowRoot.querySelector('.abLoop'));
-    abLoopBtn.onclick = () => this.#view.media.abLoop();
+    this.#abLoopButton.onclick = () => this.#view.media.abLoop();
 
     // play/pause
-    const pauseIco = /** @type HTMLParagraphElement */ (shadowRoot.getElementById('trackPause'));
-    const pauseContainer = /** @type HTMLDivElement */ (pauseIco.parentElement);
+    const pauseContainer = /** @type HTMLDivElement */ (this.#pauseIcon.parentElement);
     pauseContainer.onclick = () => this.#view.media.playToggle();
 
     // skip next
-    const skipRico = /** @type HTMLParagraphElement */ (shadowRoot.getElementById('trackSkipR'));
+    const skipRico = /** @type HTMLParagraphElement */ (shadowRoot.querySelector('#trackSkipR'));
     skipRico.setAttribute('icon', 'skip-right');
 
     const skipRContainer = /** @type HTMLDivElement */ (skipRico.parentElement);
     skipRContainer.onclick = () => this.#view.events.fire('view:skip', true);
 
     // skip previous
-    const skipLico = /** @type HTMLParagraphElement */ (shadowRoot.getElementById('trackSkipL'));
+    const skipLico = /** @type HTMLParagraphElement */ (shadowRoot.querySelector('#trackSkipL'));
     skipLico.setAttribute('icon', 'skip-left');
 
     const skipLContainer = /** @type HTMLDivElement */ (skipLico.parentElement);
     skipLContainer.onclick = () => this.#view.events.fire('view:skip', false);
 
     // loop [⟳], skip [🠖], stop [⇥] at the end of vid
-    const loopIco = /** @type HTMLParagraphElement */ (shadowRoot.getElementById('trackLoop'));
-    const loopContainer = /** @type HTMLDivElement */ (loopIco.parentElement);
+    const loopContainer = /** @type HTMLDivElement */ (this.#loopIcon.parentElement);
     loopContainer.onclick = () => this.#view.media.onEndRepeat();
 
     // seek track events
-    const trackBar = /** @type HTMLDivElement */ (shadowRoot.getElementById('vidTrack'));
-    trackBar.onmousedown = (e) => this.#onMouseTrackHandler(e);
-    trackBar.onmousemove = (e) => this.#onMouseTrackHandler(e);
+    this.#trackBar.onmousedown = (e) => this.#onMouseTrackHandler(e);
+    this.#trackBar.onmousemove = (e) => this.#onMouseTrackHandler(e);
   }
 }
