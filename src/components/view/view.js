@@ -126,15 +126,12 @@ export class View extends HTMLElement {
     this.fileType = type;
 
     // store scroll position, display media by type
-    const scroll = this.scrollBox.pos;
     const success = type === 'image'
       ? await this.screen.displayImage(filePath)
       : await this.screen.displayVideo(filePath);
 
-    // preserve scroll pos & presentation. Emit signals
+    // emit signals
     if (success) {
-      this.scrollBox.pos = { x: scroll.x, y: scroll.y, behavior: 'auto' };
-      this.screen.postPass(); // re-apply view mode to new content
       this.slideshow.tick();
 
       const playing = type === 'image'

@@ -72,8 +72,10 @@ export class ViewScreen {
     if (!success)
       return success;
 
-    // replace previous element with new image
+    // replace previous element, keep mode & scroll position
+    const pos = this.#view.scrollBox.pos;
     this.displayEmpty(img);
+    this.#postPass(pos);
 
     img.ondblclick = () => this.#view.events.fire('view:fullscreen');
 
@@ -99,8 +101,10 @@ export class ViewScreen {
     if (!success)
       return success;
 
-    // replace previous element with new video
+    // replace previous element, keep mode & scroll position
+    const pos = this.#view.scrollBox.pos;
     this.displayEmpty(vid);
+    this.#postPass(pos);
 
     // obey autoplay property but toggle on for next videos (for restoring videos as paused)
     if (this.#view.autoplay)
@@ -131,50 +135,6 @@ export class ViewScreen {
   }
 
   /**
-   * Apply mode style property values to img element.
-   * @param {DisplayModes} mode View mode. 
-   */
-  #applyMode(mode) {
-    const img = this.element, zoom = this.#view.zoom;
-
-    switch (mode) {
-      case 'none':
-        const nativeHeight = img.tagName === 'IMG'
-          ? /** @type {HTMLImageElement} */ (img).naturalHeight
-          : /** @type {HTMLVideoElement} */ (img).videoHeight
-
-        img.style.height = `${nativeHeight * (zoom * .01)}px`;
-        img.style.width = 'auto';
-        img.style.objectFit = 'unset';
-        break;
-
-      case 'stretch':
-        img.style.height = `${zoom}%`;
-        img.style.width = `${zoom}%`;
-        img.style.objectFit = 'unset';
-        break;
-
-      case 'scale':
-        img.style.height = `${zoom}%`;
-        img.style.width = `${zoom}%`;
-        img.style.objectFit = 'contain';
-        break;
-
-      case 'width':
-        img.style.height = 'auto';
-        img.style.width = `${zoom}%`;
-        img.style.objectFit = 'unset';
-        break;
-
-      case 'height':
-        img.style.height = `${zoom}%`;
-        img.style.width = 'auto';
-        img.style.objectFit = 'unset';
-        break;
-    }
-  }
-
-  /**
    * Increase, decrease and set zoom.
    * @param {string|number} value Ex: `+5`, `-2`, `8`.
    */
@@ -186,26 +146,62 @@ export class ViewScreen {
       return;
 
     if (zoomString[0] === '+' || zoomString[0] === '-')
-      newValue = this.#view.zoom + newValue; // relative
+      newValue += this.#view.zoom // relative
 
+    const { x = .5, y = .5 } = this.#view.scrollBox.pos; // fallback center
     this.#view.zoom = Math.max(0, newValue);
+    this.#postPass({ x, y });
 
-    this.postPass();
     this.#view.events.fire('view:zoom');
   }
 
   /**
-   * Re-evaluates current mode method on img load & zoom, preserves scroll position.
-   * Needed to preserve resource dependent properties such as `height: img.nativeHeight` across images.
+   * Apply and preserve element mode styling, scroll position across images.
+   * @param {{ x?: number, y?: number; }} [pos=this.#view.scrollBox.pos] Custom scroll position.
    */
-  postPass() {
-    // remember scroll position if any, else focus middle (defaults to .5)
-    const { x = .5, y = .5 } = this.#view.scrollBox.pos;
+  #postPass(pos = this.#view.scrollBox.pos) {
+    const { x = 0, y = 0 } = pos; // fallback to top-left
 
-    this.#applyMode(this.#view.mode);
+    const element = this.element, zoom = this.#view.zoom;
+
+    switch (this.#view.mode) {
+      case 'none':
+        const nativeHeight = element.tagName === 'IMG'
+          ? /** @type {HTMLImageElement} */ (element).naturalHeight
+          : /** @type {HTMLVideoElement} */ (element).videoHeight
+
+        element.style.height = `${nativeHeight * (zoom * .01)}px`;
+        element.style.width = 'auto';
+        element.style.objectFit = 'unset';
+        break;
+
+      case 'stretch':
+        element.style.height = `${zoom}%`;
+        element.style.width = `${zoom}%`;
+        element.style.objectFit = 'unset';
+        break;
+
+      case 'scale':
+        element.style.height = `${zoom}%`;
+        element.style.width = `${zoom}%`;
+        element.style.objectFit = 'contain';
+        break;
+
+      case 'width':
+        element.style.height = 'auto';
+        element.style.width = `${zoom}%`;
+        element.style.objectFit = 'unset';
+        break;
+
+      case 'height':
+        element.style.height = `${zoom}%`;
+        element.style.width = 'auto';
+        element.style.objectFit = 'unset';
+        break;
+    }
 
     // restore scroll position without animation
-    this.#view.scrollBox.pos = { x: x, y: y, behavior: 'auto' };
+    this.#view.scrollBox.pos = { x, y, behavior: 'auto' };
   }
 
   /**
@@ -214,8 +210,8 @@ export class ViewScreen {
    */
   setViewMode(mode) {
     this.#view.zoom = 100;
-    this.#applyMode(mode);
     this.#view.mode = mode;
+    this.#postPass();
 
     this.#view.events.fire('view:notify', `fit-${mode}`, 'fitMode');
     this.#view.events.fire('view:mode', mode);
@@ -226,11 +222,10 @@ export class ViewScreen {
    * @param {boolean} [forward=true] Direction.
    */
   cycleViewMode(forward = true) {
-    /** @type {DisplayModes[]} */ 
-    const modes = ['none', 'stretch', 'scale', 'width', 'height'];
+    const modes = /** @type {DisplayModes[]} */ (['none', 'stretch', 'scale', 'width', 'height']);
 
-    let nextIdx = modes.indexOf(this.#view.mode) + (forward ? 1 : -1);
-    nextIdx = nextIdx < 0 ? modes.length -1 : nextIdx % (modes.length); // wrap around
-    this.setViewMode(modes[nextIdx]);
+    const nextIdx = modes.indexOf(this.#view.mode) + (forward ? 1 : -1);
+    const newMode = modes.at(nextIdx % modes.length); // wrap around
+    this.setViewMode( /** @type {DisplayModes} */ (newMode) );
   }
 }
