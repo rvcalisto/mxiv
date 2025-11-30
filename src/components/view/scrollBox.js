@@ -126,34 +126,32 @@ export class ScrollBox {
    */
   slide(axis, value) {
     // update deltas, guard against interval overwrites
-    axis === 'x' ? this.#deltaX = value : this.#deltaY = value;
+    axis === 'x'
+      ? this.#deltaX = value
+      : this.#deltaY = value;
 
     if (this.#slideInterval != null)
       return;
 
     this.#slideInterval = setInterval(() => {
-      // zero value if axis isn't zero but can't scroll further
-      const xAdds = this.#deltaX > 0;
-      const cantFurtherX = xAdds && this.pos.x === 1 || !xAdds && this.pos.x === 0;
+      const pos = this.pos;
+      const xLimit = this.#deltaX > 0 ? 1 : 0,
+            yLimit = this.#deltaY > 0 ? 1 : 0;
 
-      if (cantFurtherX)
+      // zero delta on axis limit for direction
+      if (pos.x === xLimit)
         this.#deltaX = 0;
-
-      const yAdds = this.#deltaY > 0;
-      const cantFurtherY = !yAdds && this.pos.y === 0 || yAdds && this.pos.y === 1;
-
-      if (cantFurtherY)
+      if (pos.y === yLimit)
         this.#deltaY = 0;
 
       // end loop if both axis are zero
       if (this.#deltaX === 0 && this.#deltaY === 0) {
         clearInterval(this.#slideInterval);
         this.#slideInterval = undefined;
-        return;
+      } else {
+        this.#box.scrollLeft += this.#deltaX;
+        this.#box.scrollTop += this.#deltaY; 
       }
-
-      this.#box.scrollLeft += this.#deltaX;
-      this.#box.scrollTop += this.#deltaY;
     }, 10); // too low and cpu usage rises
   }
 
