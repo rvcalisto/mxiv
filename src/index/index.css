@@ -1,4 +1,4 @@
-@charset "utf-8"; /* prevents badly encoded icons */
+@charset "UTF-8"; /* prevents badly encoded icons */
 
 :root {
   --cover-height: 200px;

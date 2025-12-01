@@ -1,0 +1,214 @@
+@charset "UTF-8"; /* prevents badly encoded icons */
+
+* {
+  padding: 0;
+  margin: 0;
+  outline: none;
+
+  --highlight: color(
+    from var(--theme-explorer-bg) 
+    display-p3 calc(r + .05) calc(g + .05) calc(b + .05)
+  );
+}
+
+[icon]::before {
+  font-family: "font-awesome";
+  padding-right: .5em;
+  padding-left: .2em;
+}
+
+[icon=folder]::before {
+  content: "";
+  color: var(--theme-icon-folder);
+}
+
+[icon=image]::before {
+  content: "";
+  color: var(--theme-icon-image);
+}
+
+[icon=audio]::before {
+  content: "🎵";
+  color: var(--theme-icon-audio);
+}
+
+[icon=video]::before {
+  content: "";
+  color: var(--theme-icon-video);
+}
+
+[icon=archive]::before {
+  content: "";
+  color: var(--theme-icon-archive);
+}
+
+[icon=playlist]::before {
+  content: "";
+  color: var(--theme-icon-playlist);
+}
+
+[icon=explorer]::before {
+  content: "";
+  color: var(--theme-icon-explorer);
+}
+
+#wrapper {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  border-radius: inherit;
+}
+
+#header {
+  background: linear-gradient(90deg, var(--highlight), transparent);
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+
+  gap: .1em;
+  padding: .35em .5em;
+  margin-bottom: 4px;
+  border-top: solid thin transparent;
+  border-bottom: solid thin var(--highlight);
+
+  box-shadow: 2px 2px 10px #00000060;
+  z-index: 1;
+  overflow: hidden;
+
+  p {
+    color: var(--theme-explorer-header-secondary-fg);
+    text-overflow: ellipsis;
+    width: 100%;
+    max-width: fit-content;
+    overflow: hidden;
+    transition: .2s;
+
+    &:last-child {
+      color: var(--theme-explorer-header-primary-fg);
+    }
+  }
+
+  &:not([passive]):hover {
+    cursor: pointer;
+
+    p {
+
+      &:first-child:not(:empty),
+      &:first-child:empty+p {
+        color: var(--theme-explorer-header-primary-fg);
+        background: var(--theme-explorer-header-primary-bg);
+        padding: 0 .25em;
+        margin: 0 .25em;
+        border-radius: .3em;
+      }
+
+      &:last-child {
+        color: var(--theme-explorer-header-secondary-fg);
+      }
+    }
+  }
+}
+
+#itemList {
+  height: 0%;
+  flex: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.pageContainer {
+  background: inherit;
+  overflow: hidden auto;
+  height: 100%;
+  padding: 0 4px 4px 4px;
+
+  p {
+    color: var(--theme-explorer-secondary-fg);
+    background: inherit;
+    padding: 3px;
+    border-radius: 4px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    cursor: pointer;
+
+    &:hover {
+      color: var(--theme-explorer-hover-fg);
+      background: var(--theme-explorer-hover-bg);
+    }
+
+    &.selected {
+      color: var(--theme-explorer-primary-fg);
+      background: var(--theme-explorer-secondary-bg);
+
+      :host(#fileExplorer:focus) & {
+        background: var(--theme-explorer-primary-bg);
+      }
+    }
+  }
+}
+
+.paginator {
+  display: flex;
+  justify-content: space-around;
+  padding: 4px;
+  background: var(--theme-explorer-paginator-bg);
+
+  * {
+    border: none;
+    border-radius: 4px;
+    padding: 2px 8px;
+    background: var(--theme-explorer-paginator-item-bg);
+    color: var(--theme-explorer-paginator-item-fg);
+  }
+
+  button:hover {
+    background: var(--theme-explorer-paginator-item-hover-bg);
+    cursor: pointer;
+  }
+
+  button:active {
+    background: var(--theme-explorer-paginator-item-active-bg);
+  }
+}
+
+#search {
+  font-family: var(--app-font);
+  background: var(--theme-explorer-search-bg);
+  color: var(--theme-explorer-search-fg);
+  outline-style: none;
+  border: none;
+  border-top: dotted thin var(--theme-explorer-search-separator);
+  padding: .3em .8em;
+
+  &:focus {
+    border-top: solid thin var(--theme-explorer-search-separator-focus);
+    color: var(--theme-explorer-search-fg-focus);
+  }
+}
+
+/* scroll styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-corner {
+  background-color: var(--theme-scrollbar-bg);
+}
+
+::-webkit-scrollbar-track {
+  background: inherit;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--theme-scrollbar-bg);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--theme-scrollbar-fg);
+}

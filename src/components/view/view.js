@@ -6,6 +6,8 @@ import { ViewMedia } from "./media.js";
 import { Slideshow } from "./slideshow.js";
 import { ObservableEvents } from "../observableEvents.js";
 
+import style from "./view.css" with { type: 'css' };
+
 
 /**
  * @typedef {'view:loaded'|'view:skip'|'view:random'|'view:playing'|
@@ -88,7 +90,9 @@ export class View extends HTMLElement {
     // clone template content into shadow root
     const template = /** @type HTMLTemplateElement */ (document.getElementById('viewTemplate'));
     const shadowRoot = this.attachShadow({ mode: 'open' });
+
     shadowRoot.append( template.content.cloneNode(true) );
+    shadowRoot.adoptedStyleSheets = [style];
 
     // instatiate composed parts
     this.scrollBox = new ScrollBox(this);

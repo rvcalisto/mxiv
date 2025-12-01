@@ -7,6 +7,8 @@ import userPreferences from "../../components/userPreferences.js";
 import "./libraryActions.js";
 import "./libraryAccelerators.js";
 
+import style from "./library.css" with { type: 'css' };
+
 
 /**
  * @import { LibraryUpdate } from "../../APIs/library/main.js"
@@ -78,10 +80,10 @@ export class Library extends GenericFrame {
 
   connectedCallback() {
     const template = /** @type HTMLTemplateElement */ (document.getElementById('libraryTemplate'));
-    const fragment = template.content;
-    
     const shadowRoot = this.attachShadow({ mode: 'open' });
-    shadowRoot.append( fragment.cloneNode(true) );
+
+    shadowRoot.append( template.content.cloneNode(true) );
+    shadowRoot.adoptedStyleSheets = [style];
 
     this.watchlistPanel = new WatchlistPanel(this);
     this.coverGrid = new CoverGrid(this);

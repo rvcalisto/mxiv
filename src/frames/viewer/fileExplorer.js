@@ -1,9 +1,12 @@
+// @ts-check
 import { ItemList } from "../../components/itemList.js";
 import { notify } from "../../components/notifier.js";
 
+import style from "./fileExplorer.css" with { type: 'css' };
+
 
 /**
- * @typedef {import("../../APIs/file/fileSearch.js").FileObject} FileObject
+ * @import { FileObject } from "../../APIs/file/fileSearch.js"
  */
 
 
@@ -72,12 +75,14 @@ export class FileExplorer extends HTMLElement {
   #collator = new Intl.Collator('en', { numeric: true });
 
   connectedCallback() {
-    this.attachShadow({ mode: 'open' });
-    const fragment = document.getElementById('fileExplorerTemplate').content;
-    this.shadowRoot.append( fragment.cloneNode(true) );
+    const shadowRoot = this.attachShadow({ mode: 'open' });
+    const template = /** @type {HTMLTemplateElement} */ (document.querySelector('#fileExplorerTemplate'));
 
-    this.#searchPrompt = this.shadowRoot.getElementById('search');
-    this.#list = this.shadowRoot.getElementById('itemList');
+    shadowRoot.append( template.content.cloneNode(true) );
+    shadowRoot.adoptedStyleSheets = [style];
+
+    this.#searchPrompt = /** @type {HTMLInputElement} */ (shadowRoot.querySelector('#search'));
+    this.#list = /** @type {ItemList} */ (shadowRoot.querySelector('#itemList'));
 
     this.style.display = 'none'; // starts hidden
     this.#initEvents();
@@ -109,13 +114,14 @@ export class FileExplorer extends HTMLElement {
    * @param {()=>void} [clickFunc] On click function.
    */
   #updateHeader(icon, secondaryLabel, primaryLabel, title, clickFunc) {
-    const parentLabel = this.shadowRoot.getElementById('parentLabel');
+    const shadowRoot = /** @type {ShadowRoot} */ (this.shadowRoot);
+    const parentLabel = /** @type {HTMLParagraphElement} */ (shadowRoot.querySelector('#parentLabel'));
     parentLabel.textContent = secondaryLabel;
     
-    const currentLabel = this.shadowRoot.getElementById('currentLabel');
+    const currentLabel = /** @type {HTMLParagraphElement} */ (shadowRoot.querySelector('#currentLabel'));
     currentLabel.textContent = primaryLabel;
 
-    const header = this.shadowRoot.getElementById('header');
+    const header = /** @type {HTMLParagraphElement} */ (shadowRoot.querySelector('#header'));
     header.toggleAttribute('passive', clickFunc == null);
     header.setAttribute('icon', icon);
     header.title = title;
@@ -384,7 +390,9 @@ export class FileExplorer extends HTMLElement {
     // bubble events as long as search prompt isn't focused
     this.onkeydown = (e) => {
       e.stopImmediatePropagation();
-      if (this.shadowRoot.activeElement !== this.#searchPrompt)
+      const shadowRoot = /** @type {ShadowRoot} */ (this.shadowRoot);
+
+      if (shadowRoot.activeElement !== this.#searchPrompt)
         dispatchEvent( new CustomEvent('fileExplorerKeyEvent', { detail : e }) );
     }
   }

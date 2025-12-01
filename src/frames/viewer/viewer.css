@@ -1,0 +1,62 @@
+@charset "UTF-8"; /* prevents badly encoded icons */
+
+* {
+  outline: none;
+  user-select: none;
+}
+
+#wrapper {
+  display: flex;
+  position: relative;
+  height: 100%;
+  width: 100%;
+}
+
+view-component {
+  width: 100%; 
+  overflow: hidden;
+}
+
+file-explorer {
+  min-width: 23em;
+  max-width: 23em;
+  transition: .2s, margin-top 0s, margin-bottom .1s;
+  margin: var(--small-gap);
+  border-radius: .5em;
+  background: var(--theme-explorer-bg);
+  anchor-name: --viewerBar;
+}
+
+#optionBar {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: absolute;
+  position-anchor: --viewerBar;
+  left: anchor(right);
+  height: 50%;
+  padding-right: 2em;
+  gap: 1em;
+  top: 25%;
+  opacity: 0;
+  transition: .5s opacity;
+
+  &:hover {
+    opacity: 1;
+  }
+
+  & > * {
+    font-family: "font-awesome";
+    color: var(--theme-explorer-option-fg);
+    background: var(--theme-explorer-option-bg);
+    margin: 0;
+    padding: 2em .25em;
+    border-radius: 0 .3em .3em 0;
+    
+    &:hover {
+      color: var(--theme-explorer-primary-fg);
+      background: var(--theme-explorer-primary-bg);
+      cursor: pointer;
+    }
+  }
+}

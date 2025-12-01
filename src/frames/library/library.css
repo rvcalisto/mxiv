@@ -1,0 +1,295 @@
+@charset "UTF-8"; /* prevents badly encoded icons */
+
+* {
+  padding: 0%;
+  margin: 0%;
+  user-select: none;
+  outline: none;
+}
+
+[icon]::before {
+  font-family: "font-awesome";
+  font-size: small;
+}
+
+[icon=close]::before {
+  content: "";
+}
+
+[icon=addfolder]::before {
+  content: "";
+}
+
+#wrapper {
+  display: flex;
+  position: relative;
+  height: 100%;
+  width: 100%;
+  flex-direction: column;
+}
+
+item-list {
+  height: 0%;
+  flex: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.pageContainer {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+}
+
+.paginator {
+  display: flex;
+  position: absolute;
+  justify-content: center;
+  align-items: center;
+  gap: .5rem;
+  margin: .5em;
+  width: fit-content;
+  left: 50%;
+  bottom: 0;
+  border-radius: .3em;
+  transform: translateX(-50%) translateX(-.5em);
+  color: var(--theme-library-primary-fg);
+  background: var(--theme-library-paginator-bg);
+  box-shadow: var(--theme-library-paginator-shadow);
+
+  &>* {
+    color: var(--theme-library-paginator-item-fg);
+    background: var(--theme-library-paginator-item-bg);
+
+    &:is(p) {
+      padding: .1em .5em;
+      border-radius: .25em;
+    }
+
+    &:is(button) {
+      &:hover {
+        background: var(--theme-library-paginator-item-hover-bg);
+      }
+
+      &:active {
+        background: var(--theme-library-paginator-item-active-bg);
+      }
+    }
+  }
+}
+
+.itemListPage {
+  display: grid;
+  place-content: center;
+  background-color: inherit;
+  margin: auto;
+
+  /* if height is 200px then gap is 20px */
+  padding: calc(var(--cover-height)*.1);
+  gap: calc(var(--cover-height)*.1);
+
+  /* use cover height aspect ratio (width) as collumn size */
+  grid-template-columns: repeat( auto-fill, calc( var(--cover-height) * .7) );
+}
+
+cover-element {
+  height: var(--cover-height);
+  font-size: calc( var(--cover-height) * .065 );
+  aspect-ratio: .7;
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+  border-radius: .4em;
+  transition: transform .15s;
+  box-shadow: var(--theme-library-cover-shadow);
+  position: relative;
+  overflow: hidden;
+
+  &.selected {
+    transform: scale(1.15);
+    cursor: pointer;
+    outline: solid;
+    outline-color: var(--cl-accent);
+  }
+
+  .coverTitle {
+    color: var(--theme-library-primary-fg);
+    font-size: inherit;
+    font-weight: bold;
+    text-align: center;
+    text-shadow: 0px 0px 6px black;
+    width: 100%;
+    height: fit-content;
+    position: absolute;
+    bottom: 0px;
+    padding-bottom: 4px;
+    background: linear-gradient(0deg, rgba(0, 0, 0, 0.5), transparent);
+  }
+
+  .coverRemoveButton {
+    top: 0px;
+    right: 0px;
+    padding: 0px;
+    position: absolute;
+    font-size: inherit;
+    display: none;
+    color: var(--theme-library-primary-fg);
+    background: #00000045;
+
+    &:hover {
+      filter: inherit;
+      background: #141414;
+    }
+  }
+
+  &:hover .coverRemoveButton,
+  &.selected .coverRemoveButton {
+    display: block;
+  }
+}
+
+.menubar {
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  margin: .2em;
+
+  button {
+    font-family: "font-awesome";
+    font-size: large;
+    color: var(--theme-library-primary-fg);
+    background: var(--theme-library-primary-bg);
+    box-shadow: 2px 2px #00000090;
+    transition: transform .1s;
+
+    &:hover {
+      color: var(--theme-library-primary-bg);
+      background: var(--theme-library-primary-fg);
+    }
+
+    &:active {
+      transform: scale(.8);
+    }
+  }
+}
+
+button {
+  font-family: var(--app-font);
+  border-radius: .25em;
+  border: none;
+  padding: 0px 6px;
+  outline: none;
+  min-width: 1.5em;
+  aspect-ratio: 1;
+  margin: 2px;
+  cursor: pointer;
+}
+
+.overlay {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-content: center;
+  justify-content: center;
+  align-items: center;
+}
+
+#watchListPanel {
+  display: flex;
+  flex-direction: column;
+  width: 75%;
+  height: 50%;
+  border-radius: .4em;
+  box-shadow: 0px 0px 15px 0px black,
+    0px 0px 200px 20px black;
+
+  button {
+    height: 2em;
+    width: 2em;
+    color: var(--theme-library-watchlist-button-fg);
+    background: var(--theme-library-watchlist-button-bg);
+
+    &:hover {
+      background: var(--theme-library-watchlist-button-hover-bg);
+    }
+
+    &:active {
+      background: var(--theme-library-watchlist-button-press-bg);
+    }
+  }
+
+  #folderListHeader {
+    color: var(--theme-library-watchlist-header-fg);
+    background: var(--theme-library-watchlist-header-bg);
+    display: flex;
+    align-items: center;
+    padding: 0.5em 1.5em;
+    gap: .5em;
+    border-radius: .4em .4em 0 0;
+  }
+
+  #folderList {
+    display: flex;
+    flex-direction: column;
+    background: var(--theme-library-watchlist-body-bg);
+    padding: .5em;
+    height: 100%;
+    gap: .5em;
+    overflow: auto;
+    border-radius: 0 0 .4em .4em;
+
+    .folderItem {
+      display: flex;
+      gap: 1em;
+      padding: .2em 1em;
+      height: fit-content;
+      color: var(--theme-library-watchlist-item-fg);
+      background: var(--theme-library-watchlist-item-bg);
+      align-items: center;
+      border-radius: 4px;
+      overflow-wrap: anywhere;
+
+      label {
+        display: inherit;
+        gap: .5em;
+        flex-direction: row-reverse;
+        margin-left: auto;
+        width: fit-content;
+        overflow-wrap: break-word;
+
+        &:hover,
+        :hover {
+          cursor: pointer;
+        }
+      }
+
+      input[type="checkbox"] {
+        width: 1.2em;
+      }
+    }
+  }
+}
+
+/* scroll styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-corner {
+  background-color: var(--theme-scrollbar-bg);
+}
+
+::-webkit-scrollbar-track {
+  background: inherit;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--theme-scrollbar-bg);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--theme-scrollbar-fg);
+}

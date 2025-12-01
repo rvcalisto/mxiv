@@ -8,6 +8,8 @@ import "./viewerActions.js";
 import "./viewerAccelerators.js";
 import "./keyEventController.js";
 
+import style from "./viewer.css" with { type: 'css' };
+
 
 /**
  * Composed File Explorer & Media Viewer component.
@@ -64,7 +66,9 @@ export class Viewer extends GenericFrame {
     // clone template content into shadow root
     const template = /** @type HTMLTemplateElement */ (document.getElementById('viewerTemplate'));
     const shadowRoot = this.attachShadow({ mode: 'open' });
+
     shadowRoot.append( template.content.cloneNode(true) );
+    shadowRoot.adoptedStyleSheets = [style];
 
     // composition instances
     this.fileBook = new FileBook();
