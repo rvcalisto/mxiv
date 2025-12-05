@@ -117,61 +117,67 @@
   flex: auto;
   display: flex;
   flex-direction: column;
-}
 
-.pageContainer {
-  background: inherit;
-  overflow: hidden auto;
-  height: 100%;
-  padding: 0 4px 4px 4px;
-
-  p {
-    color: var(--theme-explorer-secondary-fg);
+  .pageContainer {
     background: inherit;
-    padding: 3px;
-    border-radius: 4px;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-    cursor: pointer;
+    overflow: hidden auto;
+    height: 100%;
+    padding: 0 4px 4px 4px;
 
-    &:hover {
-      color: var(--theme-explorer-hover-fg);
-      background: var(--theme-explorer-hover-bg);
-    }
+    p {
+      color: var(--theme-explorer-secondary-fg);
+      background: inherit;
+      padding: 3px;
+      border-radius: 4px;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      cursor: pointer;
 
-    &.selected {
-      color: var(--theme-explorer-primary-fg);
-      background: var(--theme-explorer-secondary-bg);
+      &:hover {
+        color: var(--theme-explorer-hover-fg);
+        background: var(--theme-explorer-hover-bg);
+      }
 
-      :host(#fileExplorer:focus) & {
-        background: var(--theme-explorer-primary-bg);
+      &.selected {
+        color: var(--theme-explorer-primary-fg);
+        background: var(--theme-explorer-secondary-bg);
+
+        :host(#fileExplorer:focus) & {
+          background: var(--theme-explorer-primary-bg);
+        }
       }
     }
   }
-}
 
-.paginator {
-  display: flex;
-  justify-content: space-around;
-  padding: 4px;
-  background: var(--theme-explorer-paginator-bg);
+  .paginator {
+    display: flex;
+    padding: 4px;
+    gap: 4px;
+    background: var(--theme-explorer-paginator-bg);
 
-  * {
-    border: none;
-    border-radius: 4px;
-    padding: 2px 8px;
-    background: var(--theme-explorer-paginator-item-bg);
-    color: var(--theme-explorer-paginator-item-fg);
-  }
+    * {
+      text-align: center;
+      width: 100%;
+      border: none;
+      border-radius: 4px;
+      padding: 2px 0px;
+      color: var(--theme-explorer-paginator-item-fg);
+    }
 
-  button:hover {
-    background: var(--theme-explorer-paginator-item-hover-bg);
-    cursor: pointer;
-  }
+    button {
+      background: var(--theme-explorer-paginator-item-bg);
+      background: none;
 
-  button:active {
-    background: var(--theme-explorer-paginator-item-active-bg);
+      &:hover {
+        background: var(--theme-explorer-paginator-item-hover-bg);
+        cursor: pointer;
+      }
+
+      &:active {
+        background: var(--theme-explorer-paginator-item-active-bg);
+      }
+    }
   }
 }
 

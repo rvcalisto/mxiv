@@ -28,45 +28,101 @@
   flex-direction: column;
 }
 
+button {
+  border: none;
+  border-radius: .25em;
+  outline: none;
+  min-width: 1.5em;
+  padding: 0px 6px; 
+  aspect-ratio: 1;
+  cursor: pointer;
+}
+
+.menubar {
+  --gap: 4px;
+
+  display: flex;
+  flex-direction: column;
+  position: absolute;
+  margin: var(--gap);
+  gap: var(--gap);
+
+  button {
+    font-family: "font-awesome";
+    font-size: large;
+    color: var(--theme-library-primary-fg);
+    background: var(--theme-library-primary-bg);
+    box-shadow: 2px 2px #00000090;
+    transition: transform .1s;
+
+    &:hover {
+      color: var(--theme-library-primary-bg);
+      background: var(--theme-library-primary-fg);
+    }
+
+    &:active {
+      transform: scale(.8);
+    }
+  }
+}
+
 item-list {
   height: 0%;
   flex: auto;
   display: flex;
   flex-direction: column;
-}
 
-.pageContainer {
-  width: 100%;
-  height: 100%;
-  overflow: auto;
-}
+  .pageContainer {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+  }
 
-.paginator {
-  display: flex;
-  position: absolute;
-  justify-content: center;
-  align-items: center;
-  gap: .5rem;
-  margin: .5em;
-  width: fit-content;
-  left: 50%;
-  bottom: 0;
-  border-radius: .3em;
-  transform: translateX(-50%) translateX(-.5em);
-  color: var(--theme-library-primary-fg);
-  background: var(--theme-library-paginator-bg);
-  box-shadow: var(--theme-library-paginator-shadow);
+  .itemListPage {
+    display: grid;
+    place-content: center;
+    background-color: inherit;
+    margin: auto;
 
-  &>* {
-    color: var(--theme-library-paginator-item-fg);
-    background: var(--theme-library-paginator-item-bg);
+    /* if height is 200px then gap is 20px */
+    padding: calc(var(--cover-height)*.1);
+    gap: calc(var(--cover-height)*.1);
 
-    &:is(p) {
-      padding: .1em .5em;
-      border-radius: .25em;
+    /* use cover height aspect ratio (width) as collumn size */
+    grid-template-columns: repeat( auto-fill, calc( var(--cover-height) * .7) );
+  }
+
+  .paginator {
+    --margin: 6px;
+
+    display: flex;
+    position: absolute;
+    justify-content: center;
+    align-items: center;
+    padding: 2px;
+    gap: .5em;
+    margin: var(--margin);
+    width: fit-content;
+    left: 50%;
+    bottom: 0;
+    border-radius: .3em;
+    transform: translateX(-50%) translateX( calc( var(--margin) * -2 ) );
+    color: var(--theme-library-primary-fg);
+    background: var(--theme-library-paginator-bg);
+    box-shadow: var(--theme-library-paginator-shadow);
+
+    * {
+      color: var(--theme-library-paginator-item-fg);
+      text-align: center;
+      width: 100%;
+      padding: 2px 0px;
+/*       border-radius: .25em; */
     }
 
-    &:is(button) {
+    button {
+      background: var(--theme-library-paginator-item-bg);
+      background: none;
+
       &:hover {
         background: var(--theme-library-paginator-item-hover-bg);
       }
@@ -76,20 +132,6 @@ item-list {
       }
     }
   }
-}
-
-.itemListPage {
-  display: grid;
-  place-content: center;
-  background-color: inherit;
-  margin: auto;
-
-  /* if height is 200px then gap is 20px */
-  padding: calc(var(--cover-height)*.1);
-  gap: calc(var(--cover-height)*.1);
-
-  /* use cover height aspect ratio (width) as collumn size */
-  grid-template-columns: repeat( auto-fill, calc( var(--cover-height) * .7) );
 }
 
 cover-element {
@@ -128,6 +170,7 @@ cover-element {
   .coverRemoveButton {
     top: 0px;
     right: 0px;
+    margin: 2px;
     padding: 0px;
     position: absolute;
     font-size: inherit;
@@ -145,43 +188,6 @@ cover-element {
   &.selected .coverRemoveButton {
     display: block;
   }
-}
-
-.menubar {
-  display: flex;
-  flex-direction: column;
-  position: absolute;
-  margin: .2em;
-
-  button {
-    font-family: "font-awesome";
-    font-size: large;
-    color: var(--theme-library-primary-fg);
-    background: var(--theme-library-primary-bg);
-    box-shadow: 2px 2px #00000090;
-    transition: transform .1s;
-
-    &:hover {
-      color: var(--theme-library-primary-bg);
-      background: var(--theme-library-primary-fg);
-    }
-
-    &:active {
-      transform: scale(.8);
-    }
-  }
-}
-
-button {
-  font-family: var(--app-font);
-  border-radius: .25em;
-  border: none;
-  padding: 0px 6px;
-  outline: none;
-  min-width: 1.5em;
-  aspect-ratio: 1;
-  margin: 2px;
-  cursor: pointer;
 }
 
 .overlay {
