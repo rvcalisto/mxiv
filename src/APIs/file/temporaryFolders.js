@@ -22,6 +22,13 @@ const TMPPREFIX = 'mxiv-';
  */
 const openArchives = {};
 
+/**
+ * Hold entries for archives currently still being processed.
+ * - Guard against duplicates on near simultaneous lease calls.
+ * @type {Set<string>}
+ */
+const pendingLeases = new Set();
+
 
 /**
  * Return either path is from a temporary folder file.
@@ -42,6 +49,10 @@ export function isPathFromTmp(path) {
  * @returns {Promise<string>} Path to temporary folder. Empty on failure.
  */
 export async function leaseArchive(archivePath, ownerID) {
+  // pending, retry in 50ms
+  while ( pendingLeases.has(archivePath) )
+    await new Promise((resolve) => setTimeout(() => resolve(true), 50) );
+
   // currently leased, track new id and return temporary path
   const registry = openArchives[archivePath];
   if (registry) {
@@ -50,20 +61,25 @@ export async function leaseArchive(archivePath, ownerID) {
   }
 
   // otherwise, validate and extract to unique temp folder (ex: /tmp/prefix-dpC7Id)
-  if ( !await archiveIsValid(archivePath) )
+  pendingLeases.add(archivePath);
+  if ( !await archiveIsValid(archivePath) ) {
+    pendingLeases.delete(archivePath);
     return '';
+  }
 
   let tmpDir = '';
   try {
     tmpDir = mkdtempSync( join(TMPDIR, TMPPREFIX) );
   } catch(err) {
     console.log(`MXIV: Failed to created tmp folder at ${tmpDir}\n`, err);
+    pendingLeases.delete(archivePath);
     return '';
   }
 
   const success = await extract(archivePath, tmpDir);
   if (!success) {
     console.log(`MXIV: Failed to extract ${archivePath} to ${tmpDir}`);
+    pendingLeases.delete(archivePath);
     return '';
   }
 
@@ -72,6 +88,7 @@ export async function leaseArchive(archivePath, ownerID) {
     owners: new Set([ownerID])
   };
 
+  pendingLeases.delete(archivePath);
   return tmpDir;
 }
 
