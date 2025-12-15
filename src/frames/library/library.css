@@ -230,7 +230,7 @@ cover-element {
     background: var(--theme-library-watchlist-header-bg);
     display: flex;
     align-items: center;
-    padding: 0.5em 1.5em;
+    padding: .5em 1em;
     gap: .5em;
     border-radius: .4em .4em 0 0;
   }
@@ -248,7 +248,8 @@ cover-element {
     .folderItem {
       display: flex;
       gap: 1em;
-      padding: .2em 1em;
+      padding: .5em;
+      padding-left: 1em;
       height: fit-content;
       color: var(--theme-library-watchlist-item-fg);
       background: var(--theme-library-watchlist-item-bg);
