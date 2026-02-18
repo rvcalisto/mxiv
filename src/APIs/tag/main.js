@@ -16,13 +16,13 @@ const tagStorage = new TagStorage();
  * @returns {Promise<boolean>}
  */
 export async function tagFile(filePath, ...tags) {
-  return await tagStorage.write(db => {
-    const oldSet = new Set( db.get(filePath) );
+  return await tagStorage.write(state => {
+    const oldSet = new Set( state.get(filePath) );
     const tagSet = new Set(tags);
     const newSet = oldSet.union(tagSet);
 
     if (oldSet.size != newSet.size) 
-      db.set(filePath, [...newSet]);
+      state.set(filePath, [...newSet]);
     else
       throw 'rollback'; // don't persist
   });
@@ -35,25 +35,64 @@ export async function tagFile(filePath, ...tags) {
  * @returns {Promise<boolean>}
  */
 export async function untagFile(filePath, ...tags) {
-  return await tagStorage.write(db => {
-    const oldSet = new Set( db.get(filePath) );
+  return await tagStorage.write(state => {
+    const oldSet = new Set( state.get(filePath) );
     const tagSet = new Set(tags);
     const newSet = oldSet.difference(tagSet);
-  
+
     // save to storage
     if (oldSet.size != newSet.size)
-      db.set(filePath, [...newSet]);
+      state.set(filePath, [...newSet]);
     else
       throw 'rollback';
   });
 }
 
 /**
- * List database entries whose files are no longer accessible.
- * @param {boolean} [deleteOrphans=false] Either to delete orphans entries if found.
+ * Rename all occurences of one or more tags.
+ * @param {string[]} tags Tags to rename.
+ * @returns {Promise<number>} Entries updated.
  */
-export async function listOrphans(deleteOrphans = false) {
-  await tagStorage.listOrphans(deleteOrphans)
+export async function renameTags(...tags) {
+  const target = /** @type {string} */ (tags.pop());
+  const renameMap = new Map( tags.map(tag => [tag, target]) );
+
+  let entriesUpdated = 0;
+  await tagStorage.write(state => {
+    entriesUpdated = state.renameTags(renameMap);
+
+    if (entriesUpdated < 1)
+      throw 'rollback';
+  });
+
+  return entriesUpdated;
+}
+
+/**
+ * Delete all occurences of one or more tags.
+ * @param {string[]} tags Tags to delete.
+ * @returns {Promise<number>} Entries updated.
+ */
+export async function deleteTags(...tags) {
+  let entriesUpdated = 0;
+  await tagStorage.write(state => {
+    entriesUpdated = state.deleteTags(tags);
+
+    if (entriesUpdated < 1)
+      throw 'rollback';
+  });
+
+  return entriesUpdated;
+}
+
+/**
+ * Return amount entries whose files are no longer accessible.
+ * @param {boolean} [deleteOrphans=false] Either to delete orphans entries if found.
+ * @returns {Promise<number>} Orphaned entry count.
+ */
+export async function countOrphans(deleteOrphans = false) {
+  const orphans = await tagStorage.listOrphans(deleteOrphans);
+  return orphans.length;
 }
 
 /**
@@ -63,10 +102,10 @@ export async function listOrphans(deleteOrphans = false) {
 async function initialize() {
   tagStorage.watchStorage(() => {
     broadcast('tags:sync');
-  })
-  
-  console.log('MXIV: Monitoring TagStorage file changes.')
+  });
+
+  console.log('MXIV: Monitoring TagStorage file changes.');
 }
 
 
-initialize()
+initialize();

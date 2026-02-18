@@ -1,7 +1,7 @@
 import { setComponentActions } from "../../actions/actionService.js";
 import { FRAME } from "../../tabs/tab.js";
 import { option, setPaletteInfo, standardFilter } from "../../components/actionPalette/actionPalette.js";
-import { runScript, tag } from "../../components/fileMethods.js";
+import { runScript, tag, renameTags, deleteTags } from "../../components/fileMethods.js";
 
 
 setComponentActions('viewer', {
@@ -370,6 +370,16 @@ setComponentActions('viewer', {
         options: () => FRAME.fileBook.currentFile != null
           ? elecAPI.getTags(FRAME.fileBook.currentFile.path)
           : []
+      },
+      'rename': {
+        desc: 'rename all occurrences of one or more tags',
+        run: async (...tags) => await renameTags(...tags),
+        options: () => elecAPI.uniqueTags()
+      },
+      'purge': {
+        desc: 'purge all occurrences of one or more tags',
+        run: async (...tags) => await deleteTags(...tags),
+        options: () => elecAPI.uniqueTags()
       }
     }
   }

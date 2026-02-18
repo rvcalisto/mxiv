@@ -1,7 +1,7 @@
 import { setComponentActions } from "../../actions/actionService.js";
 import { option, standardFilter, setPaletteInfo } from "../../components/actionPalette/actionPalette.js";
 import { FRAME }  from "../../tabs/tab.js";
-import { runScript, tag } from "../../components/fileMethods.js";
+import { runScript, tag, renameTags, deleteTags } from "../../components/fileMethods.js";
 
 
 setComponentActions('library', {
@@ -52,6 +52,16 @@ setComponentActions('library', {
         options: () => FRAME.coverGrid.selectedCover != null
           ? elecAPI.getTags(FRAME.coverGrid.selectedCover.bookPath)
           : []
+      },
+      'rename': {
+        desc: 'rename all occurrences of one or more tags',
+        run: async (...tags) => await renameTags(...tags),
+        options: () => elecAPI.uniqueTags()
+      },
+      'purge': {
+        desc: 'purge all occurrences of one or more tags',
+        run: async (...tags) => await deleteTags(...tags),
+        options: () => elecAPI.uniqueTags()
       }
     }
   },

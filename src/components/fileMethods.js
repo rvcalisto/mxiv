@@ -12,17 +12,49 @@ export async function tag(filepath, add, ...tags) {
     return notify('no file to tag', 'tag');
 
   // treat tags
-  tags = tags.map( tag => tag.toLowerCase().trim() )
+  const treatedTags = tags.map( tag => tag.toLowerCase().trim() )
     .filter(tag => tag !== '');
-  
-  if (tags.length < 1) 
+
+  if (treatedTags.length < 1) 
     return notify('no tags to update');
 
-  const success = add ?
-    await elecAPI.addTags(filepath, ...tags) :
-    await elecAPI.removeTags(filepath, ...tags);
+  const success = add
+    ? await elecAPI.addTags(filepath, ...treatedTags)
+    : await elecAPI.removeTags(filepath, ...treatedTags);
 
   notify(`${success ? '' : 'no '}tags updated`, 'tag');
+}
+
+/**
+ * Rename all occurences of one or more tags.
+ * @param {string[]} tags Tags to rename.
+ */
+export async function renameTags(...tags) {
+  // treat tags
+  const treatedTags = tags.map( tag => tag.toLowerCase().trim() )
+    .filter(tag => tag !== '');
+
+  if (treatedTags.length < 1)
+    return notify('no tags to update');
+
+  const updatedEntries = await elecAPI.renameTags(...treatedTags);
+  notify(`${updatedEntries} entries updated`);
+}
+
+/**
+ * Delete all occurences of one or more tags.
+ * @param {string[]} tags Tags to delete.
+ */
+export async function deleteTags(...tags) {
+  // treat tags
+  const treatedTags = tags.map( tag => tag.toLowerCase().trim() )
+    .filter(tag => tag !== '');
+
+  if (treatedTags.length < 1)
+    return notify('no tags to update');
+
+  const updatedEntries = await elecAPI.deleteTags(...treatedTags);
+  notify(`${updatedEntries} entries updated`);
 }
 
 /**

@@ -39,6 +39,8 @@ contextBridge.exposeInMainWorld('elecAPI', {
   getTags: (path) => localTagStorage.getTags(path), // renderer, for non-blocking sync
   addTags: async (path, ...tags) => ipcRenderer.invoke('tags:add', path, ...tags),
   removeTags: async (path, ...tags) => ipcRenderer.invoke('tags:remove', path, ...tags),
+  renameTags: async (...tags) => ipcRenderer.invoke('tags:rename', ...tags),
+  deleteTags: async (...tags) => ipcRenderer.invoke('tags:delete', ...tags),
 
   // app window
   newWindow: async () => ipcRenderer.invoke('window:new'),
