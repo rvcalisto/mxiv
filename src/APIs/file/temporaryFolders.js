@@ -116,7 +116,7 @@ async function archiveIsValid(archivePath) {
 
   return archivedFiles.some(filePath => {
     const type = fileType(filePath);
-    return type === 'image' || type === 'video';
+    return type === 'image' || type === 'video' || type === 'audio';
   });
 }
 

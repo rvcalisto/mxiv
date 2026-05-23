@@ -1,7 +1,7 @@
 {
   "name": "mxiv",
   "productName": "mxiv",
-  "version": "0.6.4",
+  "version": "0.6.5",
   "description": "Media explorer and interactive viewer",
   "main": "src/main.mjs",
   "type": "module",
