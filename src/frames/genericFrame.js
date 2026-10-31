@@ -9,10 +9,6 @@ import { ObservableEvents } from "../components/observableEvents.js";
  * @typedef {'frame:rename'|'frame:statusChange'|'frame:isPlaying'|'frame:hold'|'frame:notify'} GenericFrameEvents
  */
 
-/**
- * @typedef {'play'|'pause'|'stop'|'next'|'previous'} FrameMediaControl
- */
-
 
 /**
  * Generic `HTMLElement` to extend tab frames from.
@@ -115,7 +111,7 @@ export class GenericFrame extends HTMLElement {
   /**
    * Handle media requests for media-session integration. Override to customize.
    * @abstract
-   * @param {FrameMediaControl} action 
+   * @param {MediaSessionAction} action 
    */
   mediaControl(action) {}
 

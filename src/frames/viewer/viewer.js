@@ -482,7 +482,7 @@ export class Viewer extends GenericFrame {
 
   /**
    * @override
-   * @param {'play'|'pause'|'stop'|'next'|'previous'} action 
+   * @param {MediaSessionAction} action 
    */
   mediaControl(action) {
     const isImg = this.viewComponent.fileType === 'image';
@@ -491,13 +491,17 @@ export class Viewer extends GenericFrame {
       case 'play':
         !isImg && this.viewComponent.media?.playToggle(true);
         break;
-      case 'pause': case 'stop':
+
+      case 'pause':
+      case 'stop':
         isImg
           ? this.viewComponent.slideshow?.toggle(false, false)
           : this.viewComponent.media?.playToggle(false);
         break;
-      case 'next': case 'previous':
-        !isImg && this.flipPage(action === 'next');
+
+      case 'nexttrack':
+      case 'previoustrack':
+        !isImg && this.flipPage(action === 'nexttrack');
         break;
     }
   }

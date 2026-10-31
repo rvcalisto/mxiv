@@ -1,17 +1,13 @@
 import { FRAME } from "../tabs/tab.js";
 
-/**
- * @import { FrameMediaControl } from "../frames/genericFrame.js"
- */
-
 
 /**
  * Call active frame media control.
- * @param {FrameMediaControl} command Media control command.
+ * @param {MediaSessionAction} action Media control action.
  */
-function frameMediaControl(command) {
+function frameMediaControl(action) {
   if (FRAME != null)
-    FRAME.mediaControl(command);
+    FRAME.mediaControl(action);
 }
 
 
@@ -21,11 +17,11 @@ function frameMediaControl(command) {
 function initMediaController() {
   const mediaSession = navigator.mediaSession;
 
-  mediaSession.setActionHandler( "play", () => frameMediaControl('play') );
-  mediaSession.setActionHandler( "pause", () => frameMediaControl('pause') );
-  mediaSession.setActionHandler( "stop", () => frameMediaControl('stop') );
-  mediaSession.setActionHandler( "nexttrack", () => frameMediaControl('next') );
-  mediaSession.setActionHandler( "previoustrack", () => frameMediaControl('previous') );
+  /** @type {MediaSessionAction[]} */
+  const mediaActions = ['play', 'pause', 'stop', 'nexttrack', 'previoustrack'];
+
+  for (const action of mediaActions)
+    mediaSession.setActionHandler( action, () => frameMediaControl(action) );
 }
 
 
