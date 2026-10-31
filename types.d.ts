@@ -22,8 +22,7 @@ interface DialogTypeMap {
 declare interface MXIVElectronAPI {
   
   // coordination
-  requestLock: (lock: string) => Promise<boolean>;
-  releaseLock: (lock: string) => Promise<boolean>;
+  requestLock: (lock: string, callback: Function, waitLock?: boolean) => Promise<boolean>;
   broadcast: (message: string, ...args: any[]) => Promise<void>;
   onBroadcast: (callback: (message: string, ...args: any[]) => void) => void;
   

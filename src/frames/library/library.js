@@ -126,60 +126,17 @@ export class Library extends GenericFrame {
   async syncToWatchlist() {
     const watchItems = this.watchlistPanel.getItems();
 
-    if ( watchItems.length > 0 && !await elecAPI.requestLock('library') )
+    if (watchItems.length < 1)
       return;
 
-    // prevent closing window while async population happens
-    this.hold(true);
+    await elecAPI.requestLock('library', async () => {
+      this.hold(true);
 
-    console.time(`syncToWatchlist`);
-    let addedPaths = await elecAPI.addToLibrary(watchItems);
-    console.timeEnd(`syncToWatchlist`);
+      console.time(`syncToWatchlist`);
+      let addedPaths = await elecAPI.addToLibrary(watchItems);
+      console.timeEnd(`syncToWatchlist`);
 
-    this.notify(`${addedPaths} new book(s) added`, 'syncToWatchlist');
-
-    // reload entries & generate thumbnails
-    if (addedPaths > 0) {
-      await this.coverGrid.reloadCovers();
-      elecAPI.broadcast('library:sync');
-
-      console.time('generateThumbnails');
-      await elecAPI.updateLibraryThumbnails();
-      console.timeEnd('generateThumbnails'); 
-
-      elecAPI.broadcast('library:sync');
-    }
-
-    this.hold(false);
-    await elecAPI.releaseLock('library');
-  }
-
-  /**
-   * Add files to library. Not recursive. 
-   * - Spawns file-dialog window if no files are given.
-   * @param {string[]} files Filepaths to add to library
-   */
-  async addToLibrary(...files) {
-    if ( !await elecAPI.requestLock('library') )
-      return;
-
-    this.hold(true);
-
-    if (files.length < 1) {
-      files = await elecAPI.dialog('open', {
-        title: "Add Folder to Library",
-        properties: ['openDirectory'],
-        buttonLabel: "Add Selected"
-      });
-    }
-
-    if (files != null && files.length > 0) {
-      console.time(`addToLibrary`);
-      const items = files.map(file => ({ path: file, recursive: false }));
-      let addedPaths = await elecAPI.addToLibrary(items);
-      console.timeEnd(`addToLibrary`);
-
-      this.notify(`${addedPaths} new book(s) added`, 'addToLibrary');
+      this.notify(`${addedPaths} new book(s) added`, 'syncToWatchlist');
 
       // reload entries & generate thumbnails
       if (addedPaths > 0) {
@@ -192,10 +149,51 @@ export class Library extends GenericFrame {
 
         elecAPI.broadcast('library:sync');
       }
-    }
 
-    this.hold(false);
-    await elecAPI.releaseLock('library');
+      this.hold(false);
+    });
+  }
+
+  /**
+   * Add files to library. Not recursive. 
+   * - Spawns file-dialog window if no files are given.
+   * @param {string[]} files Filepaths to add to library
+   */
+  async addToLibrary(...files) {
+    await elecAPI.requestLock('library', async () => {
+      this.hold(true);
+
+      if (files.length < 1) {
+        files = await elecAPI.dialog('open', {
+          title: "Add Folder to Library",
+          properties: ['openDirectory'],
+          buttonLabel: "Add Selected"
+        });
+      }
+
+      if (files != null && files.length > 0) {
+        console.time(`addToLibrary`);
+        const items = files.map(file => ({ path: file, recursive: false }));
+        let addedPaths = await elecAPI.addToLibrary(items);
+        console.timeEnd(`addToLibrary`);
+
+        this.notify(`${addedPaths} new book(s) added`, 'addToLibrary');
+
+        // reload entries & generate thumbnails
+        if (addedPaths > 0) {
+          await this.coverGrid.reloadCovers();
+          elecAPI.broadcast('library:sync');
+
+          console.time('generateThumbnails');
+          await elecAPI.updateLibraryThumbnails();
+          console.timeEnd('generateThumbnails'); 
+
+          elecAPI.broadcast('library:sync');
+        }
+      }
+
+      this.hold(false);
+    });
   }
 
   /**
@@ -204,17 +202,17 @@ export class Library extends GenericFrame {
    * @returns {Promise<boolean>} Success.
    */
   async removeFromLibrary(bookPath) {
-    if ( !await elecAPI.requestLock('library') )
-      return false;
+    let success = false;
 
-    this.hold(true);
-    const success = await elecAPI.removeFromLibrary(bookPath);
+    await elecAPI.requestLock('library', async () => {
+      this.hold(true);
+      success = await elecAPI.removeFromLibrary(bookPath);
 
-    if (success)
-      elecAPI.broadcast('library:sync');
+      if (success)
+        elecAPI.broadcast('library:sync');
 
-    this.hold(false);
-    await elecAPI.releaseLock('library');
+      this.hold(false);
+    });
 
     return success;
   }
@@ -224,19 +222,19 @@ export class Library extends GenericFrame {
    * @returns {Promise<boolean>} Success.
    */
   async nukeLibrary() {
-    if ( !await elecAPI.requestLock('library') )
-      return false;
+    let success = false;
 
-    this.hold(true);
-    const success = await elecAPI.clearLibrary();
+    await elecAPI.requestLock('library', async () => {
+      this.hold(true);
+      const success = await elecAPI.clearLibrary();
 
-    if (success) {
-      this.coverGrid.reloadCovers();
-      elecAPI.broadcast('library:sync');
-    }
+      if (success) {
+        this.coverGrid.reloadCovers();
+        elecAPI.broadcast('library:sync');
+      }
 
-    this.hold(false);
-    await elecAPI.releaseLock('library');
+      this.hold(false);
+    });
 
     return success;
   }

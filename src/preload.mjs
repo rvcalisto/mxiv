@@ -3,11 +3,29 @@ import { pathToFileURL } from 'url';
 import * as localTagStorage from './APIs/tag/renderer.js';
 
 
+/**
+ * Execute local callback if granted mutual exclusivity.
+ * @param {string} lock Lock name.
+ * @param {Function} callback Callback function.
+ * @param {boolean} [waitLock=false] Either to wait for lock.
+ * @returns {Promise<boolean>} Either lock was granted.
+ */
+const requestLock = async (lock, callback, waitLock = false) => {
+  const response = /** @type {boolean} */ (await ipcRenderer.invoke('coord:lock', lock, waitLock));
+
+  if (response) {
+    await callback();
+    await ipcRenderer.invoke('coord:unlock', lock)
+  }
+
+  return response;
+}
+
+
 contextBridge.exposeInMainWorld('elecAPI', /** @satisfies {MXIVElectronAPI} */ ({
 
   // coordination
-  requestLock: async (lock) => ipcRenderer.invoke('coord:lock', lock),
-  releaseLock: async (lock) => ipcRenderer.invoke('coord:unlock', lock),
+  requestLock: requestLock,
   broadcast: async (message, ...args) => ipcRenderer.invoke('coord:broadcast', message, ...args),
   onBroadcast: (callback) => ipcRenderer.on('coord:onbroadcast', (_e, msg, ...args) => callback(msg, ...args)),
 
@@ -48,5 +66,6 @@ contextBridge.exposeInMainWorld('elecAPI', /** @satisfies {MXIVElectronAPI} */ (
   onOpen: (callback) => ipcRenderer.on('window:open', (_e, details) => callback(details)),
   toggleFullscreen: async () => ipcRenderer.invoke('window:fullscreen'),
   onFullscreen: (callback) => ipcRenderer.on('window:onFullscreen', (_e, isFullscreen) => callback(isFullscreen)),
-  setTheme: async (theme) => ipcRenderer.invoke('window:theme', theme)
+  setTheme: async (theme) => ipcRenderer.invoke('window:theme', theme),
+
 }));

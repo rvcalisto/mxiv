@@ -2,35 +2,16 @@ import { BrowserWindow, ipcMain } from 'electron';
 
 
 /**
- * Library mutual exclusivity lock object.
- * @type {Object<string, boolean>}
+ * Registered mutual exclusivity locks.
+ * @type {Set<string>}
  */
-const mutexLocks = {};
+const mutexLocks = new Set();
 
-/**
- * Request mutex lock.
- * @param {string} name Lock identifier.
- * @returns {Boolean} Success
- */
-export function requestLock(name) {
-  if (mutexLocks[name]) return false;
-
-  mutexLocks[name] = true;
-  return true;
-}
-
-/**
- * Release mutex lock.
- * @param {Number} name Lock identifier.
- */
-export function releaseLock(name) {
-  mutexLocks[name] = false;
-}
 
 /**
  * Broadcast message to all window instances.
  * @param {string} message Message identifier.
- * @param  {...any} payload Additional arguments.
+ * @param {...any} payload Additional arguments.
  */
 export function broadcast(message, ...payload) {
   BrowserWindow.getAllWindows().forEach(win => {
@@ -42,12 +23,18 @@ export function broadcast(message, ...payload) {
 /**
  * IPC Handlers
  */
-ipcMain.handle('coord:lock', (e, name) => {
-  return requestLock(name);
+ipcMain.handle('coord:lock', (_, name, _waitLock) => {
+  if ( mutexLocks.has(name) )
+    return false;
+
+  // TODO: implement wait lock, maybe.
+  mutexLocks.add(name);
+
+  return true;
 });
 
-ipcMain.handle('coord:unlock', (e, name) => {
-  return releaseLock(name);
+ipcMain.handle('coord:unlock', (_, name) => {
+  mutexLocks.delete(name);
 });
 
 ipcMain.handle('coord:broadcast', (e, message, ...args) => {
