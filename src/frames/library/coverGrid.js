@@ -1,4 +1,3 @@
-// @ts-check
 import { ItemList } from "../../components/itemList.js";
 import { Cover } from "./coverElement.js";
 import { newTab, TAB } from "../../tabs/tab.js";
@@ -76,8 +75,8 @@ export class CoverGrid {
   constructor(library) {
     this.#library = library;
 
-    const shadowRoot = /** @type ShadowRoot */ (library.shadowRoot);
-    this.#list =  /** @type ItemList */ (shadowRoot.getElementById('library'));
+    const shadowRoot = /** @type {ShadowRoot} */ (library.shadowRoot);
+    this.#list =  /** @type {ItemList<LibraryEntry, Cover>} */ (shadowRoot.getElementById('library'));
 
     // apply preferences
     this.setItemsPerPage( userPreferences.get('libraryItemsPerPage') );

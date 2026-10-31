@@ -3,7 +3,7 @@ import { pathToFileURL } from 'url';
 import * as localTagStorage from './APIs/tag/renderer.js';
 
 
-contextBridge.exposeInMainWorld('elecAPI', {
+contextBridge.exposeInMainWorld('elecAPI', /** @satisfies {MXIVElectronAPI} */ ({
 
   // coordination
   requestLock: async () => ipcRenderer.invoke('coord:lock'),
@@ -12,7 +12,7 @@ contextBridge.exposeInMainWorld('elecAPI', {
   onBroadcast: (callback) => ipcRenderer.on('coord:onbroadcast', (_e, msg, ...args) => callback(msg, ...args)),
 
   // library
-  addToLibrary: async (path, recursively) => ipcRenderer.invoke('library:add', path, recursively),
+  addToLibrary: async (items) => ipcRenderer.invoke('library:add', items),
   updateLibraryThumbnails: async () => ipcRenderer.invoke('library:thumbnails'),
   getLibraryEntries: () => ipcRenderer.invoke('library:get'),
   removeFromLibrary: async (path) => ipcRenderer.invoke('library:remove', path),
@@ -49,4 +49,4 @@ contextBridge.exposeInMainWorld('elecAPI', {
   toggleFullscreen: async () => ipcRenderer.invoke('window:fullscreen'),
   onFullscreen: (callback) => ipcRenderer.on('window:onFullscreen', (_e, isFullscreen) => callback(isFullscreen)),
   setTheme: async (theme) => ipcRenderer.invoke('window:theme', theme)
-});
+}));

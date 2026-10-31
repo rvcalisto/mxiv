@@ -1,5 +1,3 @@
-// @ts-check
-
 /**
  * Paginated item list for elements. Styling not included.
  * - Generate pages as they are requested, for performance.
@@ -177,7 +175,7 @@ export class ItemList extends HTMLElement {
    * @returns {I[]}
    */
   get itemArray() {
-    const items = [];
+    const items = /** @type {I[]} */ ([]);
     this.#virtualPages.forEach( pageData => items.push(...pageData.items) );
 
     return items;

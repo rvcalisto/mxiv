@@ -7,11 +7,16 @@ import { reloadUserAccelerators } from "../actions/userAccelerators.js";
 
 
 /**
+ * @import { Viewer } from "../frames/viewer/viewer.js"
+ */
+
+
+/**
  * Open paths passed as arguments.
  */
 elecAPI.onOpen(function openInViewer(/** @type {string[][]} */ tabs) {
   for (const paths of tabs)
-    newTab( 'viewer', (viewer) => viewer.open(...paths) );
+    newTab( 'viewer', (viewer) => /** @type {Viewer} */ (viewer).open(...paths) );
 });
 
 /**

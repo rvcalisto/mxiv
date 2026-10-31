@@ -1,4 +1,3 @@
-// @ts-check
 import { ItemList } from "../itemList.js";
 import { InputPrompt } from "./inputPrompt.js";
 import actionHistory from "./actionHistory.js";
@@ -7,6 +6,10 @@ import { getCurrentActions } from "../../actions/actionService.js";
 import { getCurrentAccelerators } from "../../actions/acceleratorService.js";
 import { notify } from "../notifier.js";
 
+
+/**
+ * @import { Options } from "../../actions/componentActions.js"
+ */
 
 /**
  * @typedef {'history'|'group'|'action'|'argument'|'shortcut'} OptionType
@@ -18,7 +21,7 @@ import { notify } from "../notifier.js";
  * @property {string} name Option name.
  * @property {string} desc Option description.
  * @property {OptionType} type Option type.
- * @property {string[]} [keys] Filter key overrides.
+ * @property {string[]|undefined} keys Filter key overrides.
  */
 
 
@@ -30,7 +33,7 @@ const containerElement = /** @type {HTMLDivElement} */ (document.querySelector('
 /**
  * Hint element list.
  */
-const listElement = /** @type ItemList */ (containerElement.querySelector('item-list'));
+const listElement = /** @type {ItemList<any, OptionElement>} */ (containerElement.querySelector('item-list'));
 
 /**
  * Info paragraph element.
@@ -131,7 +134,7 @@ async function displayHints() {
     const groups = [...groupMap]
       .map( ([key, group]) => option(key, group.desc, 'group') );
 
-    const actions = [];
+    const actions = /** @type {OptionObject[]} */ ([]);
     actionMap.forEach( (action, key) => {
       const words = action.desc.split(' ');
 
@@ -147,7 +150,7 @@ async function displayHints() {
     );
   }
 
-  let options = [],
+  let options = /** @type {Options|OptionObject[]} */ ([]),
       lastArg = /** @type {string} */ (args.at(-1)) || '';
 
   const action = actionMap.has(`${cmd} ${args[0]}`)

@@ -1,14 +1,15 @@
 {
   "name": "mxiv",
   "productName": "mxiv",
-  "version": "0.6.6",
+  "version": "0.6.7",
   "description": "Media explorer and interactive viewer",
   "main": "src/main.mjs",
   "type": "module",
   "scripts": {
     "start": "electron .",
     "package": "electron-forge package",
-    "make": "electron-forge make"
+    "make": "electron-forge make",
+    "check": "tsc --noEmit"
   },
   "keywords": [],
   "author": "rvcalisto",

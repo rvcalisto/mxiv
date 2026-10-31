@@ -1,7 +1,5 @@
-// @ts-check
-
 /**
- * @import { OptionType } from "./actionPalette"
+ * @import { OptionType } from "./actionPalette.js"
  */
 
 

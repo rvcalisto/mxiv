@@ -1,5 +1,3 @@
-// @ts-check
-
 /**
  * @typedef {{name:string, desc:string}} DetailedHint
  */
@@ -66,12 +64,14 @@ export class ComponentActions {
     this.#actions.clear();
 
     for ( const [key, entry] of Object.entries(this.#actionSet) ) {
-      if (entry['actions'] == null)
-        this.#actions.set(key, /** @type Action */ (entry) );
-      else {
-        this.#groups.set(key, /** @type Group */ (entry) );
+      const isGroup = Object.hasOwn(entry, 'actions');
 
-        Object.entries( /** @type Group */ (entry).actions )
+      if (!isGroup)
+        this.#actions.set(key, /** @type {Action} */ (entry));
+      else {
+        this.#groups.set(key, /** @type {Group} */ (entry));
+
+        Object.entries(/** @type {Group} */ (entry).actions)
           .forEach( ([name, action]) => this.#actions.set(`${key} ${name}`, action));
       }
     }

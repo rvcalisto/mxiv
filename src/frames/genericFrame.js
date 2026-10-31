@@ -1,13 +1,16 @@
-// @ts-check
 import { ObservableEvents } from "../components/observableEvents.js";
 
 
-/**
- * @typedef {import("./frameRegistry.js").FrameType} FrameType
+/** 
+ * @import { StatusObjectType } from "../components/statusBar.js"
  */
 
 /**
  * @typedef {'frame:rename'|'frame:statusChange'|'frame:isPlaying'|'frame:hold'|'frame:notify'} GenericFrameEvents
+ */
+
+/**
+ * @typedef {'play'|'pause'|'stop'|'next'|'previous'} FrameMediaControl
  */
 
 
@@ -20,9 +23,8 @@ export class GenericFrame extends HTMLElement {
 
   /**
    * Frame class type, class constructor name in lowercase.
-   * @type {FrameType}
    */
-  type = /** @type FrameType */ (this.constructor.name.toLowerCase());
+  type = this.constructor.name.toLowerCase();
   
   /**
    * @type {ObservableEvents<GenericFrameEvents>}
@@ -61,14 +63,14 @@ export class GenericFrame extends HTMLElement {
 
   /**
    * Return Frame status object to be presented in bar. Override to customize.
-   * @returns {import("../components/statusBar.js").StatusObjectType}
+   * @returns {StatusObjectType}
    */
   status() {
     return {
       title: this.constructor.name,
       infoLeft: this.constructor.name,
       infoRight: '',
-      infoLeftFunc: null
+      infoLeftFunc: () => {}
     };
   }
 
@@ -113,7 +115,7 @@ export class GenericFrame extends HTMLElement {
   /**
    * Handle media requests for media-session integration. Override to customize.
    * @abstract
-   * @param {'play'|'pause'|'stop'|'next'|'previous'} action 
+   * @param {FrameMediaControl} action 
    */
   mediaControl(action) {}
 

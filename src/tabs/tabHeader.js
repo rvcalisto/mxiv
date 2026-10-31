@@ -1,4 +1,3 @@
-// @ts-check
 import { TAB } from "./tab.js";
 import setDragEvent from "./tabHeaderDrag.js";
 import { addItem, removeItem, slideIntoView } from "./tabHeaderPanel.js";
@@ -24,7 +23,7 @@ export class TabHeader {
    * @param {string} [name] Tab name. 
    */
   constructor(tabInstance, name = 'tab') {
-    this.name;
+    this.name = '';
     this.tabInstance = tabInstance;
     this.#element = this.#createHeaderElement();
     this.rename(name);

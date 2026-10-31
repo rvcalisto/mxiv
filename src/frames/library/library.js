@@ -1,4 +1,3 @@
-// @ts-check
 import { GenericFrame } from "../genericFrame.js";
 import { CoverGrid } from "./coverGrid.js";
 import { WatchlistPanel } from "./watchlistPanel.js";

@@ -1,4 +1,3 @@
-// @ts-check
 import { ItemList } from "../../components/itemList.js";
 import { notify } from "../../components/notifier.js";
 
@@ -6,7 +5,11 @@ import style from "./fileExplorer.css" with { type: 'css' };
 
 
 /**
- * @import { FileObject } from "../../APIs/file/fileSearch.js"
+ * @import { FileObject, LSObject } from "../../APIs/file/fileSearch.js"
+ */
+
+/**
+ * @typedef {CustomEvent<KeyboardEvent>} FileExplorerEvent
  */
 
 
@@ -82,11 +85,13 @@ export class FileExplorer extends HTMLElement {
     shadowRoot.adoptedStyleSheets = [style];
 
     this.#searchPrompt = /** @type {HTMLInputElement} */ (shadowRoot.querySelector('#search'));
-    this.#list = /** @type {ItemList} */ (shadowRoot.querySelector('#itemList'));
+    this.#list = /** @type {ItemList<FileObject, HTMLElement>} */ (shadowRoot.querySelector('#itemList'));
 
     this.style.display = 'none'; // starts hidden
     this.#initEvents();
-    this.onblur();
+
+    if (this.onblur != null)
+      this.onblur( new FocusEvent('') );
   }
 
   /** 
@@ -134,12 +139,11 @@ export class FileExplorer extends HTMLElement {
    * @returns {Promise<boolean>} Success
    */
   async #changeDirectory(path) {
-    /** @type {import("../../APIs/file/fileSearch.js").LSObject} */
-    const lsObj = await elecAPI.scanPath(path);
+    const lsObj = /** @type {LSObject} */ (await elecAPI.scanPath(path));
     
     // sort categories individually, then merge in order
-    for (const key of ['directories', 'archives', 'files'])
-      lsObj[key].sort( (fileA, fileB) => this.#collator.compare(fileA.path, fileB.path) );
+    for (const files of [lsObj.directories, lsObj.archives, lsObj.files])
+      files.sort( (fileA, fileB) => this.#collator.compare(fileA.path, fileB.path) );
     
     const directoryFiles = lsObj.directories.concat(lsObj.archives, lsObj.files);
     if (directoryFiles.length < 1) {

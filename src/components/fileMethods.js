@@ -60,8 +60,8 @@ export async function deleteTags(...tags) {
 /**
  * Run user script on system shell.
  * @param {string} userScript User script.
- * @param {string?} filepath Absolute file path, if any.
- * @param {string} optMsg Optional message to display.
+ * @param {string} [filepath] Absolute file path, if any.
+ * @param {string} [optMsg] Optional message to display.
  */
 export async function runScript(userScript, filepath, optMsg) {
   if (!userScript)

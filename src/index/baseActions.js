@@ -10,6 +10,11 @@ import userPreferences from "../components/userPreferences.js";
 import * as headerPanel from "../tabs/tabHeaderPanel.js";
 
 
+/**
+ * @import { ThemeOverride } from "../components/userPreferences.js"
+ */
+
+
 setBaseActions({
 
   'palette': {
@@ -242,7 +247,7 @@ setBaseActions({
           }
 
           elecAPI.setTheme(theme);
-          userPreferences.set('themeOverride', theme);
+          userPreferences.set('themeOverride', /** @type {ThemeOverride} */ (theme));
           notify(`set theme to "${theme}"`, 'setTheme');
         },
         options: (_, args) => {

@@ -53,7 +53,7 @@ export function deleteFile(filePath) {
   try {
     rmSync(filePath);
     return true;
-  } catch (err) {
+  } catch (/** @type {any} */ err) {
     return err.code === 'ENOENT'; // already deleted, return true
   }
 }

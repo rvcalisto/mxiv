@@ -1,11 +1,9 @@
-// @ts-check
-
 /**
  * @typedef StatusObjectType
  * @property {string} title Title to display on application window.
  * @property {string} infoLeft Information to display on the left.
  * @property {string} infoRight Information to display on the right.
- * @property {()=>void} [infoLeftFunc] Function to run on right-click on the left.
+ * @property {() => void} [infoLeftFunc] Function to run on right-click on the left.
  */
 
 
@@ -62,7 +60,7 @@ export function updateStatus(statusObject) {
  * Toggle visibility on fullscreen.
  */
 function initialize() {
-  elecAPI.onFullscreen( function onFullscreenChange(/** @type boolean */ isFullscreen) {
+  elecAPI.onFullscreen( function onFullscreenChange(/** @type {boolean} */ isFullscreen) {
     if (isFullscreen)
       wasVisible = statusVisibility();
 

@@ -5,14 +5,14 @@
 export class ObservableEvents {
 
   /**
-   * @type {Object<string, ((...any)=>void)[]>}
+   * @type {Object<string, ((...args: any[]) => void)[]>}
    */
   #events = {};
 
   /**
    * Register an event observer.
    * @param {CustomEvents} event
-   * @param {(...any)=>void} callback
+   * @param {(...args: any[]) => void} callback
    */
   observe(event, callback) {
     if (this.#events[event] == null)

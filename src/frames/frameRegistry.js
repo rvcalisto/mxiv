@@ -1,4 +1,3 @@
-// @ts-check
 import { Viewer } from "./viewer/viewer.js";
 import { Library } from "./library/library.js";
 
@@ -16,14 +15,10 @@ import { Library } from "./library/library.js";
  * @property {boolean} allowProfiling
  */
 
-/**
- * @typedef {keyof registry} FrameType
- */
-
 
 /**
  * Frame registry entries.
- * @satisfies {Object<string, FrameEntry>}
+ * @type {Object<string, FrameEntry>}
  */
 const registry = {
   'viewer': {
@@ -52,7 +47,7 @@ const tagSuffix = 'component';
 
 /**
  * Get policy for frame type.
- * @param {FrameType} type Frame type.
+ * @param {string} type Frame type.
  */
 export function getFramePolicy(type) {
   return registry[type].policy;
@@ -60,7 +55,7 @@ export function getFramePolicy(type) {
 
 /**
  * Create and return new frame DOM element.
- * @param {FrameType} type Frame type.
+ * @param {string} type Frame type.
  */
 export function createFrame(type) {
   return document.createElement(`${type}-${tagSuffix}`);

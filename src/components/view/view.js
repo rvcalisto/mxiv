@@ -1,4 +1,3 @@
-// @ts-check
 import { ScrollBox } from "./scrollBox.js";
 import { ViewScreen } from "./screen.js";
 import { TrackBar } from "./trackBar.js";
@@ -10,12 +9,12 @@ import style from "./view.css" with { type: 'css' };
 
 
 /**
- * @typedef {'view:loaded'|'view:skip'|'view:random'|'view:playing'|
- * 'view:notify'|'view:mode'|'view:zoom'|'view:fullscreen'} ViewEvents
+ * @import { FileCategory } from "../../APIs/file/fileSearch.js"
  */
 
 /**
- * @typedef {import("../../APIs/file/fileSearch").FileCategory} FileCategory
+ * @typedef {'view:loaded'|'view:skip'|'view:random'|'view:playing'|
+ * 'view:notify'|'view:mode'|'view:zoom'|'view:fullscreen'} ViewEvents
  */
 
 

@@ -1,5 +1,3 @@
-// @ts-check
-
 /**
  * Tabs Container div.
  */
@@ -77,7 +75,8 @@ function onDragTab(e) {
   const draggedTabCenter = draggedTabLeft + tabWidth / 2;
   insertBefore = draggedTabLeft < selectedTabLeft;
   
-  let leftmostTab = null;
+  let leftmostTab = /** @type {HTMLElement | null} */ (null);
+  
   tabElements.forEach(element => {
     if ( !element.classList.contains('tab') )
       return;
@@ -116,9 +115,9 @@ function onDragTab(e) {
  */
 function onDragRelease(_) {
   if (selectedTab != null && targetTab != null)
-    insertBefore ?
-      targetTab.before(selectedTab) :
-      targetTab.after(selectedTab);
+    insertBefore
+      ? targetTab.before(selectedTab)
+      : targetTab.after(selectedTab);
   
   removeEventListener('mousemove', onDragThreshold);
   removeEventListener('mousemove', onDragTab);

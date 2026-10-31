@@ -1,4 +1,3 @@
-// @ts-check
 import { GenericStorage } from "./genericStorage.js";
 import { ObservableEvents } from "./observableEvents.js";
 
@@ -12,40 +11,40 @@ const storage = new GenericStorage('userPreferences');
 
 /**
  * Observable property changes.
- * @type {ObservableEvents<keyof values>}
+ * @type {ObservableEvents<keyof preferences>}
  */
 export const events = new ObservableEvents();
 
 /**
- * Runtime values, defaults.
+ * Runtime preferences, defaults.
  */
-const values = {
+const preferences = {
   libraryItemsPerPage: 100,
   libraryCoverSize: 200,
-  themeOverride: /** @type ThemeOverride */ ('system'),
+  themeOverride: /** @type {ThemeOverride} */ ('system'),
   paletteHistorySize: 10
 };
 
 
 /**
  * Get user preference value.
- * @template {keyof values} T
+ * @template {keyof preferences} T
  * @param {T} property
- * @returns {values[T]}
+ * @returns {preferences[T]}
  */
 export function get(property) {
-  return values[property];
+  return preferences[property];
 }
 
 /**
  * Set new value for user preference property.
- * @template {keyof values} T
+ * @template {keyof preferences} T
  * @param {T} property
- * @param {values[T]} value
+ * @param {preferences[T]} value
  * @returns {boolean} Success.
  */
 export function set(property, value) {
-  if (values[property] == null)
+  if (preferences[property] == null)
     return false;
 
   if (property === 'themeOverride') {
@@ -53,12 +52,12 @@ export function set(property, value) {
     if (value === 'system')
       localStorage.removeItem(property);
     else
-      localStorage.setItem(property, /** @type ThemeOverride */ (value));
+      localStorage.setItem(property, /** @type {ThemeOverride} */ (value));
   } else {
     storage.set(property, value);
   }
 
-  values[property] = value;
+  preferences[property] = value;
   events.fire(property, value);
   elecAPI.broadcast('userPref:sync', property, value);
 
@@ -71,7 +70,7 @@ export function set(property, value) {
 function reload() {
   for ( const [key, value] of storage.entries() ) {
     if (value !== undefined)
-      values[key] = value;
+      Object.assign(preferences, { [key]: value });
   }
 }
 
@@ -81,9 +80,13 @@ function reload() {
 function initialize() {
   reload();
 
-  elecAPI.onBroadcast((/** @type string */ message, property, value) => {
+  elecAPI.onBroadcast((
+    /** @type {string} */ message,
+    /** @type {keyof preferences} */ property,
+    /** @type {preferences[property]} */ value
+  ) => {
     if (message === 'userPref:sync') {
-      values[property] = value;
+      Object.assign(preferences, { [property]: value });
       events.fire(property, value);
     }
   });
@@ -91,5 +94,6 @@ function initialize() {
 
 
 initialize();
+
 
 export default { get, set, events };

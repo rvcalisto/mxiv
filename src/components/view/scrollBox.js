@@ -1,5 +1,3 @@
-// @ts-check
-
 /** 
  * Scrollbar methods for Viewer content container. 
  */
@@ -83,7 +81,7 @@ export class ScrollBox {
 
   /**
    * Set or get normalized scroll position. 0 = left/top; 1 = right/bottom.
-   * @return {{x?:number, y?:number}} vector
+   * @return {{x: number|undefined, y: number|undefined}} vector
    */
   get pos() {
     let x = undefined, y = undefined;

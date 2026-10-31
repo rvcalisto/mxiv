@@ -1,6 +1,3 @@
-// @ts-check
-
-
 /**
  * @typedef {Object<string, string[]>} AcceleratorSet
  */
@@ -13,6 +10,7 @@ export class ComponentAccelerators {
 
   /**
    * Aliased KeyboardEvent keys.
+   * @type {Object<string, string>}
    */
   static #keyAliases = {
     ' ': 'space',

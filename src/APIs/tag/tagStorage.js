@@ -382,7 +382,7 @@ export class TagStorage extends JsonStorage {
    * @returns {Promise<string[]>} Orphaned entries.
    */
   async listOrphans(deleteOrphans = false) {
-    const taskPromises = [], orphans = [];
+    const taskPromises = [], orphans = /** @type {string[]} */ ([]);
     const state = await this.getState();
 
     for ( const filepath of state.keys() ) {

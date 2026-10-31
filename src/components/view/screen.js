@@ -1,4 +1,6 @@
-// @ts-check
+/**
+ * @import { View } from './view.js'
+ */
 
 /**
  * @typedef {'none'|'stretch'|'scale'|'width'|'height'} DisplayModes
@@ -12,7 +14,7 @@ export class ViewScreen {
 
   /**
    * Host View component.
-   * @type {import('./view.js').View}
+   * @type {View}
    */
   #view;
 
@@ -22,7 +24,7 @@ export class ViewScreen {
   #emptyView;
 
   /**
-   * @param {import('./view.js').View} view View instance.
+   * @param {View} view View instance.
    */
   constructor(view) {
     this.#view = view;
@@ -157,7 +159,7 @@ export class ViewScreen {
 
   /**
    * Apply and preserve element mode styling, scroll position across images.
-   * @param {{ x?: number, y?: number; }} [pos=this.#view.scrollBox.pos] Custom scroll position.
+   * @param {{ x: number|undefined, y: number|undefined; }} [pos=this.#view.scrollBox.pos] Custom scroll position.
    */
   #postPass(pos = this.#view.scrollBox.pos) {
     const { x = 0, y = 0 } = pos; // fallback to top-left

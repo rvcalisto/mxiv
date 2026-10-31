@@ -1,4 +1,3 @@
-// @ts-check
 import { TabHeader } from "./tabHeader.js";
 import { updateStatus } from "../components/statusBar.js";
 import { getFramePolicy, createFrame } from "../frames/frameRegistry.js";
@@ -6,7 +5,8 @@ import { NotificationChannel } from "../components/notifier.js";
 
 
 /**
- * @import { GenericFrame, FrameType } from "../frames/genericFrame.js"
+ * @import { GenericFrame } from "../frames/genericFrame.js"
+ * @import { Viewer } from "../frames/viewer/viewer.js"
  */
 
 /**
@@ -15,7 +15,7 @@ import { NotificationChannel } from "../components/notifier.js";
 
 /**
  * @typedef TabProfileType
- * @property {FrameType} type Tab frame type.
+ * @property {string} type Tab frame type.
  * @property {Object} state Tab frame state.
  */
 
@@ -51,8 +51,8 @@ class Tab {
 
   /**
    * Create a new Tab instance.
-   * @param {FrameType} [type=viewer] Frame type.
-   * @param {(instance:GenericFrame)=>void} [callback] Callback, executed before selection.
+   * @param {string} [type=viewer] Frame type.
+   * @param {(instance: InstanceType<typeof GenericFrame>) => void} [callback] Callback, executed before selection.
    * @param {string} [name=tab] Tab name.
    */
   constructor(type = 'viewer', callback, name = 'tab') {
@@ -68,7 +68,7 @@ class Tab {
 
   /** 
    * Append tab frame component to DOM.
-   * @param {FrameType} type Frame type.
+   * @param {string} type Frame type.
    * @returns {GenericFrame}
    */
   #setupFrame(type) {
@@ -207,8 +207,8 @@ class Tab {
 
 /**
  * Create a new tab of given type, if policy allows it.
- * @param {FrameType} [type=viewer] Frame type.
- * @param {(instance:GenericFrame)=>void} [callback] Callback, executed before selection.
+ * @param {string} [type=viewer] Frame type.
+ * @param {(instance: InstanceType<typeof GenericFrame>) => void} [callback] Callback, executed before selection.
  * @param {NewTabOptions} [options] Custom options.
  * @returns {Tab?}
  */
@@ -261,8 +261,7 @@ export function allTabs() {
  */
 export function newFileViewer() {
   newTab('viewer', frame => {
-    /** @type {import("../frames/viewer/viewer.js").Viewer} */ 
-    (frame).fileExplorer.togglePanel();
+    /** @type {Viewer} */ (frame).fileExplorer.togglePanel();
   });
 }
 

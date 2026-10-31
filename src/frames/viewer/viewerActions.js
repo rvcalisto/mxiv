@@ -1,3 +1,4 @@
+// @ts-nocheck: FRAME context is too ambiguous for the LSP
 import { setComponentActions } from "../../actions/actionService.js";
 import { FRAME } from "../../tabs/tab.js";
 import { option, setPaletteInfo, standardFilter } from "../../components/actionPalette/actionPalette.js";

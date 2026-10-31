@@ -97,6 +97,7 @@ function ipcHandlers() {
 
 
 // quit as part of the squirrel.windows installation procedure, if present
+// @ts-ignore: ignore package otherwise.
 if (process.platform === 'win32' && await import('electron-squirrel-startup')
   .then(module => module.default)
   .catch(_ => false)

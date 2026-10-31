@@ -1,4 +1,3 @@
-// @ts-check
 import { GenericFrame } from "../genericFrame.js";
 import { FileBook } from "./fileBook.js";
 import { FileExplorer } from "./fileExplorer.js";
@@ -9,6 +8,11 @@ import "./viewerAccelerators.js";
 import "./keyEventController.js";
 
 import style from "./viewer.css" with { type: 'css' };
+
+
+/**
+ * @import { StatusObjectType } from "../../components/statusBar.js"
+ */
 
 
 /**
@@ -451,6 +455,7 @@ export class Viewer extends GenericFrame {
    * @override
    */
   status() {
+    /** @type {StatusObjectType} */
     const status = {
       title: '',
       infoLeft: 'None',

@@ -1,4 +1,3 @@
-// @ts-check
 import * as utils from './thumbnailService.js';
 import { libraryStorage } from './libraryStorage.js';
 import { createThumbnailMultiThreaded } from './thumbnailWorker.js';
@@ -9,11 +8,8 @@ import { availableParallelism } from 'os';
 
 
 /**
- * @typedef {import('../tool/toolCapabilities.js').ToolCapabilities} ToolCapabilities
- */
-
-/**
- * @typedef {import('./libraryStorage.js').LibraryEntry} LibraryEntry
+ * @import {ToolCapabilities} from '../tool/toolCapabilities.js'
+ * @import {LibraryEntry} from './libraryStorage.js'
  */
 
 /**
@@ -46,7 +42,7 @@ export async function addToLibrary(senderWin, folderItems) {
     candidates.push(...folders);
   }
   
-  const addedEntries = [];
+  const addedEntries = /** @type {string[]} */ ([]);
   let total = candidates.length;
 
   const sendUpdate = () => senderWin.send('library:new', /** @type {LibraryUpdate} */ ({
@@ -82,7 +78,7 @@ export async function addToLibrary(senderWin, folderItems) {
 
 /**
  * Return sorted Library entries for displaying.
- * @returns {Promise<import("./libraryStorage").LibraryEntry[]>}
+ * @returns {Promise<LibraryEntry[]>}
  */
 export async function getLibraryEntries() {
   return await libraryStorage.getStateFromCache()

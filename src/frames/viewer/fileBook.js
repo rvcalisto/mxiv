@@ -1,10 +1,9 @@
-// @ts-check
 import { matchNameOrTags } from '../../components/fileMethods.js';
 
 
 /**
- * @import { FileObject } from "../../APIs/file/fileSearch"
- * @import { BookObject } from "../../APIs/file/openFile"
+ * @import { FileObject } from "../../APIs/file/fileSearch.js"
+ * @import { BookObject } from "../../APIs/file/openFile.js"
  */
 
 
