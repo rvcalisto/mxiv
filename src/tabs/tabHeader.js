@@ -1,4 +1,3 @@
-import { TAB } from "./tab.js";
 import setDragEvent from "./tabHeaderDrag.js";
 import { addItem, removeItem, slideIntoView } from "./tabHeaderPanel.js";
 
@@ -11,7 +10,7 @@ export class TabHeader {
   static #classMap = /** @type {WeakMap<Element, TabHeader>} */ (new WeakMap());
   static #tabsContainer = /** @type {HTMLElement} */ (document.querySelector('#tabs'));
 
-  #nameCount = 1
+  #nameCount = 1;
   /** @type {HTMLElement}          */ #element;
   /** @type {HTMLButtonElement}    */ #playButton;
   /** @type {HTMLParagraphElement} */ #nameLabel;
@@ -62,10 +61,9 @@ export class TabHeader {
 
     // compose & append to DOM
     container.append(this.#playButton, this.#nameLabel, this.#closeButton);
-    if (TAB != null)
-      addItem(container, TAB.header.#element);
-    else
-      addItem(container);
+
+    const selection = TabHeader.#tabsContainer.querySelector('.tab.selected');
+    addItem(container, /** @type {HTMLElement?} */ (selection) ?? undefined);
 
     // set tab events
     setDragEvent(container);
@@ -182,6 +180,6 @@ export class TabHeader {
   static get allHeaders() {
     const elements = this.#tabsContainer.getElementsByClassName('tab');
     const headers = [...elements].map(element => TabHeader.#classMap.get(element));
-    return /** @type TabHeader[] */ (headers);
+    return /** @type {TabHeader[]} */ (headers);
   }
 }
