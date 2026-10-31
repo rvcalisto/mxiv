@@ -3,9 +3,9 @@ import { notify } from "./notifier.js";
 
 /**
  * Add or remove tags from given file.
- * @param {string?} filepath Absolute file path.
+ * @param {string} filepath Absolute file path.
  * @param {boolean} add Add tags instead of removing them.
- * @param  {...string} tags Tags to associate to current file.
+ * @param {...string} tags Tags to associate to current file.
  */
 export async function tag(filepath, add, ...tags) {
   if (!filepath)

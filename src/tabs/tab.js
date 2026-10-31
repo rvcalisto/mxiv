@@ -34,7 +34,7 @@ export let TAB;
 
 /**
  * Currently selected frame reference.
- * @type {GenericFrame?}
+ * @type {InstanceType<typeof GenericFrame>?}
  */
 export let FRAME;
 
