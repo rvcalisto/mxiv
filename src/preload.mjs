@@ -6,8 +6,8 @@ import * as localTagStorage from './APIs/tag/renderer.js';
 contextBridge.exposeInMainWorld('elecAPI', /** @satisfies {MXIVElectronAPI} */ ({
 
   // coordination
-  requestLock: async () => ipcRenderer.invoke('coord:lock'),
-  releaseLock: async () => ipcRenderer.invoke('coord:unlock'),
+  requestLock: async (lock) => ipcRenderer.invoke('coord:lock', lock),
+  releaseLock: async (lock) => ipcRenderer.invoke('coord:unlock', lock),
   broadcast: async (message, ...args) => ipcRenderer.invoke('coord:broadcast', message, ...args),
   onBroadcast: (callback) => ipcRenderer.on('coord:onbroadcast', (_e, msg, ...args) => callback(msg, ...args)),
 

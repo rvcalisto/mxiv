@@ -1,16 +1,16 @@
 import { TabHeader } from "./tabHeader.js";
 import { updateStatus } from "../components/statusBar.js";
-import { getFramePolicy, createFrame } from "../frames/frameRegistry.js";
+import { getFramePolicy, createFrame, getFrameClass } from "../frames/frameRegistry.js";
 import { NotificationChannel } from "../components/notifier.js";
+import { Viewer } from "../frames/viewer/viewer.js";
 
 
 /**
  * @import { GenericFrame } from "../frames/genericFrame.js"
- * @import { Viewer } from "../frames/viewer/viewer.js"
  */
 
 /**
- * @typedef {Tab} TabType
+ * @typedef {Tab<typeof GenericFrame>} TabType
  */
 
 /**
@@ -28,7 +28,7 @@ import { NotificationChannel } from "../components/notifier.js";
 
 /**
  * Currently selected tab reference.
- * @type {Tab?}
+ * @type {Tab<typeof GenericFrame>?}
  */
 export let TAB;
 
@@ -40,6 +40,7 @@ export let FRAME;
 
 
 /**
+ * @template {typeof GenericFrame} T
  * Tab instance.
  */
 class Tab {
@@ -51,13 +52,13 @@ class Tab {
 
   /**
    * Create a new Tab instance.
-   * @param {string} [type=viewer] Frame type.
-   * @param {(instance: InstanceType<typeof GenericFrame>) => void} [callback] Callback, executed before selection.
+   * @param {T} type Frame type.
+   * @param {(instance: InstanceType<T>) => void} [callback] Callback, executed before selection.
    * @param {string} [name=tab] Tab name.
    */
-  constructor(type = 'viewer', callback, name = 'tab') {
+  constructor(type, callback, name = 'tab') {
     this.header = new TabHeader(this, name);
-    this.frame = this.#setupFrame(type);
+    this.frame = this.#setupFrame( type.name.toLowerCase() );
     this.channel = new NotificationChannel();
 
     if (callback)
@@ -69,10 +70,10 @@ class Tab {
   /** 
    * Append tab frame component to DOM.
    * @param {string} type Frame type.
-   * @returns {GenericFrame}
+   * @returns {InstanceType<T>}
    */
   #setupFrame(type) {
-    const frame = /** @type {GenericFrame} */ (createFrame(type));
+    const frame = /** @type {InstanceType<T>} */ (createFrame(type));
 
     // set and store tab name, hide frame on start
     frame.tabName = this.header.name;
@@ -100,7 +101,7 @@ class Tab {
         updateStatus( frame.status() );
     });
 
-    const contentContainer = /** @type HTMLDivElement */ (document.getElementById('contents'));
+    const contentContainer = /** @type {HTMLDivElement} */ (document.getElementById('contents'));
     contentContainer.appendChild(frame);
 
     return frame;
@@ -210,14 +211,16 @@ class Tab {
  * @param {string} [type=viewer] Frame type.
  * @param {(instance: InstanceType<typeof GenericFrame>) => void} [callback] Callback, executed before selection.
  * @param {NewTabOptions} [options] Custom options.
- * @returns {Tab?}
+ * @returns {Tab<typeof GenericFrame>?}
  */
 export function newTab(type = 'viewer', callback, options = {}) {
   const framePolicy = getFramePolicy(type);
+  const frameClass = getFrameClass(type);
 
   if (!framePolicy.allowDuplicate) {
     const instance = allTabs().find(tab => tab.frame.type === type);
-    if (instance) {
+
+    if (instance != null) {
       if (!options.quiet) {
         instance.select();
         instance.frame.notify(`${type} doesn't support multiple instances`, 'singleInst');
@@ -227,7 +230,7 @@ export function newTab(type = 'viewer', callback, options = {}) {
     }
   }
 
-  return new Tab(type, callback, options.name);
+  return new Tab(frameClass, callback, options.name);
 }
 
 /**
@@ -249,7 +252,7 @@ export function cycleTabs(forward = true) {
 
 /**
  * Array of all open tabs at the time, in order of presentation.
- * @returns {Tab[]}
+ * @returns {Tab<typeof GenericFrame>[]}
  */
 export function allTabs() {
   const tabs = TabHeader.allHeaders;
@@ -260,11 +263,10 @@ export function allTabs() {
  * Create a Viewer tab with FileExplorer panel visible by default.
  */
 export function newFileViewer() {
-  newTab('viewer', frame => {
-    /** @type {Viewer} */ (frame).fileExplorer.togglePanel();
-  });
+  new Tab(Viewer, viewer => viewer.fileExplorer.togglePanel() );
 }
 
+
 // add newTab event listener (side effect)
-const newTabButton = /** @type HTMLDivElement */ (document.getElementById('newTab'));
+const newTabButton = /** @type {HTMLDivElement} */ (document.getElementById('newTab'));
 newTabButton.onclick = newFileViewer;

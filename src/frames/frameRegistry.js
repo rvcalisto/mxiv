@@ -37,7 +37,7 @@ const registry = {
       allowDuplicate: false
     }
   }
-}
+};
 
 /**
  * Frame custom element tag suffix.
@@ -51,6 +51,14 @@ const tagSuffix = 'component';
  */
 export function getFramePolicy(type) {
   return registry[type].policy;
+}
+
+/**
+ * get frame type class.
+ * @param {string} type Frame type.
+ */
+export function getFrameClass(type) {
+  return registry[type].class;
 }
 
 /**
