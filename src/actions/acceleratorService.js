@@ -1,4 +1,3 @@
-// @ts-check
 import { ComponentAccelerators } from "./componentAccelerators.js";
 import { FRAME } from "../tabs/tab.js";
 
@@ -9,10 +8,22 @@ import { FRAME } from "../tabs/tab.js";
 
 
 /**
- * Collection of component accelerators.
+ * Registered ComponentAccelerators.
  * @type {Object<string, ComponentAccelerators>}
  */
-const collection = {};
+const registeredAccelerators = {};
+
+/**
+ * Registered custom ComponentAccelerators overlays.
+ * @type {Object<string, ComponentAccelerators>}
+ */
+const customAccelerators = {};
+
+/**
+ * Composed ComponentAccelerators for each registered component.
+ * @type {Object<string, ComponentAccelerators>}
+ */
+const composedAccelerators = {};
 
 /**
  * Non-base components.
@@ -22,20 +33,11 @@ const components = new Set();
 
 
 /**
- * Returns component AcceleratorSet. Empty if not stored.
- * @param {string} component Component name.
- * @returns {AcceleratorSet}
- */
-function getSet(component) {
-  return collection[component]?.asObject() || {};
-}
-
-/**
  * Set common base accelerators.
  * @param {AcceleratorSet} accelerators Accelerator set.
  */
 export function setBaseAccelerators(accelerators) {
-  collection['base'] = new ComponentAccelerators(accelerators);
+  registeredAccelerators['base'] = new ComponentAccelerators(accelerators);
   buildComposedAccelerators('base');
 
   for (const component of components)
@@ -47,7 +49,7 @@ export function setBaseAccelerators(accelerators) {
  * @param {AcceleratorSet} accelerators Accelerator set.
  */
 export function setBaseUserAccelerators(accelerators) {
-  collection['base-user'] = new ComponentAccelerators(accelerators);
+  customAccelerators['base'] = new ComponentAccelerators(accelerators);
   buildComposedAccelerators('base');
 
   for (const component of components)
@@ -62,7 +64,7 @@ export function setBaseUserAccelerators(accelerators) {
 export function setComponentAccelerators(component, accelerators) {
   components.add(component);
 
-  collection[component] = new ComponentAccelerators(accelerators);
+  registeredAccelerators[component] = new ComponentAccelerators(accelerators);
   buildComposedAccelerators(component);
 }
 
@@ -72,7 +74,7 @@ export function setComponentAccelerators(component, accelerators) {
  * @param {AcceleratorSet} accelerators Accelerator set.
  */
 export function setComponentUserAccelerators(component, accelerators) {
-  collection[`${component}-user`] = new ComponentAccelerators(accelerators);
+  customAccelerators[component] = new ComponentAccelerators(accelerators);
   buildComposedAccelerators(component);
 }
 
@@ -81,30 +83,30 @@ export function setComponentUserAccelerators(component, accelerators) {
  * @param {string} component Component name.
  */
 function buildComposedAccelerators(component) {
-  const composedAccelerators = new ComponentAccelerators();
+  const accelerators = new ComponentAccelerators();
 
   if (component !== 'base') 
-    composedAccelerators.merge( getSet('base-all'), false );
+    accelerators.merge( composedAccelerators['base']?.asObject() || {}, false );
 
-  composedAccelerators.merge( collection[component].asObject(), false );
-  composedAccelerators.merge( getSet(`${component}-user`) );
+  accelerators.merge( registeredAccelerators[component]?.asObject() || {}, false );
+  accelerators.merge( customAccelerators[component]?.asObject() || {} );
 
-  collection[`${component}-all`] = composedAccelerators;
+  composedAccelerators[component] = accelerators;
 }
 
 /**
  * Returns component accelerators.
  * @param {string} component Component name.
- * @param {'composed'|'default'|'user'} [type='composed'] Layer, `composed` by default.
- * @returns {ComponentAccelerators?}
+ * @param {'default'|'custom'|'composed'} [type='composed'] Layer, `composed` by default.
+ * @returns {ComponentAccelerators | undefined}
  */
 export function getAccelerators(component, type = 'composed') {
-  if (type === 'composed')
-    return collection[`${component}-all`];
-  else if (type === 'default')
-    return collection[component];
+  if (type === 'default')
+    return registeredAccelerators[component];
+  if (type === 'custom')
+    return customAccelerators[component];
   else
-    return collection[`${component}-user`];
+    return composedAccelerators[component];
 }
 
 /**
@@ -113,6 +115,6 @@ export function getAccelerators(component, type = 'composed') {
  */
 export function getCurrentAccelerators() {
   return FRAME == null
-    ? collection['base-all']
-    : collection[`${FRAME.type}-all`];
+    ? registeredAccelerators['base']
+    : composedAccelerators[FRAME.type];
 }

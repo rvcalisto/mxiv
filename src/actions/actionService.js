@@ -1,6 +1,5 @@
-// @ts-check
-import { FRAME } from "../tabs/tab.js";
 import { ComponentActions } from "./componentActions.js";
+import { FRAME } from "../tabs/tab.js";
 
 
 /** 
@@ -9,10 +8,16 @@ import { ComponentActions } from "./componentActions.js";
 
 
 /**
- * Collection of component actions.
+ * Registered ComponentActions.
  * @type {Object<string, ComponentActions>}
  */
-const collection = {};
+const registeredActions = {};
+
+/**
+ * Composed ComponentActions for each registered component.
+ * @type {Object<string, ComponentActions>}
+ */
+const composedActions = {};
 
 /**
  * Non-base components.
@@ -26,7 +31,7 @@ const components = new Set();
  * @param {ActionSet} actions Action set.
  */
 export function setBaseActions(actions) {
-  collection['base'] = new ComponentActions(actions);
+  registeredActions['base'] = new ComponentActions(actions);
 
   for (const component of components)
     buildComposedActions(component); // propagate changes
@@ -40,7 +45,7 @@ export function setBaseActions(actions) {
 export function setComponentActions(component, actions) {
   components.add(component);
 
-  collection[component] = new ComponentActions(actions);
+  registeredActions[component] = new ComponentActions(actions);
   buildComposedActions(component);
 }
 
@@ -49,13 +54,13 @@ export function setComponentActions(component, actions) {
  * @param {string} component Component name.
  */
 function buildComposedActions(component) {
-  const composedActions = new ComponentActions();
-  const baseActionSet = collection['base']?.asObject() || {};
+  const actions = new ComponentActions();
+  const baseActionSet = registeredActions['base']?.asObject() || {};
 
-  composedActions.merge(baseActionSet);
-  composedActions.merge( collection[component].asObject() );
+  actions.merge(baseActionSet);
+  actions.merge( registeredActions[component].asObject() );
 
-  collection[`${component}-all`] = composedActions;
+  composedActions[component] = actions;
 }
 
 /**
@@ -64,7 +69,7 @@ function buildComposedActions(component) {
  * @returns {ComponentActions}
  */
 export function getActions(component) {
-  return collection[`${component}-all`];
+  return composedActions[component];
 }
 
 /**
@@ -73,6 +78,6 @@ export function getActions(component) {
  */
 export function getCurrentActions() {
   return FRAME == null
-    ? collection['base']
-    : collection[`${FRAME.type}-all`];
+    ? registeredActions['base']
+    : composedActions[FRAME.type];
 }
