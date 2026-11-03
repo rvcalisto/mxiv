@@ -11,19 +11,24 @@ import * as headerPanel from "../tabs/tabHeaderPanel.js";
 
 
 /**
+ * @import { GenericFrame } from "../frames/genericFrame.js"
+ * @import { ActionSet } from "../actions/componentActions.js"
  * @import { ThemeOverride } from "../components/userPreferences.js"
  */
 
 
-setBaseActions({
+/**
+ * @type {ActionSet<GenericFrame>}
+ */
+const baseActions = {
 
   'palette': {
     desc: 'open on action, repeat or clear recent actions from history',
     actions: {
       'show': {
         desc: 'show action palette, optionally with a given string',
-        run: (customStr) => palette.togglePalette(true, customStr),
-        options: (_query, allArgs) => {
+        run: (_frame, customStr) => palette.togglePalette(true, customStr),
+        options: (_frame, _query, allArgs) => {
           if (allArgs.length < 2)
             setPaletteInfo('arguments: <string>');
 
@@ -45,48 +50,48 @@ setBaseActions({
     desc: 'create, move, rename tabs and more',
     actions: {
       'new': {
-        desc : 'create new tab',
-        run  : (type = 'viewer') => {
+        desc: 'create new tab',
+        run: (_frame, type = 'viewer') => {
           isFrameType(type)
             ? type === 'viewer' ? newFileViewer() : newTab(type)
             : notify(`"${type}" is not a valid tab type`, 'newTab');
         },
-        options: (_query, allArgs) => allArgs.length < 2
+        options: (_frame, _query, allArgs) => allArgs.length < 2
           ? frameDescriptors().map( ([frame, desc]) => option(frame, desc) )
           : []
       },
       'move': {
-        desc : 'move current tab to the right or left',
-        run  : (next = 'right') => TAB?.move(next !== 'left'),
-        options: (_query, args) => args.length < 2
+        desc: 'move current tab to the right or left',
+        run: (_frame, next = 'right') => TAB?.move(next !== 'left'),
+        options: (_frame, _query, args) => args.length < 2
           ? [option('right', 'default'), 'left']
           : []
       },
       'cycle': {
-        desc : 'cycle through tabs',
-        run  : (next = 'next') => cycleTabs(next !== 'back'),
-        options: (_query, args) => args.length < 2
+        desc: 'cycle through tabs',
+        run: (_frame, next = 'next') => cycleTabs(next !== 'back'),
+        options: (_frame, _query, args) => args.length < 2
           ? [option('next', 'default'), 'back']
           : []
       },
       'close': {
-        desc : 'close current tab',
-        run  : () => TAB?.close()
+        desc: 'close current tab',
+        run: () => TAB?.close()
       },
       'duplicate': {
-        desc : 'duplicate current tab',
-        run  : () => TAB?.duplicate()
+        desc: 'duplicate current tab',
+        run: () => TAB?.duplicate()
       },
       'rename': {
-        desc : 'rename current tab',
-        run  : (name = '') => {
+        desc: 'rename current tab',
+        run: (_frame, name = '') => {
           const validName = name.trim();
 
           validName != ''
             ? TAB?.rename(validName)
             : notify('tab name can\'t be empty', 'tabRename');
         },
-        options: (_query, allArgs) => {
+        options: (_frame, _query, allArgs) => {
           if (allArgs.length < 2)
             setPaletteInfo('arguments: <name>');
 
@@ -101,14 +106,14 @@ setBaseActions({
     actions: {
       'load': {
         desc: 'load session profile',
-        run: (name = '', clearSession = 'default') => {
+        run: (_frame, name = '', clearSession = 'default') => {
           const treatedName = name.trim();
 
           treatedName !== ''
             ? sessionProfiles.load(treatedName, clearSession !== 'keepSession')
             : notify('session name can\'t be empty', 'proLoad');
         },
-        options: (_query, args) => args.length > 2
+        options: (_frame, _query, args) => args.length > 2
           ? []
           : args.length < 2
             ? sessionProfiles.list()
@@ -119,27 +124,27 @@ setBaseActions({
       },
       'store': {
         desc: 'store current session as profile',
-        run: (name = '') => {
+        run: (_frame, name = '') => {
           const treatedName = name.trim();
 
           treatedName !== ''
             ? sessionProfiles.store(treatedName)
             : notify('session name can\'t be empty', 'proStore');
         },
-        options: (_query, allArgs) => allArgs.length < 2
+        options: (_frame, _query, allArgs) => allArgs.length < 2
           ? sessionProfiles.list()
           : []
       },
       'erase': {
         desc: 'erase a session profile',
-        run: (name = '') => {
+        run: (_frame, name = '') => {
           const treatedName = name.trim();
 
           treatedName !== ''
             ? sessionProfiles.erase(treatedName)
             : notify('session name can\'t be empty', 'proErase');
         },
-        options: (_query, allArgs) => allArgs.length < 2
+        options: (_frame, _query, allArgs) => allArgs.length < 2
           ? sessionProfiles.list()
           : []
       }
@@ -170,7 +175,7 @@ setBaseActions({
 
   'accel': {
     desc: 'accelerate action with a hotkey',
-    run: (component = '', keycombo = '', ...args) => {
+    run: (_frame, component = '', keycombo = '', ...args) => {
       if ( !isFrameType(component) && component !== 'base' )
         notify(`${component} is not a valid component`);
       else if (keycombo === '')
@@ -182,7 +187,7 @@ setBaseActions({
         notify(`user accelerator updated`);
       }
     },
-    options: (_query, allArgs) => {
+    options: (_frame, _query, allArgs) => {
       // hint available components
       if (allArgs.length < 2) {
         setPaletteInfo('argument: <component>');
@@ -239,7 +244,7 @@ setBaseActions({
     actions: {
       'theme': {
         desc: 'set application theme',
-        run: (theme = 'system', ..._args) => {
+        run: (_frame, theme = 'system', ..._args) => {
           // toggle theme if argument unknown
           if ( !['light', 'dark', 'system'].includes(theme) ) {
             const isLightTheme = matchMedia('(prefers-color-scheme: light)').matches;
@@ -250,7 +255,7 @@ setBaseActions({
           userPreferences.set('themeOverride', /** @type {ThemeOverride} */ (theme));
           notify(`set theme to "${theme}"`, 'setTheme');
         },
-        options: (_, args) => {
+        options: (_frame, _, args) => {
           const currentValue = userPreferences.get('themeOverride');
 
           return args.length < 2
@@ -264,7 +269,7 @@ setBaseActions({
       },
       'libraryCoverSize': {
         desc: 'set cover height size in pixels',
-        run: (size = '200') => {
+        run: (_frame, size = '200') => {
           let value = parseInt( size.trim() );
           if ( isNaN(value) || value < 100 )
             value = 200;
@@ -272,7 +277,7 @@ setBaseActions({
           userPreferences.set('libraryCoverSize', value);
           notify(`cover height sized to ${value}px`, 'coverSize');
         },
-        options: (_, args) => {
+        options: (_frame, _, args) => {
           const currentValue = userPreferences.get('libraryCoverSize');
 
           return args.length < 2
@@ -284,7 +289,7 @@ setBaseActions({
       },
       'libraryItemsPerPage': {
         desc: 'set how many items are displayed per page',
-        run: (count = '100') => {
+        run: (_frame, count = '100') => {
           let value = parseInt( count.trim() );
           if ( isNaN(value) || value < 10 )
             value = 100;
@@ -292,7 +297,7 @@ setBaseActions({
           userPreferences.set('libraryItemsPerPage', value);
           notify(`showing ${value} items per page`, 'itemsPerPage');
         },
-        options: (_, args) => {
+        options: (_frame, _, args) => {
           const currentValue = userPreferences.get('libraryItemsPerPage');
 
           return args.length < 2
@@ -304,7 +309,7 @@ setBaseActions({
       },
       'paletteHistorySize': {
         desc: 'set palette action history size',
-        run: (limit = '10') => {
+        run: (_frame, limit = '10') => {
           let value = parseInt( limit.trim() );
           if ( isNaN(value) || value < 0 )
             value = 10;
@@ -312,7 +317,7 @@ setBaseActions({
           userPreferences.set('paletteHistorySize', value);
           notify(`set palette history size to ${value}`, 'historySize');
         },
-        options: (_, args) => {
+        options: (_frame, _, args) => {
           const currentValue = userPreferences.get('paletteHistorySize');
 
           return args.length < 2
@@ -324,4 +329,7 @@ setBaseActions({
       }
     }
   }
-});
+};
+
+
+setBaseActions(baseActions);

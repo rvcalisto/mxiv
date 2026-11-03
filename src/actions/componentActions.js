@@ -7,49 +7,53 @@
  */
 
 /**
+ * @template T
  * @typedef Action
  * @property {string} desc Action description.
- * @property {(...args:string[])=>void} run Main procedure.
- * @property {(lastArg:string, allArgs:string[])=>Options|Promise<Options>} [options] Optional hints.
- * @property {(query:string)=>(lastArg:string)=>boolean} [customFilter] Optional custom hint filter.
+ * @property {(instance: T, ...args:string[])=>void} run Main procedure.
+ * @property {(instance: T, lastArg:string, allArgs:string[])=>Options|Promise<Options>} [options] Optional hints.
+ * @property {(instance: T, query:string)=>(lastArg:string)=>boolean} [customFilter] Optional custom hint filter.
  */
 
 /**
+ * @template T
  * @typedef Group
  * @property {string} desc Group description.
- * @property {Object<string, Action>} actions Group actions.
+ * @property {{[x: string]: Action<T>}} actions Group actions.
  */
 
 /**
- * @typedef {Object<string, Action|Group>} ActionSet
+ * @template [T=any]
+ * @typedef {{[x: string]: Action<T>|Group<T>}} ActionSet
  */
 
 
 /**
+ * @template [T=any]
  * Actions for a given component.
  */
 export class ComponentActions {
 
   /**
    * Component actions, groups.
-   * @type {ActionSet}
+   * @type {ActionSet<T>}
    */
   #actionSet = {};
 
   /**
    * Actions organized by group.
-   * @type {Map<string, Group>}
+   * @type {Map<string, Group<T>>}
    */
   #groups = new Map();
 
   /**
    * Actions, including group actions ('group action').
-   * @type {Map<string, Action>}
+   * @type {Map<string, Action<T>>}
    */
   #actions = new Map();
 
   /**
-   * @param {ActionSet} actions
+   * @param {ActionSet<T>} actions
    */
   constructor(actions = {}) {
     this.#actionSet = actions;
@@ -67,11 +71,11 @@ export class ComponentActions {
       const isGroup = Object.hasOwn(entry, 'actions');
 
       if (!isGroup)
-        this.#actions.set(key, /** @type {Action} */ (entry));
+        this.#actions.set(key, /** @type {Action<T>} */ (entry));
       else {
-        this.#groups.set(key, /** @type {Group} */ (entry));
+        this.#groups.set(key, /** @type {Group<T>} */ (entry));
 
-        Object.entries(/** @type {Group} */ (entry).actions)
+        Object.entries(/** @type {Group<T>} */ (entry).actions)
           .forEach( ([name, action]) => this.#actions.set(`${key} ${name}`, action));
       }
     }
@@ -93,7 +97,7 @@ export class ComponentActions {
 
   /**
    * Merge action entries for polymorphism.
-   * @param {ActionSet} actions Actions to merge or overwrite.
+   * @param {ActionSet<T>} actions Actions to merge or overwrite.
    */
   merge(actions) {
     Object.assign(this.#actionSet, actions);
@@ -102,7 +106,7 @@ export class ComponentActions {
 
   /**
    * Get action set object.
-   * @returns {ActionSet}
+   * @returns {ActionSet<T>}
    */
   asObject() {
     return this.#actionSet;
@@ -110,10 +114,11 @@ export class ComponentActions {
 
   /**
    * Run action. Return true on successful call.
+   * @param {T} component Component reference.
    * @param {string[]} cmdArgs Action and arguments.
    * @returns {boolean} Either the corresponding action was called.
    */
-  run(cmdArgs) {
+  run(component, cmdArgs) {
     const [cmd, ...args] = cmdArgs;
 
     let action = this.#groups.has(cmd)
@@ -123,7 +128,7 @@ export class ComponentActions {
     if (action == null)
       return false;
 
-    action.run(...args);
+    action.run(component, ...args);
     return true;
   }
 }

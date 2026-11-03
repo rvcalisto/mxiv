@@ -2,13 +2,13 @@ import { ItemList } from "../itemList.js";
 import { InputPrompt } from "./inputPrompt.js";
 import actionHistory from "./actionHistory.js";
 import { OptionElement } from "./optionElement.js";
-import { getCurrentActions } from "../../actions/actionService.js";
-import { getCurrentAccelerators } from "../../actions/acceleratorService.js";
+import { getFrameContext } from "../../frames/frameContext.js";
 import { notify } from "../notifier.js";
 
 
 /**
  * @import { Options } from "../../actions/componentActions.js"
+ * @import { ComponentAccelerators } from "../../actions/componentAccelerators.js"
  */
 
 /**
@@ -72,21 +72,22 @@ export const option = (name, desc = '', type = 'argument', keys) => ({
  * Returns a HTMLElement for this option.
  * @param {OptionObject|string} item Option string or object.
  * @param {string[]} [leadingAction] Action being evaluated.
+ * @param {ComponentAccelerators} [frameAccelerators] Context frame accelerators.
  * @returns {OptionElement}
  */
-function createElement(item, leadingAction = []) {
+function createElement(item, leadingAction = [], frameAccelerators) {
   let name = '', desc = '', type = /** @type OptionType */ ('argument');
   typeof item !== 'string'
     ? (name = item.name, desc = item.desc, type = item.type)
     : (name = item);
 
   const element = OptionElement.createElement(type, name, desc);
-  const frameAccelerators = getCurrentAccelerators();
 
   // tag accelerators keys, if any
-  element.tags = type === 'shortcut'
-    ? frameAccelerators.byAction( name.split(' ') )
-    : frameAccelerators.byAction([...leadingAction, name]);
+  if (frameAccelerators != null)
+    element.tags = type === 'shortcut'
+      ? frameAccelerators.byAction( name.split(' ') )
+      : frameAccelerators.byAction([...leadingAction, name]);
 
   if (type === 'history') {
     element.onForget = () => {
@@ -118,7 +119,9 @@ function createElement(item, leadingAction = []) {
 async function displayHints() {
   setPaletteInfo('');
 
-  const currentActions = getCurrentActions(),
+  const context = getFrameContext();
+
+  const currentActions = context.actions,
         inputTextArray = inputElement.getTextArrayBeforeCursor(),
         [cmd = '', ...args] = inputTextArray;
 
@@ -145,7 +148,7 @@ async function displayHints() {
     });
 
     return listElement.populate( history.concat(groups, actions), 
-      item => createElement(item, []), 
+      item => createElement(item, [], context.accelerators), 
       standardFilter(cmd)
     );
   }
@@ -164,15 +167,15 @@ async function displayHints() {
 
   // hint action options
   else if (action != null && action.options != null && args.length > 0)
-    options = await action.options(lastArg, args);
+    options = await action.options(context.frame, lastArg, args);
 
   const leadingAction = inputTextArray
     .slice(0, inputTextArray.length > 1 ? -1 : undefined);
 
   return listElement.populate(options, 
-    item => createElement(item, leadingAction), 
+    item => createElement(item, leadingAction, context.accelerators), 
     action != null && action.customFilter
-      ? action.customFilter(lastArg)
+      ? action.customFilter(context.frame, lastArg)
       : standardFilter(lastArg)
   );
 }
@@ -265,8 +268,9 @@ function runAction(actionText) {
   if (action.length < 1)
     return;
 
-  const frameActions = getCurrentActions();
-  if ( frameActions.run(action) ) {
+  const context = getFrameContext();
+
+  if ( context.actions.run(context.frame, action) ) {
     const textItem = actionText.trim();
 
     if (textItem !== 'palette repeatLast')
@@ -275,7 +279,7 @@ function runAction(actionText) {
     return;
   }
 
-  frameActions.getGroups().has(action[0])
+  context.actions.getGroups().has(action[0])
     ? notify(`"${action[1]}" isn't a "${action[0]}" action in current context`, 'runAct')
     : notify(`"${action[0]}" isn't an action nor group in current context`, 'runAct');
 }

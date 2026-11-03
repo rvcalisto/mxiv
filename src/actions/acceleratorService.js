@@ -1,5 +1,4 @@
 import { ComponentAccelerators } from "./componentAccelerators.js";
-import { FRAME } from "../tabs/tab.js";
 
 
 /**
@@ -107,14 +106,4 @@ export function getAccelerators(component, type = 'composed') {
     return customAccelerators[component];
   else
     return composedAccelerators[component];
-}
-
-/**
- * Returns current FRAME Accelerators.
- * @returns {ComponentAccelerators}
- */
-export function getCurrentAccelerators() {
-  return FRAME == null
-    ? registeredAccelerators['base']
-    : composedAccelerators[FRAME.type];
 }

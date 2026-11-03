@@ -1,24 +1,23 @@
 import { setComponentActions } from "../../actions/actionService.js";
 import { option, standardFilter, setPaletteInfo } from "../../components/actionPalette/actionPalette.js";
-import { FRAME } from "../../tabs/tab.js";
 import { runScript, tag, renameTags, deleteTags } from "../../components/fileMethods.js";
 
 
 /**
  * @import { Library } from "./library.js"
+ * @import { ActionSet } from "../../actions/componentActions.js"
  */
 
 
-// [Workaround] get type check support for current FRAME.
-const frame = () => /** @type {Library} */ (FRAME);
-
-
-setComponentActions('library', {
+/**
+ * @type {ActionSet<Library>}
+ */
+const libraryActions = {
 
   'filter': {
     desc: 'filter books by name or tags, list tags with ?, prepend - to exclude it',
-    run : () => {},
-    options: (query, allArgs) => {
+    run: () => {},
+    options: (library, query, allArgs) => {
       setPaletteInfo('arguments: [[-]string...], ?: list tags');
 
       // inject tag completion if query begins with '?'
@@ -32,14 +31,14 @@ setComponentActions('library', {
 
       // display 'clear filter' on single empty arg, show filter otherwise
       if (allArgs.length === 1 && query === '')
-        frame().notify('clear filter', 'filter');
+        library.notify('clear filter', 'filter');
       else if (query !== '')
-        frame().notify(`filter: ${query}`, 'filter');
+        library.notify(`filter: ${query}`, 'filter');
 
-      frame().coverGrid.drawCovers(queries);
+      library.coverGrid.drawCovers(queries);
       return [];
     },
-    customFilter: (query) => {
+    customFilter: (_library, query) => {
       if (query[0] === '?')
         query = query.slice(1);
 
@@ -52,8 +51,8 @@ setComponentActions('library', {
     actions: {
       'add': {
         desc: 'add one or more tags to current book',
-        run: (...tags) => {
-          const selectedCover = frame().coverGrid.selectedCover;
+        run: (library, ...tags) => {
+          const selectedCover = library.coverGrid.selectedCover;
 
           if (selectedCover != null)
             tag(selectedCover.bookPath, true, ...tags);
@@ -62,14 +61,14 @@ setComponentActions('library', {
       },
       'del': {
         desc: 'delete one or more tags from current book',
-        run: (...tags) => {
-          const selectedCover = frame().coverGrid.selectedCover;
+        run: (library, ...tags) => {
+          const selectedCover = library.coverGrid.selectedCover;
 
           if (selectedCover != null)
             tag(selectedCover.bookPath, false, ...tags);
         },
-        options: () => {
-          const selectedCover = frame().coverGrid.selectedCover;
+        options: (library) => {
+          const selectedCover = library.coverGrid.selectedCover;
 
           return selectedCover != null
             ? elecAPI.getTags(selectedCover.bookPath)
@@ -78,12 +77,12 @@ setComponentActions('library', {
       },
       'rename': {
         desc: 'rename all occurrences of one or more tags',
-        run: async (...tags) => await renameTags(...tags),
+        run: async (_library, ...tags) => await renameTags(...tags),
         options: () => elecAPI.uniqueTags()
       },
       'purge': {
         desc: 'purge all occurrences of one or more tags',
-        run: async (...tags) => await deleteTags(...tags),
+        run: async (_library, ...tags) => await deleteTags(...tags),
         options: () => elecAPI.uniqueTags()
       }
     }
@@ -91,8 +90,8 @@ setComponentActions('library', {
 
   'addToLibrary': {
     desc: 'add folders/archives to library',
-    run: async (...paths) => await frame().addToLibrary(...paths),
-    options: async (query) => await elecAPI.queryPath(query)
+    run: async (library, ...paths) => await library.addToLibrary(...paths),
+    options: async (_library, query) => await elecAPI.queryPath(query)
   },
 
   'watchlist': {
@@ -100,46 +99,46 @@ setComponentActions('library', {
     actions: {
       'add': {
         desc: 'add folder to Watchlist',
-        run: (path = '') => {
+        run: (library, path = '') => {
           const treatedPath = path.trim();
           if (treatedPath === '')
-            frame().notify(`"${treatedPath}" is not a valid path`, 'watchAdd');
+            library.notify(`"${treatedPath}" is not a valid path`, 'watchAdd');
           else {
-            frame().watchlistPanel.addItem(treatedPath);
-            frame().notify(`added "${treatedPath}" to Watchlist`, 'watchAdd');
+            library.watchlistPanel.addItem(treatedPath);
+            library.notify(`added "${treatedPath}" to Watchlist`, 'watchAdd');
           }
         },
-        options: async (query, allArgs) => allArgs.length < 2
+        options: async (_library, query, allArgs) => allArgs.length < 2
           ? await elecAPI.queryPath(query)
           : []
       },
       'remove': {
         desc: 'remove folder to Watchlist',
-        run: (path = '') => {
+        run: (library, path = '') => {
           const treatedPath = path.trim();
           if (treatedPath === '')
-            frame().notify(`"${treatedPath}" is not a valid path`);
+            library.notify(`"${treatedPath}" is not a valid path`);
           else {
-            frame().watchlistPanel.removeItem(treatedPath)
-              ? frame().notify(`removed ${treatedPath} from Watchlist`, 'watchRemove')
-              : frame().notify(`no "${treatedPath}" in watchlist to remove`, 'watchRemove');
+            library.watchlistPanel.removeItem(treatedPath)
+              ? library.notify(`removed ${treatedPath} from Watchlist`, 'watchRemove')
+              : library.notify(`no "${treatedPath}" in watchlist to remove`, 'watchRemove');
           }
         },
-        options: (_query, allArgs) => allArgs.length < 2
-          ? frame().watchlistPanel.getItems().map(i => i.path)
+        options: (library, _query, allArgs) => allArgs.length < 2
+          ? library.watchlistPanel.getItems().map(i => i.path)
           : []
       },
       'sync': {
         desc: 'synchronize books with Watchlist entries',
-        run: async () => await frame().syncToWatchlist()
+        run: async (library) => await library.syncToWatchlist()
       },
       'panel': {
         desc: 'open or close Watchlist panel',
-        run: (option) => {
+        run: (library, option) => {
           const values = /** @type {Object<string, boolean>} */ ({ 'open': true, 'close': false });
-          frame().watchlistPanel.toggleVisibility(values[option]);
+          library.watchlistPanel.toggleVisibility(values[option]);
         },
-        options: (_query, allArgs) => allArgs.length < 2 
+        options: (_library, _query, allArgs) => allArgs.length < 2 
           ? [option('toggle', '(default)'), 'open', 'close']
           : []
       }
@@ -151,29 +150,29 @@ setComponentActions('library', {
     actions: {
       'open': {
         desc: 'open currently selected book in-place or on a new tab',
-        run: (whichTab = 'inPlace') => {
-          const cover = frame().coverGrid.selectedCover;
+        run: (library, whichTab = 'inPlace') => {
+          const cover = library.coverGrid.selectedCover;
 
           cover != null
-            ? frame().coverGrid.openCoverBook(cover, whichTab === 'newTab')
-            : frame().notify('no selected cover to open', 'bookOpen');
+            ? library.coverGrid.openCoverBook(cover, whichTab === 'newTab')
+            : library.notify('no selected cover to open', 'bookOpen');
         },
-        options: (_query, allArgs) => allArgs.length < 2 ? [
+        options: (_library, _query, allArgs) => allArgs.length < 2 ? [
           option('newTab', 'open book in a new tab'),
           option('inPlace', 'open book on current tab (default)'),
         ] : []
       },
       'delist': {
         desc: 'delist currently selected book from library',
-        run: async () => {
-          const cover = frame().coverGrid.selectedCover;
+        run: async (library) => {
+          const cover = library.coverGrid.selectedCover;
           if (cover == null) 
-            return frame().notify('no book selected ', 'bookDelist');
+            return library.notify('no book selected ', 'bookDelist');
 
-          if ( await frame().coverGrid.removeCover(cover) )
-            frame().notify('book delisted', 'bookDelist');
+          if ( await library.coverGrid.removeCover(cover) )
+            library.notify('book delisted', 'bookDelist');
           else
-            frame().notify('failed to delist book', 'bookDelist');
+            library.notify('failed to delist book', 'bookDelist');
         }
       }
     }
@@ -181,13 +180,13 @@ setComponentActions('library', {
 
   'moveSelection': {
     desc: 'move book selection',
-    run: (axis, next = 'next') => {
+    run: (library, axis, next = 'next') => {
       if (axis === 'horizontally')
-        frame().coverGrid.nextCoverHorizontal(next === 'next');
+        library.coverGrid.nextCoverHorizontal(next === 'next');
       if (axis === 'vertically')
-        frame().coverGrid.nextCoverVertical(next === 'next');
+        library.coverGrid.nextCoverVertical(next === 'next');
     },
-    options: (_query, allArgs) => {
+    options: (_library, _query, allArgs) => {
       if (allArgs.length < 2) return [
         option('horizontally', 'select neighbor in the horizontal'),
         option('vertically', 'select neighbor in the vertical')
@@ -204,30 +203,33 @@ setComponentActions('library', {
 
   'random': {
     desc: 'select random book',
-    run: () => frame().coverGrid.randomCover()
+    run: (library) => library.coverGrid.randomCover()
   },
 
   'nukeLibrary' : {
     desc: 'completely delist entire library',
-    run: async () => {
-      if ( await frame().nukeLibrary() )
-        frame().notify('library book entries cleared', 'nukeLibrary');
+    run: async (library) => {
+      if ( await library.nukeLibrary() )
+        library.notify('library book entries cleared', 'nukeLibrary');
       else
-        frame().notify('failed to clear library book entries', 'nukeLibrary');
+        library.notify('failed to clear library book entries', 'nukeLibrary');
     }
   },
 
   'runScript': {
     desc: 'run user script where %F, %N, %T represent the selected file path, \
            name & type, respectively',
-    run: async (script, msg) => {
-      await runScript(script, frame().coverGrid.selectedCover?.bookPath, msg);
+    run: async (library, script, msg) => {
+      await runScript(script, library.coverGrid.selectedCover?.bookPath, msg);
     },
-    options: (_query, allArgs) => {
+    options: (_library, _query, allArgs) => {
       if (allArgs.length < 3)
         setPaletteInfo('arguments: <script, %F: filepath, %N: basename, %T: filetype> [notification]');
 
       return [];
     }
   }
-});
+};
+
+
+setComponentActions('library', libraryActions);

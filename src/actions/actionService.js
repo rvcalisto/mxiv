@@ -1,5 +1,4 @@
 import { ComponentActions } from "./componentActions.js";
-import { FRAME } from "../tabs/tab.js";
 
 
 /** 
@@ -70,14 +69,4 @@ function buildComposedActions(component) {
  */
 export function getActions(component) {
   return composedActions[component];
-}
-
-/**
- * Returns current FRAME Actions.
- * @returns {ComponentActions} 
- */
-export function getCurrentActions() {
-  return FRAME == null
-    ? registeredActions['base']
-    : composedActions[FRAME.type];
 }

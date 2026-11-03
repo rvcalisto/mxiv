@@ -1,7 +1,5 @@
-// @ts-check
 import palette from "../components/actionPalette/actionPalette.js";
-import { getCurrentActions } from "../actions/actionService.js";
-import { getCurrentAccelerators } from "../actions/acceleratorService.js";
+import { getFrameContext } from "../frames/frameContext.js";
 import { notify } from "../components/notifier.js";
 
 
@@ -14,17 +12,22 @@ export function frameKeyEvHandler(e) {
   if (palette.paletteIsVisible)
     return palette.togglePalette(e.key !== 'Escape');
 
-  const action = getCurrentAccelerators().byEvent(e);
-  if (action != null) {
-    e.preventDefault();
+  const context = getFrameContext();
+  if (context.frame == null)
+    return;
 
-    const frameActions = getCurrentActions();
-    if ( !frameActions.run(action) ) {
-      frameActions.getGroups().has(action[0])
-        ? notify(`"${action[1]}" isn't a "${action[0]}" action in current context`, 'runAct')
-        : notify(`"${action[0]}" isn't an action nor group in current context`, 'runAct');
-    }
-  }
-};
+  const action = context.accelerators.byEvent(e);
+  if (action == null)
+    return;
+
+  e.preventDefault();
+  if ( context.actions.run(context.frame, action) )
+    return;
+
+  context.actions.getGroups().has(action[0])
+    ? notify(`"${action[1]}" isn't a "${action[0]}" action in current context`, 'runAct')
+    : notify(`"${action[0]}" isn't an action nor group in current context`, 'runAct');
+}
+
 
 addEventListener('keydown', frameKeyEvHandler);
